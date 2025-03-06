@@ -28,6 +28,9 @@ const HotelDataProvider = ({ children }) => {
         }
     }, []);
 
+    sessionStorage.setItem("username", "Shaik Sadhik");
+
+
     const login = (token) => {
         localStorage.setItem("token", token);
         const decodedToken = jwtDecode(token);

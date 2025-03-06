@@ -18,53 +18,113 @@ function Checkout() {
         "Vizianagaram", "West Godavari"
     ];
 
+    // Fetch cart from API
     useEffect(() => {
-        const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-        setCart(storedCart);
-        updateTotal(storedCart);
+        const fetchCart = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("User is not authenticated");
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:5000/api/cart", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch cart");
+                }
+
+                const data = await response.json();
+                setCart(data);
+                updateTotal(data);
+            } catch (error) {
+                console.error("Error fetching cart:", error);
+                alert("Error fetching cart");
+            }
+        };
+
+        fetchCart();
     }, []);
 
+    // Update total price
     const updateTotal = (cartItems) => {
         const totalPrice = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         setTotal(totalPrice + shippingCharge);
     };
 
+    // Handle form inputs
     const handleInputChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const updateQuantity = (index, change) => {
+    // Update quantity
+    const updateQuantity = async (index, change) => {
         const updatedCart = [...cart];
         updatedCart[index].quantity = Math.max(1, updatedCart[index].quantity + change);
         setCart(updatedCart);
-        localStorage.setItem("cart", JSON.stringify(updatedCart));
         updateTotal(updatedCart);
+
+        try {
+            const token = localStorage.getItem("token");
+            await fetch(`http://localhost:5000/api/cart/${updatedCart[index]._id}`, {
+                method: "PATCH",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ quantity: updatedCart[index].quantity })
+            });
+        } catch (error) {
+            console.error("Error updating quantity:", error);
+        }
     };
 
-    const deleteItem = (index) => {
+    // Delete item from cart
+    const deleteItem = async (index) => {
+        const itemId = cart[index]._id;
         const updatedCart = cart.filter((_, i) => i !== index);
         setCart(updatedCart);
-        localStorage.setItem("cart", JSON.stringify(updatedCart));
         updateTotal(updatedCart);
+
+        try {
+            const token = localStorage.getItem("token");
+            await fetch(`http://localhost:5000/api/cart//${itemId}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+        } catch (error) {
+            console.error("Error deleting item:", error);
+        }
     };
 
+    // Place order
     const handlePlaceOrder = async () => {
         if (Object.values(form).some(field => field.trim() === "")) {
             alert("Please fill in all fields.");
             return;
         }
 
-        const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
         const token = localStorage.getItem("token");
 
-        if (cartItems.length === 0) {
+        if (cart.length === 0) {
             alert("Your cart is empty.");
             return;
         }
 
         const orderData = {
-            items: cartItems,
-            totalAmount: cartItems.reduce((total, item) => total + item.price * item.quantity, 0),
+            items: cart,
+            shippingDetails: { ...form },
+            // totalAmount: total - shippingCharge,
+            totalAmount: total,
             paymentMethod: paymentMethod,
         };
 
@@ -82,7 +142,15 @@ function Checkout() {
 
             if (response.ok) {
                 alert(`Order placed successfully using ${paymentMethod}!`);
-                localStorage.removeItem("cart");
+                // write the code here
+
+                await fetch("http://localhost:5000/api/cart", {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
                 navigate("/");
             } else {
                 alert(`Failed to place order: ${data.error}`);
@@ -93,9 +161,7 @@ function Checkout() {
         }
     };
 
-
     return (
-
         <>
             <Navbar />
             <div className="container mt-4">
@@ -154,12 +220,7 @@ function Checkout() {
                                 </select>
                             </div>
 
-                            {/* Country (Fixed as India) */}
-                            <div className="mb-2">
-                                <label className="form-label">Country</label>
-                                <input type="text" className="form-control" value="India" disabled />
-                            </div>
-
+                            {/* Payment Method */}
                             {/* Payment Method */}
                             <div className="mb-3">
                                 <h5>Payment Method</h5>
@@ -196,7 +257,6 @@ function Checkout() {
                 )}
             </div>
         </>
-
     );
 }
 

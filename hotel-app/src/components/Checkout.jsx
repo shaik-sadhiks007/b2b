@@ -23,7 +23,9 @@ function Checkout() {
         const fetchCart = async () => {
             const token = localStorage.getItem("token");
             if (!token) {
-                alert("User is not authenticated");
+                const localCart = JSON.parse(localStorage.getItem("cart")) || [];
+                setCart(localCart);
+                updateTotal(localCart);
                 return;
             }
 
@@ -70,8 +72,13 @@ function Checkout() {
         setCart(updatedCart);
         updateTotal(updatedCart);
 
+        const token = localStorage.getItem("token");
+        if (!token) {
+            localStorage.setItem("cart", JSON.stringify(updatedCart));
+            return;
+        }
+
         try {
-            const token = localStorage.getItem("token");
             await fetch(`http://localhost:5000/api/cart/${updatedCart[index]._id}`, {
                 method: "PATCH",
                 headers: {
@@ -92,8 +99,14 @@ function Checkout() {
         setCart(updatedCart);
         updateTotal(updatedCart);
 
+        const token = localStorage.getItem("token");
+        if (!token) {
+            localStorage.setItem("cart", JSON.stringify(updatedCart));
+            return;
+        }
+
+
         try {
-            const token = localStorage.getItem("token");
             await fetch(`http://localhost:5000/api/cart//${itemId}`, {
                 method: "DELETE",
                 headers: {
@@ -129,10 +142,12 @@ function Checkout() {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/api/orders/place-order", {
+            const apiUrl = token ? "http://localhost:5000/api/orders/place-order" : "http://localhost:5000/api/orders/place-order/guest-login";
+
+            const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": token ? `Bearer ${token}` : "",
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(orderData)
@@ -142,14 +157,15 @@ function Checkout() {
 
             if (response.ok) {
                 alert(`Order placed successfully using ${paymentMethod}!`);
-                // write the code here
 
-                await fetch("http://localhost:5000/api/cart", {
-                    method: "DELETE",
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
+                if (token) {
+                    await fetch("http://localhost:5000/api/cart", {
+                        method: "DELETE",
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+                } else {
+                    localStorage.removeItem("cart");
+                }
 
                 navigate("/");
             } else {

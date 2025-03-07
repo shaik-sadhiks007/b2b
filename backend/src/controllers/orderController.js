@@ -114,3 +114,32 @@ exports.orderHistoryByPhone = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch order history by phone number" });
     }
 };
+
+exports.guestplaceOrder = async (req, res) => {
+    try {
+        const { items, totalAmount, shippingDetails, paymentMethod } = req.body;
+
+        if (!items || items.length === 0) {
+            return res.status(400).json({ error: "Order must contain at least one item." });
+        }
+
+        // Check if email is provided
+        // if (!email) {
+        //     return res.status(400).json({ error: "Email is required for guest checkout." });
+        // }
+
+        // Create new order for guest user
+        const newOrder = new Order({
+            // guestEmail: email, 
+            items,
+            shippingDetails,
+            totalAmount,
+            paymentMethod,
+        });
+
+        await newOrder.save();
+        res.status(201).json({ message: "Order placed successfully", order: newOrder });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to place order" });
+    }
+};

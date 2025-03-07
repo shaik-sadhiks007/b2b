@@ -24,7 +24,6 @@ function App() {
                 <Route path="/order-history" element={<OrderHistory/>} />
                 <Route path="/create-menu" element={<CreateMenu/>} />
                 <Route path="/edit-menu/:id" element={<EditMenu/>} />
-
             </Routes>
         </BrowserRouter>
     );

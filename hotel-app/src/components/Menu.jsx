@@ -10,8 +10,8 @@ function Menu() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem("token"); 
-    
+        const token = localStorage.getItem("token");
+
         // Fetch today's menu
         axios.get("http://localhost:5000/api/menu/today")
             .then((response) => {
@@ -22,63 +22,84 @@ function Menu() {
                 setError("Failed to load menu.");
                 setLoading(false);
             });
-    
-        // Fetch the user's cart from the backend
-        axios.get("http://localhost:5000/api/cart", {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-            .then((response) => {
-                setCart(response.data); 
+
+        // Fetch the user's cart from localStorage or backend
+        if (token === null) {
+            const localCart = JSON.parse(localStorage.getItem("cart")) || [];
+            setCart(localCart);
+        } else {
+            axios.get("http://localhost:5000/api/cart", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             })
-            .catch(() => {
-                setError("Failed to load cart.");
-            });
+                .then((response) => {
+                    setCart(response.data);
+                })
+                .catch(() => {
+                    setError("Failed to load cart.");
+                });
+        }
     }, []);
-    
 
     const handleAddToCart = async (item, mealTime) => {
-        const token = localStorage.getItem("token"); 
+        let token = localStorage.getItem("token");
 
-        if(token === null) {
-            navigate('/login')
+        if (token === null) {
+            // Retrieve existing cart items from localStorage
+            const localCart = JSON.parse(localStorage.getItem("cart")) || [];
+
+            // Create a new cart item
+            const newItem = {
+                menuName: item.menuName,
+                price: item.price,
+                image: item.image,
+                mealTime,
+                quantity: 1,
+                date: new Date().toISOString().split("T")[0],
+            };
+
+            // Add the new item to the local cart
+            localCart.push(newItem);
+
+            // Store the updated cart in localStorage
+            localStorage.setItem("cart", JSON.stringify(localCart));
+
+            // Update the local state
+            setCart([...cart, newItem]);
+
+            return;
         }
 
         try {
-            
-            const response = await fetch("http://localhost:5000/api/cart", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
+            const response = await axios.post(
+                "http://localhost:5000/api/cart",
+                {
                     menuName: item.menuName,
                     price: item.price,
                     image: item.image,
                     mealTime,
                     quantity: 1,
-                    date : new Date().toISOString().split("T")[0],
-                }),
-            });
+                    date: new Date().toISOString().split("T")[0],
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
-            if (!response.ok) throw new Error("Failed to add item to cart");
-
-            const newItem = await response.json();
-            setCart([...cart, newItem]);
+            setCart([...cart, response.data]);
         } catch (error) {
             console.error("Error adding to cart:", error);
         }
     };
-
 
     const handleGoToCart = () => {
         navigate("/cart");
     };
 
     if (loading) return <p>Loading...</p>;
-
 
     return (
         <div className="container text-black mt-4">
@@ -90,8 +111,8 @@ function Menu() {
                             <h4 className="text-center text-capitalize">{mealTime} Menu</h4>
                             <div className="row">
                                 {menu[mealTime].map((item, index) => {
-                                    const isInCart = cart.some(cartItem =>
-                                        cartItem.menuName === item.menuName && cartItem.mealTime === mealTime
+                                    const isInCart = Array.isArray(cart) && cart.some(
+                                        (cartItem) => cartItem.menuName === item.menuName && cartItem.mealTime === mealTime
                                     );
                                     return (
                                         <div key={index} className="col-md-4 mb-3">

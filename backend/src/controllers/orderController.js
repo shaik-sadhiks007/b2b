@@ -1,5 +1,6 @@
 const Order = require("../models/orderModel");
 const User = require("../models/userModel"); 
+const { sendOrderConfirmationEmail } = require('../utils/emailService');
 
 exports.placeOrder = async (req, res) => {
     try {
@@ -23,11 +24,27 @@ exports.placeOrder = async (req, res) => {
             shippingDetails,
             totalAmount,
             paymentMethod,
+            status: 'pending'
         });
 
         await newOrder.save();
+
+        // Send confirmation email
+        try {
+            await sendOrderConfirmationEmail(email, {
+                items,
+                shippingDetails,
+                totalAmount,
+                paymentMethod
+            });
+        } catch (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+            // Don't throw error here, just log it
+        }
+
         res.status(201).json({ message: "Order placed successfully", order: newOrder });
     } catch (error) {
+        console.error('Error placing order:', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };
@@ -135,11 +152,27 @@ exports.guestplaceOrder = async (req, res) => {
             shippingDetails,
             totalAmount,
             paymentMethod,
+            status: 'pending'
         });
 
         await newOrder.save();
+
+        // Send confirmation email to guest user
+        try {
+            await sendOrderConfirmationEmail(shippingDetails.email, {
+                items,
+                shippingDetails,
+                totalAmount,
+                paymentMethod
+            });
+        } catch (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+            // Don't throw error here, just log it
+        }
+
         res.status(201).json({ message: "Order placed successfully", order: newOrder });
     } catch (error) {
+        console.error('Error placing guest order:', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };

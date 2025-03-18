@@ -6,7 +6,7 @@ function Checkout() {
     const [cart, setCart] = useState([]);
     const [total, setTotal] = useState(0);
     const [form, setForm] = useState({
-        name: "", phone: "", address: "", city: "", state: "", country: "India", pincode: ""
+        name: "", phone: "", address: "", city: "", state: "", country: "India", pincode: "", email: ""
     });
     const [paymentMethod, setPaymentMethod] = useState("COD");
     const navigate = useNavigate();
@@ -211,11 +211,11 @@ function Checkout() {
                         {/* Shipping Details Form */}
                         <div className="card p-3">
                             <h5>Shipping Details</h5>
-                            {["name", "phone", "address", "city", "pincode"].map((field, index) => (
+                            {["name", "phone", "address", "city", "pincode", "email"].map((field, index) => (
                                 <div className="mb-2" key={index}>
                                     <label className="form-label">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
                                     <input
-                                        type={field === "pincode" || field === "phone" ? "number" : "text"}
+                                        type={field === "pincode" || field === "phone" ? "number" : field === "email" ? "email" : "text"}
                                         name={field}
                                         className="form-control"
                                         value={form[field]}
@@ -227,7 +227,7 @@ function Checkout() {
 
                             {/* State Dropdown */}
                             <div className="mb-2">
-                                <label className="form-label">State</label>
+                                <label className="form-label">District</label>
                                 <select name="state" className="form-control" value={form.state} onChange={handleInputChange} required>
                                     <option value="">Select State</option>
                                     {statesOfAP.map((state, index) => (
@@ -236,7 +236,6 @@ function Checkout() {
                                 </select>
                             </div>
 
-                            {/* Payment Method */}
                             {/* Payment Method */}
                             <div className="mb-3">
                                 <h5>Payment Method</h5>

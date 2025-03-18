@@ -30,7 +30,7 @@ function OrderHistory() {
                 setLoading(false);
             })
             .catch(err => {
-                setError(err.response?.data?.message || "Failed to fetch orders");
+                // setError(err.response?.data?.message || "Failed to fetch orders");
                 setLoading(false);
             });
     }, [user, token]);
@@ -110,7 +110,7 @@ function OrderHistory() {
                 <button
                     className="btn btn-danger btn-sm"
                     onClick={() => handleStatusChange(row._id, "Cancelled")}
-                    disabled={row.status !== "Pending" || token == null} 
+                    disabled={row.status.toLowerCase() !== "pending" || token == null} 
                 >
                     Cancel
                 </button>

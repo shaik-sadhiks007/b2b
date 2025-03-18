@@ -60,17 +60,17 @@ const MenuItems = () => {
             sortable: true,
         },
         {
-            name: "Morning Menu",
+            name: "Menu",
             selector: (row) => row.morning.map(item => item.menuName).join(", "),
         },
-        {
-            name: "Afternoon Menu",
-            selector: (row) => row.afternoon.map(item => item.menuName).join(", "),
-        },
-        {
-            name: "Evening Menu",
-            selector: (row) => row.evening.map(item => item.menuName).join(", "),
-        },
+        // {
+        //     name: "Afternoon Menu",
+        //     selector: (row) => row.afternoon.map(item => item.menuName).join(", "),
+        // },
+        // {
+        //     name: "Evening Menu",
+        //     selector: (row) => row.evening.map(item => item.menuName).join(", "),
+        // },
         {
             name: "Actions",
             cell: (row) => (

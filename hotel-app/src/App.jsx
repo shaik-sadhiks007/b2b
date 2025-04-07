@@ -11,10 +11,45 @@ import CreateMenu from "./admin/CreateMenu";
 import Profile from "./components/Profile";
 import AddressManagement from "./components/AddressManagement";
 import MenuTemplate from "./admin/MenuTemplate";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useEffect } from "react";
 
 function App() {
+    useEffect(() => {
+        // Check for token in localStorage first
+        const transferToken = localStorage.getItem('transferToken');
+        if (transferToken) {
+            localStorage.setItem('token', transferToken);
+            localStorage.removeItem('transferToken');
+            console.log('Token received from transfer');
+        }
+
+        // Define the message handler function
+        const messageHandler = (event) => {
+            if (event.origin !== "http://localhost:5174") return;  // Verify origin
+            const { token } = event.data;
+            if (token) {
+                localStorage.setItem("token", token); // Store token
+                console.log("Token received and stored:", token);
+            }
+        };
+
+        // Add event listener
+        window.addEventListener("message", messageHandler);
+
+        // Notify parent window that this window is ready
+        window.postMessage('ready', '*');
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('message', messageHandler);
+        };
+    }, []);
+
     return (
         <BrowserRouter>
+            <ToastContainer />
             <Routes>
                 <Route path='/' element={<Home />} />
                 <Route path='/login' element={<Login />} />

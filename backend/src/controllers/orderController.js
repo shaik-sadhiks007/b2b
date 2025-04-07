@@ -1,11 +1,11 @@
 const Order = require("../models/orderModel");
 const User = require("../models/userModel"); 
-const { sendOrderConfirmationEmail } = require('../utils/emailService');
+const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
 
 exports.placeOrder = async (req, res) => {
     try {
         const { email } = req.user;  
-        const { items, totalAmount,shippingDetails, paymentMethod } = req.body;
+        const { items, totalAmount, shippingDetails, paymentMethod } = req.body;
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: "Order must contain at least one item." });
@@ -24,7 +24,7 @@ exports.placeOrder = async (req, res) => {
             shippingDetails,
             totalAmount,
             paymentMethod,
-            status: 'pending'
+            status: 'Order Placed'
         });
 
         await newOrder.save();
@@ -101,9 +101,40 @@ exports.updateOrderStatus = async (req, res) => {
             return res.status(404).json({ error: "Order not found" });
         }
 
+        // Get the previous status
+        const previousStatus = order.status;
+
         // Update order status
         order.status = status;
         await order.save();
+
+        // Send status change email notification
+        try {
+            let email;
+            if (order.userId) {
+                // For logged-in users, get email from user model
+                const user = await User.findById(order.userId);
+                email = user.email;
+            } else {
+                // For guest users, use the email from shipping details
+                email = order.shippingDetails.email;
+            }
+
+            if (email) {
+                await sendStatusChangeEmail(email, {
+                    orderId: order._id,
+                    previousStatus,
+                    newStatus: status,
+                    items: order.items,
+                    shippingDetails: order.shippingDetails,
+                    totalAmount: order.totalAmount,
+                    paymentMethod: order.paymentMethod
+                });
+            }
+        } catch (emailError) {
+            console.error('Error sending status change email:', emailError);
+            // Don't throw error here, just log it
+        }
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
@@ -140,19 +171,13 @@ exports.guestplaceOrder = async (req, res) => {
             return res.status(400).json({ error: "Order must contain at least one item." });
         }
 
-        // Check if email is provided
-        // if (!email) {
-        //     return res.status(400).json({ error: "Email is required for guest checkout." });
-        // }
-
         // Create new order for guest user
         const newOrder = new Order({
-            // guestEmail: email, 
             items,
             shippingDetails,
             totalAmount,
             paymentMethod,
-            status: 'pending'
+            status: 'Order Placed'
         });
 
         await newOrder.save();

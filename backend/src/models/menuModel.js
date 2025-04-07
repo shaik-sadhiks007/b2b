@@ -4,23 +4,26 @@ const menuSchema = new mongoose.Schema({
   date: { type: String, unique: true, required: true }, 
   morning: [
     {
-      menuName: { type: String,  },
-      image: { type: String,  }, 
-      price: { type: Number,  },
+      menuName: { type: String, required: true },
+      image: { type: String }, 
+      price: { type: Number, required: true },
+      quantity: { type: Number, default: 1, min: 1 }
     },
   ],
   afternoon: [
     {
-      menuName: { type: String,  },
-      image: { type: String,  },
-      price: { type: Number,  },
+      menuName: { type: String, required: true },
+      image: { type: String },
+      price: { type: Number, required: true },
+      quantity: { type: Number, default: 1, min: 1 }
     },
   ],
   evening: [
     {
-      menuName: { type: String,  },
-      image: { type: String,  },
-      price: { type: Number,  },
+      menuName: { type: String, required: true },
+      image: { type: String },
+      price: { type: Number, required: true },
+      quantity: { type: Number, default: 1, min: 1 }
     },
   ],
 });

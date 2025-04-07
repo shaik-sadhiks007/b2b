@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import { toast } from 'react-toastify';
 
 const CreateMenu = () => {
     const [templates, setTemplates] = useState([]);
+    const [selectedTemplates, setSelectedTemplates] = useState([]);
+    const [customItems, setCustomItems] = useState([]);
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
-        morning: [{ menuName: "", image: "", price: "", showPreview: false }],
-        afternoon: [],
-        evening: []
+        morning: []
     });
 
     useEffect(() => {
@@ -21,60 +22,78 @@ const CreateMenu = () => {
                 const data = await response.json();
                 setTemplates(data);
             } else {
-                console.error('Failed to fetch templates');
+                toast.error('Failed to fetch templates');
             }
         } catch (error) {
             console.error('Error fetching templates:', error);
+            toast.error('Error fetching templates');
         }
     };
 
-    const handleChange = (e, index) => {
-        const { name, value } = e.target;
-        const updatedMorning = [...formData.morning];
-        updatedMorning[index] = {
-            ...updatedMorning[index],
-            [name]: value,
-            showPreview: name === 'image' ? true : updatedMorning[index].showPreview
-        };
-        setFormData({ ...formData, morning: updatedMorning });
-    };
-
-    const handleTemplateSelect = (e, index) => {
-        const selectedTemplate = templates.find(template => template._id === e.target.value);
-        if (selectedTemplate) {
-            const updatedMorning = [...formData.morning];
-            updatedMorning[index] = {
-                menuName: selectedTemplate.menuName,
-                image: selectedTemplate.image,
-                price: selectedTemplate.price,
-                showPreview: true
-            };
-            setFormData({ ...formData, morning: updatedMorning });
-        }
-    };
-
-    const addMenuItem = () => {
-        setFormData({
-            ...formData,
-            morning: [...formData.morning, { menuName: "", image: "", price: "", showPreview: false }]
+    const handleTemplateToggle = (template) => {
+        setSelectedTemplates(prev => {
+            const isSelected = prev.some(t => t._id === template._id);
+            if (isSelected) {
+                return prev.filter(t => t._id !== template._id);
+            } else {
+                return [...prev, { ...template, quantity: 1 }];
+            }
         });
     };
 
-    const deleteMenuItem = (index) => {
-        if (formData.morning.length > 1) {
-            const updatedMorning = formData.morning.filter((_, i) => i !== index);
-            setFormData({ ...formData, morning: updatedMorning });
-        }
+    const handleQuantityChange = (templateId, value) => {
+        setSelectedTemplates(prev => 
+            prev.map(template => 
+                template._id === templateId 
+                    ? { ...template, quantity: Math.max(1, parseInt(value) || 1) }
+                    : template
+            )
+        );
+    };
+
+    const handleCustomItemChange = (index, field, value) => {
+        const updatedCustomItems = [...customItems];
+        updatedCustomItems[index] = {
+            ...updatedCustomItems[index],
+            [field]: value
+        };
+        setCustomItems(updatedCustomItems);
+    };
+
+    const addCustomItem = () => {
+        setCustomItems([...customItems, { menuName: "", image: "", price: "", quantity: 1 }]);
+    };
+
+    const removeCustomItem = (index) => {
+        setCustomItems(customItems.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem("token");
 
-        // Remove showPreview field from each item before sending
-        const cleanedFormData = {
-            ...formData,
-            morning: formData.morning.map(({ showPreview, ...item }) => item)
+        // Combine selected templates and custom items with quantities
+        const menuItems = [
+            ...selectedTemplates.map(template => ({
+                menuName: template.menuName,
+                image: template.image,
+                price: template.price,
+                quantity: template.quantity
+            })),
+            ...customItems.filter(item => item.menuName && item.price).map(item => ({
+                ...item,
+                quantity: item.quantity || 1
+            }))
+        ];
+
+        if (menuItems.length === 0) {
+            toast.warning("Please select at least one menu item");
+            return;
+        }
+
+        const menuData = {
+            date: formData.date,
+            morning: menuItems
         };
 
         try {
@@ -84,21 +103,24 @@ const CreateMenu = () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify(cleanedFormData),
+                body: JSON.stringify(menuData),
             });
+
             if (response.ok) {
-                alert("Menu created successfully");
+                toast.success("Menu created successfully");
+                // Reset form
                 setFormData({
                     date: new Date().toISOString().split('T')[0],
-                    morning: [{ menuName: "", image: "", price: "", showPreview: false }],
-                    afternoon: [],
-                    evening: []
+                    morning: []
                 });
+                setSelectedTemplates([]);
+                setCustomItems([]);
             } else {
-                alert("Failed to create menu");
+                toast.error("Failed to create menu");
             }
         } catch (error) {
             console.error("Error submitting form", error);
+            toast.error("Error creating menu");
         }
     };
 
@@ -108,7 +130,7 @@ const CreateMenu = () => {
             <div className="container mt-5" style={{ background: "white", color: "black", padding: "20px", borderRadius: "10px" }}>
                 <h2 className="text-center">Create Menu</h2>
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
+                    <div className="mb-4">
                         <label className="form-label">Date</label>
                         <input
                             type="date"
@@ -119,81 +141,155 @@ const CreateMenu = () => {
                             required
                         />
                     </div>
-                    <div className="mb-3">
-                        <h4>Breakfast Menu</h4>
-                        {formData.morning.map((item, index) => (
-                            <div key={index} className="card mb-3 p-3">
-                                <h5>Menu Item {index + 1}</h5>
-                                <div className="mb-2">
-                                    <label className="form-label">Select from Templates</label>
-                                    <select 
-                                        className="form-control mb-2"
-                                        value={templates.find(t => 
-                                            t.menuName === item.menuName && 
-                                            t.price === item.price
-                                        )?._id || ''}
-                                        onChange={(e) => handleTemplateSelect(e, index)}
-                                    >
-                                        <option value="">Custom Item</option>
-                                        {templates.map((template) => (
-                                            <option key={template._id} value={template._id}>
-                                                {template.menuName} - ₹{template.price}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    placeholder="Menu Name"
-                                    name="menuName"
-                                    value={item.menuName}
-                                    onChange={(e) => handleChange(e, index)}
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    placeholder="Image URL"
-                                    name="image"
-                                    value={item.image}
-                                    onChange={(e) => handleChange(e, index)}
-                                />
-                                {item.showPreview && item.image && (
-                                    <div className="mb-2">
-                                        <img 
-                                            src={item.image} 
-                                            alt={item.menuName} 
-                                            style={{ maxWidth: '200px', height: 'auto' }}
-                                            className="mt-2"
-                                        />
-                                    </div>
-                                )}
-                                <input
-                                    type="number"
-                                    className="form-control mb-2"
-                                    placeholder="Price"
-                                    name="price"
-                                    value={item.price}
-                                    onChange={(e) => handleChange(e, index)}
-                                    required
-                                />
-                                {formData.morning.length > 1 && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger"
-                                        onClick={() => deleteMenuItem(index)}
-                                    >
-                                        Delete
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                        <button type="button" className="btn btn-primary" onClick={addMenuItem}>
-                            + Add Another Item
+
+                    <div className="mb-4">
+                        <h4>Menu Templates</h4>
+                        <div className="table-responsive">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Select</th>
+                                        <th>Image</th>
+                                        <th>Menu Name</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {templates.map((template) => (
+                                        <tr key={template._id}>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    className="form-check-input"
+                                                    checked={selectedTemplates.some(t => t._id === template._id)}
+                                                    onChange={() => handleTemplateToggle(template)}
+                                                />
+                                            </td>
+                                            <td>
+                                                {template.image && (
+                                                    <img
+                                                        src={template.image}
+                                                        alt={template.menuName}
+                                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                                    />
+                                                )}
+                                            </td>
+                                            <td>{template.menuName}</td>
+                                            <td>₹{template.price}</td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    min="1"
+                                                    value={selectedTemplates.find(t => t._id === template._id)?.quantity || 1}
+                                                    onChange={(e) => handleQuantityChange(template._id, e.target.value)}
+                                                    disabled={!selectedTemplates.some(t => t._id === template._id)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-warning btn-sm"
+                                                    onClick={() => handleTemplateToggle(template)}
+                                                >
+                                                    {selectedTemplates.some(t => t._id === template._id) ? 'Remove' : 'Add'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="mb-4">
+                        <h4>Custom Menu Items</h4>
+                        <div className="table-responsive">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Image URL</th>
+                                        <th>Menu Name</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {customItems.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>
+                                                {item.image && (
+                                                    <img
+                                                        src={item.image}
+                                                        alt={item.menuName}
+                                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                                    />
+                                                )}
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Enter image URL"
+                                                    value={item.image}
+                                                    onChange={(e) => handleCustomItemChange(index, 'image', e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Menu Name"
+                                                    value={item.menuName}
+                                                    onChange={(e) => handleCustomItemChange(index, 'menuName', e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Price"
+                                                    value={item.price}
+                                                    onChange={(e) => handleCustomItemChange(index, 'price', e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    min="1"
+                                                    value={item.quantity || 1}
+                                                    onChange={(e) => handleCustomItemChange(index, 'quantity', e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-danger btn-sm"
+                                                    onClick={() => removeCustomItem(index)}
+                                                >
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={addCustomItem}
+                        >
+                            + Add Custom Item
                         </button>
                     </div>
-                    <button type="submit" className="btn btn-dark mt-3">Create Menu</button>
+
+                    <button type="submit" className="btn btn-dark">Create Menu</button>
                 </form>
             </div>
         </>

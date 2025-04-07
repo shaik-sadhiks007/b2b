@@ -4,6 +4,7 @@ import DataTable from "react-data-table-component";
 import { HotelContext } from "../contextApi/HotelContextProvider";
 import Navbar from "../components/Navbar";
 import moment from "moment";
+import { toast } from 'react-toastify';
 
 function OrderHistory() {
     const { user } = useContext(HotelContext);
@@ -13,6 +14,8 @@ function OrderHistory() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [phone, setPhone] = useState("");
+    const [searchName, setSearchName] = useState("");
+    const [searchDate, setSearchDate] = useState("");
 
     useEffect(() => {
         if (!token || !user || !user.role) return;
@@ -30,14 +33,14 @@ function OrderHistory() {
                 setLoading(false);
             })
             .catch(err => {
-                // setError(err.response?.data?.message || "Failed to fetch orders");
+                toast.error("Failed to fetch orders");
                 setLoading(false);
             });
     }, [user, token]);
 
     const handleSearchByPhone = () => {
         if (!phone.trim()) {
-            setError("Please enter a valid phone number");
+            toast.warning("Please enter a valid phone number");
             return;
         }
 
@@ -49,7 +52,7 @@ function OrderHistory() {
                 setLoading(false);
             })
             .catch(err => {
-                setError(err.response?.data?.error || "Failed to fetch orders");
+                toast.error(err.response?.data?.error || "Failed to fetch orders");
                 setLoading(false);
             });
     };
@@ -62,9 +65,44 @@ function OrderHistory() {
                 setOrders(prevOrders => prevOrders.map(order =>
                     order._id === orderId ? { ...order, status: newStatus } : order
                 ));
+                toast.success(`Order status updated to ${newStatus}`);
             })
-            .catch(err => console.error("Failed to update status", err));
+            .catch(err => {
+                console.error("Failed to update status", err);
+                toast.error("Failed to update order status");
+            });
     };
+
+    const handleResendEmail = async (order) => {
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/orders/resend-email/${order._id}`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            toast.success('Email sent successfully!');
+        } catch (error) {
+            console.error('Error sending email:', error);
+            toast.error('Failed to send email. Please try again.');
+        }
+    };
+
+    const filteredOrders = orders.filter(order => {
+        // Name filter
+        const nameMatch = !searchName || 
+            order.shippingDetails?.name?.toLowerCase().includes(searchName.toLowerCase());
+        
+        // Date filter
+        const dateMatch = !searchDate || 
+            (searchDate === "today" ? 
+                moment(order.createdAt).isSame(moment(), 'day') :
+                moment(order.createdAt).format("YYYY-MM-DD") === searchDate);
+        
+        // Return true if either filter is empty or both match
+        return nameMatch && dateMatch;
+    });
 
     const columns = [
         {
@@ -73,8 +111,13 @@ function OrderHistory() {
             sortable: true
         },
         {
+            name: "Name",
+            selector: row => row.shippingDetails?.name || 'N/A',
+            sortable: true
+        },
+        {
             name: "Total Amount",
-            selector: row => `$${row.totalAmount}`,
+            selector: row => `₹${row.totalAmount}`,
             sortable: true
         },
         {
@@ -92,28 +135,40 @@ function OrderHistory() {
             cell: row => (
                 <ul className="list-unstyled mb-0">
                     {row.items.map((item, index) => (
-                        <li key={index}>{item.menuName} - {item.quantity} x ${item.price}</li>
+                        <li key={index}>{item.menuName} - {item.quantity} x ₹{item.price}</li>
                     ))}
                 </ul>
             )
         },
         {
             name: "Action",
-            cell: row => user && user.role === "admin" ? (
-                <select value={row.status} onChange={(e) => handleStatusChange(row._id, e.target.value)}>
-                    <option value="Pending">Pending</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Cancelled">Cancel</option>
-                    <option value="Delivered">Delivered</option>
-                </select>
-            ) : (
-                <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleStatusChange(row._id, "Cancelled")}
-                    disabled={row.status.toLowerCase() !== "pending" || token == null} 
-                >
-                    Cancel
-                </button>
+            cell: row => (
+                <div className="d-flex gap-2">
+                    {user && user.role === "admin" ? (
+                        <select value={row.status} onChange={(e) => handleStatusChange(row._id, e.target.value)}>
+                            <option value="Order Placed">Order Placed</option>
+                            <option value="Ready to Pickup">Ready to Pickup</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Picked Up">Picked Up</option>
+                        </select>
+                    ) : (
+                        <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleStatusChange(row._id, "Cancelled")}
+                            disabled={row.status !== "Order Placed" || token == null} 
+                        >
+                            Cancel
+                        </button>
+                    )}
+                    {user && user.role === "admin" && row.shippingDetails?.email && (
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleResendEmail(row)}
+                        >
+                            Send Email
+                        </button>
+                    )}
+                </div>
             ),
             ignoreRowClick: true,
             allowOverflow: true,
@@ -127,26 +182,50 @@ function OrderHistory() {
             <div className="container mt-4">
                 <h5>Order History</h5>
 
-                {!token && (
-                    <div className="mb-3">
+                <div className="row mb-3">
+                    {!token && (
+                        <div className="col-md-4 mb-2">
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Enter phone number"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                            />
+                            <button className="btn btn-primary mt-2" onClick={handleSearchByPhone}>
+                                Search by Phone
+                            </button>
+                        </div>
+                    )}
+                    <div className="col-md-4 mb-2">
                         <input
                             type="text"
                             className="form-control"
-                            placeholder="Enter phone number"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="Search by name"
+                            value={searchName}
+                            onChange={(e) => setSearchName(e.target.value)}
                         />
-                        <button className="btn btn-primary mt-2" onClick={handleSearchByPhone}>
-                            Search
-                        </button>
                     </div>
-                )}
+                    <div className="col-md-4 mb-2">
+                        <select 
+                            className="form-control"
+                            value={searchDate}
+                            onChange={(e) => setSearchDate(e.target.value)}
+                        >
+                            <option value="">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value={moment().subtract(1, 'days').format("YYYY-MM-DD")}>Yesterday</option>
+                            <option value={moment().subtract(7, 'days').format("YYYY-MM-DD")}>Last 7 Days</option>
+                            <option value={moment().subtract(30, 'days').format("YYYY-MM-DD")}>Last 30 Days</option>
+                        </select>
+                    </div>
+                </div>
 
                 {error && <p className="text-danger">{error}</p>}
                 {loading ? <p>Loading...</p> : (
                     <DataTable
                         columns={columns}
-                        data={orders}
+                        data={filteredOrders}
                         pagination
                         highlightOnHover
                         striped

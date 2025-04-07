@@ -16,98 +16,228 @@ exports.getTodayMenu = async (req, res) => {
     }
 };
 
-
-// get all menus
+// Get all menus
 exports.getAllMenus = async (req, res) => {
     try {
-        const menus = await Menu.find();
-
-        if (menus.length === 0) {
-            return res.status(404).json({ message: "No menus found." });
-        }
-
-        res.status(200).json(menus);
+        const menus = await Menu.find().sort({ date: -1 });
+        res.json(menus);
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+        console.error("Error fetching menus:", error);
+        res.status(500).json({ error: "Failed to fetch menus" });
     }
 };
-
 
 // Get menu by date
 exports.getMenuByDate = async (req, res) => {
     try {
         const { date } = req.params;
         const menu = await Menu.findOne({ date });
-
         if (!menu) {
-            return res.status(404).json({ message: "No menu found for this date." });
+            return res.status(404).json({ error: "Menu not found" });
         }
-
-        res.status(200).json(menu);
+        res.json(menu);
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error fetching menu:", error);
+        res.status(500).json({ error: "Failed to fetch menu" });
     }
 };
 
-// Create a menu
+// Create new menu
 exports.createMenu = async (req, res) => {
-    const { date, morning, afternoon, evening } = req.body;
-
-    if (!Array.isArray(morning) || !Array.isArray(afternoon) || !Array.isArray(evening)) {
-        return res.status(400).json({ message: "Each meal time must have all menu items." });
-    }
-
     try {
-        const existingMenu = await Menu.findOne({ date });
+        const { date, morning, afternoon, evening } = req.body;
 
-        if (existingMenu) {
-            return res.status(400).json({ message: "Menu for this date already exists." });
+        // Validate required fields
+        if (!date) {
+            return res.status(400).json({ error: "Date is required" });
         }
 
-        const newMenu = new Menu({ date, morning, afternoon, evening });
+        // Check if menu already exists for the date
+        const existingMenu = await Menu.findOne({ date });
+        if (existingMenu) {
+            return res.status(400).json({ error: "Menu already exists for this date" });
+        }
 
-        await newMenu.save();
-        res.status(201).json({ message: "Menu added successfully." });
+        // Create new menu with quantities
+        const menu = new Menu({
+            date,
+            morning: Array.isArray(morning) ? morning.map(item => ({
+                menuName: item.menuName,
+                image: item.image || "",
+                price: item.price,
+                quantity: item.quantity || 1
+            })) : [],
+            afternoon: Array.isArray(afternoon) ? afternoon.map(item => ({
+                menuName: item.menuName,
+                image: item.image || "",
+                price: item.price,
+                quantity: item.quantity || 1
+            })) : [],
+            evening: Array.isArray(evening) ? evening.map(item => ({
+                menuName: item.menuName,
+                image: item.image || "",
+                price: item.price,
+                quantity: item.quantity || 1
+            })) : []
+        });
+
+        // Validate that at least one meal time has items
+        if (menu.morning.length === 0 && menu.afternoon.length === 0 && menu.evening.length === 0) {
+            return res.status(400).json({ error: "At least one meal time must have menu items" });
+        }
+
+        await menu.save();
+        res.status(201).json(menu);
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error creating menu:", error);
+        res.status(500).json({ error: "Failed to create menu" });
     }
 };
 
-// Update a menu
+// Update menu
 exports.updateMenu = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { date, morning } = req.body;
+
+        // Validate required fields
+        if (!date) {
+            return res.status(400).json({ error: "Date is required" });
+        }
+
+        // Find the menu by ID
+        const menu = await Menu.findById(id);
+        if (!menu) {
+            return res.status(404).json({ error: "Menu not found" });
+        }
+
+        // Check if another menu exists for the same date (excluding current menu)
+        const existingMenu = await Menu.findOne({ 
+            date, 
+            _id: { $ne: id } 
+        });
+        if (existingMenu) {
+            return res.status(400).json({ error: "Menu already exists for this date" });
+        }
+
+        // Validate morning array
+        if (!Array.isArray(morning)) {
+            return res.status(400).json({ error: "Morning menu must be an array" });
+        }
+
+        // Validate that morning array is not empty
+        if (morning.length === 0) {
+            return res.status(400).json({ error: "At least one menu item is required" });
+        }
+
+        // Update menu with quantities and validate each item
+        menu.date = date;
+        menu.morning = morning.map(item => {
+            if (!item.menuName || !item.price) {
+                throw new Error("Menu name and price are required for each item");
+            }
+            return {
+                menuName: item.menuName,
+                image: item.image || "",
+                price: item.price,
+                quantity: item.quantity || 1
+            };
+        });
+
+        await menu.save();
+        res.status(200).json({ 
+            message: "Menu updated successfully",
+            menu 
+        });
+    } catch (error) {
+        console.error("Error updating menu:", error);
+        if (error.message === "Menu name and price are required for each item") {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Failed to update menu" });
+    }
+};
+
+// Update menu by date
+exports.updateMenuByDate = async (req, res) => {
     try {
         const { date } = req.params;
         const { morning, afternoon, evening } = req.body;
 
-        const updatedMenu = await Menu.findOneAndUpdate(
-            { date },
-            { morning, afternoon, evening },
-            { new: true } // Returns the updated document
-        );
-
-        if (!updatedMenu) {
-            return res.status(404).json({ message: "No menu found for this date." });
+        // Validate required fields
+        if (!date) {
+            return res.status(400).json({ error: "Date is required" });
         }
 
-        res.status(200).json({ message: "Menu updated successfully.", updatedMenu });
+        // Find the menu by date
+        const menu = await Menu.findOne({ date });
+        if (!menu) {
+            return res.status(404).json({ error: "Menu not found" });
+        }
+
+        // Validate morning array
+        if (!Array.isArray(morning)) {
+            return res.status(400).json({ error: "Morning menu must be an array" });
+        }
+
+        // Validate that morning array is not empty
+        if (morning.length === 0) {
+            return res.status(400).json({ error: "At least one menu item is required" });
+        }
+
+        // Update menu with quantities and validate each item
+        menu.morning = morning.map(item => {
+            if (!item.menuName || !item.price) {
+                throw new Error("Menu name and price are required for each item");
+            }
+            return {
+                menuName: item.menuName,
+                image: item.image || "",
+                price: item.price,
+                quantity: item.quantity || 1
+            };
+        });
+
+        // Update afternoon and evening arrays
+        menu.afternoon = Array.isArray(afternoon) ? afternoon.map(item => ({
+            menuName: item.menuName,
+            image: item.image || "",
+            price: item.price,
+            quantity: item.quantity || 1
+        })) : [];
+
+        menu.evening = Array.isArray(evening) ? evening.map(item => ({
+            menuName: item.menuName,
+            image: item.image || "",
+            price: item.price,
+            quantity: item.quantity || 1
+        })) : [];
+
+        await menu.save();
+        res.status(200).json({ 
+            message: "Menu updated successfully",
+            menu 
+        });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error updating menu:", error);
+        if (error.message === "Menu name and price are required for each item") {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Failed to update menu" });
     }
 };
 
-// Delete a menu
+// Delete menu
 exports.deleteMenu = async (req, res) => {
     try {
         const { date } = req.params;
-
-        const deletedMenu = await Menu.findOneAndDelete({ date });
-
-        if (!deletedMenu) {
-            return res.status(404).json({ message: "No menu found for this date." });
+        const menu = await Menu.findOneAndDelete({ date });
+        if (!menu) {
+            return res.status(404).json({ error: "Menu not found" });
         }
-
-        res.status(200).json({ message: "Menu deleted successfully." });
+        res.json({ message: "Menu deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error deleting menu:", error);
+        res.status(500).json({ error: "Failed to delete menu" });
     }
 };

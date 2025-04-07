@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from './Navbar';
+import { toast } from 'react-toastify';
 
 function Checkout() {
     const [cart, setCart] = useState([]);
@@ -122,21 +123,20 @@ function Checkout() {
     // Place order
     const handlePlaceOrder = async () => {
         if (Object.values(form).some(field => field.trim() === "")) {
-            alert("Please fill in all fields.");
+            toast.warning("Please fill in all fields.");
             return;
         }
 
         const token = localStorage.getItem("token");
 
         if (cart.length === 0) {
-            alert("Your cart is empty.");
+            toast.warning("Your cart is empty.");
             return;
         }
 
         const orderData = {
             items: cart,
             shippingDetails: { ...form },
-            // totalAmount: total - shippingCharge,
             totalAmount: total,
             paymentMethod: paymentMethod,
         };
@@ -156,7 +156,7 @@ function Checkout() {
             const data = await response.json();
 
             if (response.ok) {
-                alert(`Order placed successfully using ${paymentMethod}!`);
+                toast.success(`Order placed successfully using ${paymentMethod}!`);
 
                 if (token) {
                     await fetch("http://localhost:5000/api/cart", {
@@ -169,10 +169,10 @@ function Checkout() {
 
                 navigate("/");
             } else {
-                alert(`Failed to place order: ${data.error}`);
+                toast.error(`Failed to place order: ${data.error}`);
             }
         } catch (error) {
-            alert("An error occurred while placing the order.");
+            toast.error("An error occurred while placing the order.");
             console.error(error);
         }
     };

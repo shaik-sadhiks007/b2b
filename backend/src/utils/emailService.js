@@ -55,6 +55,54 @@ const sendOrderConfirmationEmail = async (email, orderData) => {
     }
 };
 
+const sendStatusChangeEmail = async (email, orderData) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: `Order Status Update - ${orderData.newStatus}`,
+            html: `
+                <h2>Order Status Update</h2>
+                <p>Dear ${orderData.shippingDetails.name},</p>
+                <p>Your order status has been updated from <strong>${orderData.previousStatus}</strong> to <strong>${orderData.newStatus}</strong>.</p>
+                
+                <h3>Order Details:</h3>
+                <p>Order ID: ${orderData.orderId}</p>
+                
+                <h3>Order Items:</h3>
+                <ul>
+                    ${orderData.items.map(item => `
+                        <li>${item.menuName} x ${item.quantity} - ₹${item.price * item.quantity}</li>
+                    `).join('')}
+                </ul>
+
+                <h3>Shipping Details:</h3>
+                <p>Name: ${orderData.shippingDetails.name}</p>
+                <p>Phone: ${orderData.shippingDetails.phone}</p>
+                <p>Address: ${orderData.shippingDetails.address}</p>
+                <p>City: ${orderData.shippingDetails.city}</p>
+                <p>State: ${orderData.shippingDetails.state}</p>
+                <p>Pincode: ${orderData.shippingDetails.pincode}</p>
+
+                <h3>Payment Method:</h3>
+                <p>${orderData.paymentMethod}</p>
+
+                <h3>Total Amount:</h3>
+                <p>₹${orderData.totalAmount}</p>
+
+                <p>Thank you for choosing our service!</p>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Status change email sent successfully:', info.messageId);
+    } catch (error) {
+        console.error('Error sending status change email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
-    sendOrderConfirmationEmail
+    sendOrderConfirmationEmail,
+    sendStatusChangeEmail
 }; 

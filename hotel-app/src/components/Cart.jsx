@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { toast } from 'react-toastify';
 
 function Cart() {
     const [cart, setCart] = useState([]);
@@ -31,54 +32,71 @@ function Cart() {
         }
     };
 
-    const updateQuantity = async (id, quantity) => {
-        if (quantity < 1) return;
-
-        if (token) {
-            try {
-                const response = await fetch(`http://localhost:5000/api/cart/${id}`, {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ quantity }),
-                });
-
-                if (!response.ok) throw new Error("Failed to update quantity");
-
-                const updatedItem = await response.json();
-                setCart(cart.map((item) => (item._id === id ? updatedItem : item)));
-            } catch (error) {
-                console.error("Error updating quantity:", error);
+    const handleQuantityChange = async (itemId, change) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                const updatedCart = cart.map(item =>
+                    item._id === itemId
+                        ? { ...item, quantity: Math.max(1, item.quantity + change) }
+                        : item
+                );
+                setCart(updatedCart);
+                localStorage.setItem("cart", JSON.stringify(updatedCart));
+                return;
             }
-        } else {
-            const updatedCart = cart.map((item) =>
-                item._id === id ? { ...item, quantity } : item
-            );
-            setCart(updatedCart);
-            localStorage.setItem("cart", JSON.stringify(updatedCart));
+
+            const response = await fetch(`http://localhost:5000/api/cart/${itemId}`, {
+                method: "PATCH",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ quantity: Math.max(1, cart.find(item => item._id === itemId).quantity + change) })
+            });
+
+            if (response.ok) {
+                const updatedCart = cart.map(item =>
+                    item._id === itemId
+                        ? { ...item, quantity: Math.max(1, item.quantity + change) }
+                        : item
+                );
+                setCart(updatedCart);
+            } else {
+                toast.error("Failed to update quantity");
+            }
+        } catch (error) {
+            console.error("Error updating quantity:", error);
+            toast.error("Failed to update quantity");
         }
     };
 
-    const removeItem = async (id) => {
-        if (token) {
-            try {
-                const response = await fetch(`http://localhost:5000/api/cart/${id}`, {
-                    method: "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (!response.ok) throw new Error("Failed to delete item");
-
-                setCart(cart.filter((item) => item._id !== id));
-            } catch (error) {
-                console.error("Error deleting item:", error);
+    const handleRemoveItem = async (itemId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                const updatedCart = cart.filter(item => item._id !== itemId);
+                setCart(updatedCart);
+                localStorage.setItem("cart", JSON.stringify(updatedCart));
+                return;
             }
-        } else {
-            const updatedCart = cart.filter((item) => item._id !== id);
-            setCart(updatedCart);
-            localStorage.setItem("cart", JSON.stringify(updatedCart));
+
+            const response = await fetch(`http://localhost:5000/api/cart/${itemId}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                setCart(cart.filter(item => item._id !== itemId));
+                toast.success("Item removed from cart");
+            } else {
+                toast.error("Failed to remove item");
+            }
+        } catch (error) {
+            console.error("Error removing item:", error);
+            toast.error("Failed to remove item");
         }
     };
 
@@ -118,7 +136,7 @@ function Cart() {
                                             className="form-control form-control-sm"
                                             value={item.quantity || 1}
                                             onChange={(e) =>
-                                                updateQuantity(item._id, parseInt(e.target.value) || 1)
+                                                handleQuantityChange(item._id, parseInt(e.target.value) - (item.quantity || 1))
                                             }
                                             min="1"
                                             style={{ width: "60px" }}
@@ -127,7 +145,7 @@ function Cart() {
                                     <div className="col-12 col-md-4 text-end">
                                         <button
                                             className="btn btn-sm btn-danger me-2"
-                                            onClick={() => removeItem(item._id)}
+                                            onClick={() => handleRemoveItem(item._id)}
                                         >
                                             Delete
                                         </button>

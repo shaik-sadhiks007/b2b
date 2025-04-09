@@ -7,6 +7,9 @@ import Register from './pages/Register'
 import AddRestaurant from './pages/AddRestaurant'
 import { AuthProvider } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
+import Orders from './components/Orders'
+import InventoryManager from './components/InventoryManager'
+
 
 function App() {
   return (
@@ -14,6 +17,9 @@ function App() {
       <Router>
         <Routes>
           <Route path='/' element={<LandingPage />} />
+          <Route path='/orders' element={<Orders />} />
+          <Route path='/inventory' element={<InventoryManager />} />
+          <Route path='/menu' element={<Dashboard />} />
           <Route path='/login' element={<Login />} />
           <Route path='/register' element={<Register />} />
           <Route path='/add-restaurant' element={<AddRestaurant />} />

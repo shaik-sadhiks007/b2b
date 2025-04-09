@@ -4,13 +4,16 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
     const [itemData, setItemData] = useState({
         name: '',
         description: '',
-        foodType: 'Veg',
         serviceType: 'Delivery',
         basePrice: '',
         photos: [],
         packagingCharges: '',
-        totalPrice: ''
-    });
+        totalPrice: '',
+        customisable: true,
+        isVeg: true,
+        inStock: true,
+    }
+);
 
     // Reset form when initialData changes or when show becomes true
     useEffect(() => {
@@ -34,7 +37,10 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
                 basePrice: basePrice,
                 photos: initialData.photos || [],
                 packagingCharges: packagingCharges,
-                totalPrice: initialData.totalPrice || ''
+                totalPrice: initialData.totalPrice || '',
+                customisable: initialData.customisable !== undefined ? initialData.customisable : true,
+                isVeg: initialData.isVeg !== undefined ? initialData.isVeg : true,
+                inStock: initialData.inStock !== undefined ? initialData.inStock : true
             });
         }
     }, [show, initialData]);
@@ -48,7 +54,8 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
         // Create a copy of itemData with the calculated total price
         const itemDataWithTotal = {
             ...itemData,
-            totalPrice
+            totalPrice,
+            isVeg: itemData.foodType === 'Veg' // Ensure isVeg is set based on foodType
         };
         
         onSave(itemDataWithTotal);
@@ -173,6 +180,21 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
                                 <option value="Both">Both</option>
                             </select>
                         </div>
+                        <div className="mb-3">
+                            <label className="form-label">Stock Status</label>
+                            <div className="form-check form-switch">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="inStockSwitch"
+                                    checked={itemData.inStock}
+                                    onChange={(e) => setItemData({ ...itemData, inStock: e.target.checked })}
+                                />
+                                <label className="form-check-label" htmlFor="inStockSwitch">
+                                    {itemData.inStock ? 'In Stock' : 'Out of Stock'}
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Item Photos Section */}
@@ -245,25 +267,45 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
                                 className="form-control"
                                 value={itemData.packagingCharges}
                                 onChange={(e) => setItemData({ ...itemData, packagingCharges: e.target.value })}
-                                placeholder="Enter packaging charges"
+                                placeholder="10"
                             />
                         </div>
                         <div className="mb-3">
-                            <label className="form-label">Total Price</label>
-                            <div className="form-control bg-light">
-                                ₹{calculateTotalPrice()}
-                            </div>
+                            <label className="form-label">Total price</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={`₹${calculateTotalPrice()}`}
+                                disabled
+                            />
+                        </div>
+                    </div>
+
+                    {/* Customisation Section */}
+                    <div className="mb-4">
+                        <h6 className="mb-3">Customisation</h6>
+                        <div className="form-check form-switch">
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="customisableSwitch"
+                                checked={itemData.customisable}
+                                onChange={(e) => setItemData({ ...itemData, customisable: e.target.checked })}
+                            />
+                            <label className="form-check-label" htmlFor="customisableSwitch">
+                                Allow customisation
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
             <div className="offcanvas-footer border-top p-3">
-                <div className="d-flex justify-content-between">
-                    <button className="btn btn-link text-decoration-none text-danger" onClick={onHide}>
-                        Discard
+                <div className="d-flex justify-content-end gap-2">
+                    <button className="btn btn-outline-secondary" onClick={onHide}>
+                        Cancel
                     </button>
                     <button className="btn btn-primary" onClick={handleSave}>
-                        Save Changes
+                        Save
                     </button>
                 </div>
             </div>

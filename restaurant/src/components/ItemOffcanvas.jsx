@@ -5,6 +5,7 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
         name: '',
         description: '',
         serviceType: 'Delivery',
+        foodType: 'Veg',
         basePrice: '',
         photos: [],
         packagingCharges: '',
@@ -12,12 +13,15 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
         customisable: true,
         isVeg: true,
         inStock: true,
-    }
-);
+    });
 
+    const [error, setError] = useState('');
+
+    console.log(itemData,"itemData");
     // Reset form when initialData changes or when show becomes true
     useEffect(() => {
         if (show) {
+            setError('');
             // Extract basePrice and packagingCharges from price if they're not directly available
             let basePrice = initialData.basePrice || '';
             let packagingCharges = initialData.packagingCharges || '';
@@ -46,6 +50,16 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
     }, [show, initialData]);
 
     const handleSave = () => {
+        // Validate required fields
+        if (!itemData.name.trim()) {
+            setError('Item name is required');
+            return;
+        }
+        if (!itemData.basePrice) {
+            setError('Base price is required');
+            return;
+        }
+
         // Calculate total price before saving
         const basePrice = parseFloat(itemData.basePrice) || 0;
         const packagingCharges = parseFloat(itemData.packagingCharges) || 0;
@@ -58,6 +72,7 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
             isVeg: itemData.foodType === 'Veg' // Ensure isVeg is set based on foodType
         };
         
+        console.log(itemDataWithTotal,"itemDataWithTotal");
         onSave(itemDataWithTotal);
         onHide();
     };
@@ -103,6 +118,11 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
                 </div>
             </div>
             <div className="offcanvas-body">
+                {error && (
+                    <div className="alert alert-danger" role="alert">
+                        {error}
+                    </div>
+                )}
                 <div className="container-fluid p-0">
                     {/* Basic Details Section */}
                     <div className="mb-4">

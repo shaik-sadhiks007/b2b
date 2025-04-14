@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import Navbar from "./Navbar"
 import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
+import axios from 'axios'
 
 
 const categories = [
@@ -231,13 +232,15 @@ const serviceProviders = [
 
 
 const Home = () => {
-
     const [showLocationModal, setShowLocationModal] = useState(false)
     const [location, setLocation] = useState("")
     const [activeTab, setActiveTab] = useState("all")
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [restaurants, setRestaurants] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const navigate = useNavigate()
 
     // Function to fetch location suggestions
@@ -367,26 +370,28 @@ const Home = () => {
         }
     };
 
-    const handleRestaurantClick = (e) => {
-        e.preventDefault(); // Prevent default navigation
-
-        // Get the token from localStorage
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-            console.log('No token found, redirecting to login');
-            navigate('/login');
-            return;
-        }
-
-        // Use the utility function to open window and transfer token
-        const targetWindow = openWindowWithToken("http://localhost:5175", "http://localhost:5175");
-
-        if (!targetWindow) {
-            // Handle case where window couldn't be opened or no token was found
-            navigate('/login');
-        }
+    const handleRestaurantClick = (restaurant) => {
+        navigate(`/hotel/${restaurant._id}`, { state: { restaurant } });
     };
+
+    useEffect(() => {
+        const fetchRestaurants = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/restaurants/public/all');
+                setRestaurants(response.data);
+                setLoading(false);
+            } catch (err) {
+                setError('Failed to fetch restaurants');
+                setLoading(false);
+                console.error('Error fetching restaurants:', err);
+            }
+        };
+
+        fetchRestaurants();
+    }, []);
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
 
     return (
         <div>
@@ -462,25 +467,28 @@ const Home = () => {
                         {/* Tab content */}
                         {activeTab === "all" && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {serviceProviders.map((provider) => (
-                                    <a
-                                        href={provider.link}
-                                        onClick={(e) => handleServiceProviderClick(provider)}
-                                        key={provider.name}
-                                        className="block border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer"
+                                {restaurants.map((restaurant) => (
+                                    <div
+                                        key={restaurant._id}
+                                        className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                                        onClick={() => handleRestaurantClick(restaurant)}
                                     >
-                                        <div
-                                            className="h-40 bg-gray-200 bg-cover bg-center"
-                                            style={{ backgroundImage: `url(${provider.imageUrl})` }}
-                                        ></div>
-                                        <div className="p-4">
-                                            <h3 className="font-semibold">{provider.name}</h3>
-                                            <p className="text-sm text-gray-500">
-                                                {provider.category} • {provider.rating} ★ • {provider.distance} mi
-                                            </p>
-                                            <p className="text-sm mt-2">{provider.description}</p>
+                                        <div className="h-48 w-full">
+                                            <img
+                                                src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
+                                                alt={restaurant.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
-                                    </a>
+                                        <div className="p-4">
+                                            <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
+                                            <p className="text-gray-600 mb-2">{restaurant.description}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-yellow-500">★ {restaurant.rating}</span>
+                                                <span className="text-gray-500">{restaurant.distance} mi away</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         )}

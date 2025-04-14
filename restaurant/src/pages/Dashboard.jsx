@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -6,32 +6,18 @@ import ItemOffcanvas from '../components/ItemOffcanvas';
 import InventoryManager from '../components/InventoryManager';
 import Orders from '../components/Orders';
 import '../styles/Dashboard.css';
+import axios from 'axios';
 
 const Dashboard = () => {
-    const { user, restaurant } = useContext(AuthContext);
+    const { user, token } = useContext(AuthContext);
     const [searchQuery, setSearchQuery] = useState('');
     const [isOnline, setIsOnline] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState('desserts');
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-    const [categories, setCategories] = useState([
-        {
-            id: 'desserts',
-            name: 'Desserts',
-            isExpanded: true,
-            subcategories: [
-                {
-                    id: 'ice-cream',
-                    name: 'Ice Cream',
-                    items: [
-                        { id: 1, name: 'Vanilla Ice Cream', customisable: true, basePrice: "99", description: "description", isVeg: true, photos: [], serviceType: "Delivery", totalPrice: "100.00", packagingCharges: "1", inStock: true },
-                        { id: 2, name: 'Chocolate Ice Cream', customisable: true, basePrice: "119", description: "description", isVeg: true, photos: [], serviceType: "Delivery", totalPrice: "120.00", packagingCharges: "1", inStock: true },
-                        { id: 3, name: 'Strawberry Ice Cream', customisable: true, basePrice: "109", description: "description", isVeg: true, photos: [], serviceType: "Delivery", totalPrice: "110.00", packagingCharges: "1", inStock: true }
-                    ]
-                },
-               
-            ]
-        }
-    ]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [restaurants, setRestaurants] = useState([]);
 
     // Modal states
     const [showModal, setShowModal] = useState(false);
@@ -51,7 +37,7 @@ const Dashboard = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [isAddingNewItem, setIsAddingNewItem] = useState(false);
 
-    const [activeTab, setActiveTab] = useState('menu');
+    const [activeTab, setActiveTab] = useState('menu-editor');
 
     const navigate = useNavigate();
 
@@ -77,11 +63,109 @@ const Dashboard = () => {
         { label: "Charges", path: "/charges" }
     ];
 
+    // Configure axios defaults
+    useEffect(() => {
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        }
+    }, [token]);
+
+    // Fetch menu items
+    const fetchMenu = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/menu', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setCategories(response.data);
+            setLoading(false);
+        } catch (error) {
+            setError('Error fetching menu items');
+            setLoading(false);
+        }
+    };
+
+    // Fetch restaurants
+    const fetchRestaurants = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/restaurants', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setRestaurants(response.data);
+            console.log("Restaurants fetched:", response.data);
+        } catch (error) {
+            console.error('Error fetching restaurants:', error);
+            setError('Error fetching restaurants');
+        }
+    };
+
+    useEffect(() => {
+        if (token) {
+            fetchRestaurants();
+            fetchMenu();
+        }
+    }, [token]);
+
+    // Add new menu item
+    const handleAddItem = async (newItem) => {
+        try {
+            const response = await axios.post('http://localhost:5000/api/menu', newItem, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setCategories([...categories, response.data]);
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error adding menu item');
+        }
+    };
+
+    // Update menu item
+    const handleUpdateItem = async (id, updatedItem) => {
+        try {
+            await axios.put(`http://localhost:5000/api/menu/${id}`, updatedItem, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error updating menu item');
+        }
+    };
+
+    // Delete menu item
+    const handleDeleteItem = async (categoryId, subcategoryId, itemId) => {
+        if (!categoryId || !subcategoryId || !itemId) {
+            setError('Category ID, Subcategory ID, and Item ID are required');
+            return;
+        }
+        try {
+            await axios.delete(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error deleting item');
+            console.error('Error deleting item:', error);
+        }
+    };
+
     const handleStatusChange = (status) => {
         setIsOnline(status === 'online');
     };
 
     const openModal = (type, mode, data = null, parentId = null) => {
+        if (mode === 'edit' && !data) {
+            setError('No data provided for editing');
+            return;
+        }
         setModalType(type);
         setModalMode(mode);
         setModalData({
@@ -90,7 +174,7 @@ const Dashboard = () => {
             isVeg: data?.isVeg ?? true,
             customisable: data?.customisable ?? false,
             parentId: parentId,
-            itemId: data?.id || null
+            itemId: data?._id || null
         });
         setShowModal(true);
     };
@@ -100,128 +184,151 @@ const Dashboard = () => {
             if (modalMode === 'add') {
                 handleAddCategory(modalData.name);
             } else {
+                if (!modalData.itemId) {
+                    setError('Category ID is required for editing');
+                    return;
+                }
                 handleEditCategory(modalData.itemId, modalData.name);
             }
         } else if (modalType === 'subcategory') {
             if (modalMode === 'add') {
+                if (!modalData.parentId) {
+                    setError('Category ID is required for adding subcategory');
+                    return;
+                }
                 handleAddSubcategory(modalData.parentId, modalData.name);
             } else {
+                if (!modalData.parentId || !modalData.itemId) {
+                    setError('Category ID and Subcategory ID are required for editing');
+                    return;
+                }
                 handleEditSubcategory(modalData.parentId, modalData.itemId, modalData.name);
-            }
-        } else if (modalType === 'item') {
-            if (modalMode === 'add') {
-                handleAddItem(modalData.parentId, selectedSubcategory.id, modalData);
-            } else {
-                handleEditItem(modalData.parentId, selectedSubcategory.id, modalData.itemId, modalData);
             }
         }
         setShowModal(false);
     };
 
-    const handleAddCategory = (name) => {
-        const newCategory = {
-            id: `category-${Date.now()}`,
-            name: name,
-            isExpanded: true,
-            subcategories: []
-        };
-        setCategories([...categories, newCategory]);
-
-        // Select the newly created category
-        setSelectedCategory(newCategory.id);
-        setSelectedSubcategory(null);
-    };
-
-    const handleEditCategory = (categoryId, newName) => {
-        setCategories(categories.map(category =>
-            category.id === categoryId
-                ? { ...category, name: newName }
-                : category
-        ));
-    };
-
-    const handleDeleteCategory = (categoryId) => {
-        setCategories(categories.filter(category => category.id !== categoryId));
-
-        // If the deleted category was selected, select another category or clear selection
-        if (selectedCategory === categoryId) {
-            const remainingCategories = categories.filter(category => category.id !== categoryId);
-            if (remainingCategories.length > 0) {
-                setSelectedCategory(remainingCategories[0].id);
-                if (remainingCategories[0].subcategories.length > 0) {
-                    setSelectedSubcategory(remainingCategories[0].subcategories[0]);
-                } else {
-                    setSelectedSubcategory(null);
+    // Add new category
+    const handleAddCategory = async (name) => {
+        try {
+            const newCategory = {
+                name: name,
+                isExpanded: true,
+                subcategories: []
+            };
+            await axios.post('http://localhost:5000/api/menu', newCategory, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            } else {
-                setSelectedCategory('');
-                setSelectedSubcategory(null);
-            }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error adding category');
         }
     };
 
-    const handleAddSubcategory = (categoryId, name) => {
-        const newSubcategory = {
-            id: `subcategory-${Date.now()}`,
-            name: name,
-            items: []
-        };
-
-        const updatedCategories = categories.map(category => {
-            if (category.id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: [
-                        ...category.subcategories,
-                        newSubcategory
-                    ]
-                };
-            }
-            return category;
-        });
-
-        setCategories(updatedCategories);
-
-        // Set the newly created subcategory as selected
-        setSelectedSubcategory(newSubcategory);
+    // Update category
+    const handleEditCategory = async (categoryId, newName) => {
+        if (!categoryId) {
+            setError('Category ID is required');
+            return;
+        }
+        try {
+            const response = await axios.put(`http://localhost:5000/api/menu/${categoryId}`, { name: newName }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error updating category');
+            console.error('Error updating category:', error);
+        }
     };
 
-    const handleEditSubcategory = (categoryId, subcategoryId, newName) => {
-        setCategories(categories.map(category => {
-            if (category.id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: category.subcategories.map(sub =>
-                        sub.id === subcategoryId
-                            ? { ...sub, name: newName }
-                            : sub
-                    )
-                };
-            }
-            return category;
-        }));
+    // Delete category
+    const handleDeleteCategory = async (categoryId) => {
+        try {
+            await axios.delete(`http://localhost:5000/api/menu/${categoryId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error deleting category');
+        }
     };
 
-    const handleDeleteSubcategory = (categoryId, subcategoryId) => {
-        setCategories(categories.map(category => {
-            if (category.id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: category.subcategories.filter(sub => sub.id !== subcategoryId)
-                };
-            }
-            return category;
-        }));
+    // Add new subcategory
+    const handleAddSubcategory = async (categoryId, name) => {
+        if (!categoryId) {
+            setError('Category ID is required');
+            return;
+        }
+        try {
+            const newSubcategory = {
+                name: name,
+                items: []
+            };
+            await axios.post(`http://localhost:5000/api/menu/${categoryId}/subcategories`, newSubcategory, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error adding subcategory');
+            console.error('Error adding subcategory:', error);
+        }
+    };
+
+    // Update subcategory
+    const handleEditSubcategory = async (categoryId, subcategoryId, newName) => {
+        if (!categoryId || !subcategoryId) {
+            setError('Category ID and Subcategory ID are required');
+            return;
+        }
+        try {
+            const response = await axios.put(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}`, { name: newName }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error updating subcategory');
+            console.error('Error updating subcategory:', error);
+        }
+    };
+
+    // Delete subcategory
+    const handleDeleteSubcategory = async (categoryId, subcategoryId) => {
+        if (!categoryId || !subcategoryId) {
+            setError('Category ID and Subcategory ID are required');
+            return;
+        }
+        try {
+            await axios.delete(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            setError('Error deleting subcategory');
+            console.error('Error deleting subcategory:', error);
+        }
     };
 
     const handleStockChange = (itemId, newStockStatus) => {
-        setCategories(prevCategories => 
+        setCategories(prevCategories =>
             prevCategories.map(category => ({
                 ...category,
                 subcategories: category.subcategories.map(subcategory => ({
                     ...subcategory,
-                    items: subcategory.items.map(item => 
-                        item.id === itemId 
+                    items: subcategory.items.map(item =>
+                        item.id === itemId
                             ? { ...item, inStock: newStockStatus }
                             : item
                     )
@@ -230,78 +337,21 @@ const Dashboard = () => {
         );
     };
 
-    const handleAddItem = (categoryId, subcategoryId, itemData) => {
-        // Create a new item with a unique ID
-        const newItem = {
-            id: Date.now(),
-            name: itemData.name,
-            description: itemData.description,
-            price: `₹${itemData.totalPrice || itemData.basePrice}`,
-            customisable: true,
-            isVeg: itemData.foodType === 'Veg',
-            stock: true // Add default stock status
-        };
-
-        // Update the categories state with the new item
-        const updatedCategories = categories.map(category => {
-            if (category.id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: category.subcategories.map(subcategory => {
-                        if (subcategory.id === subcategoryId) {
-                            return {
-                                ...subcategory,
-                                items: [...subcategory.items, newItem]
-                            };
-                        }
-                        return subcategory;
-                    })
-                };
-            }
-            return category;
-        });
-
-        // Update the state with the new categories
-        setCategories(updatedCategories);
-
-        // Force a re-render by updating the selectedSubcategory
-        const updatedSubcategory = updatedCategories
-            .find(cat => cat.id === categoryId)
-            ?.subcategories.find(sub => sub.id === subcategoryId);
-
-        if (updatedSubcategory) {
-            setSelectedSubcategory({ ...updatedSubcategory });
-        }
-    };
-
     const handleEditItem = (categoryId, subcategoryId, itemId, itemData) => {
         // Create a new item with updated data
-        const updatedItem = {
-            id: itemId,
-            name: itemData.name,
-            description: itemData.description,
-            price: `₹${itemData.totalPrice || itemData.basePrice}`,
-            customisable: true,
-            isVeg: itemData.foodType === 'Veg',
-            foodType: itemData.foodType,
-            serviceType: itemData.serviceType,
-            basePrice: itemData.basePrice,
-            packagingCharges: itemData.packagingCharges,
-            totalPrice: itemData.totalPrice,
-            photos: itemData.photos || []
-        };
+        const updatedItem = itemData;
 
         // Update the categories state with the edited item
         const updatedCategories = categories.map(category => {
-            if (category.id === categoryId) {
+            if (category._id === categoryId) {
                 return {
                     ...category,
                     subcategories: category.subcategories.map(subcategory => {
-                        if (subcategory.id === subcategoryId) {
+                        if (subcategory._id === subcategoryId) {
                             return {
                                 ...subcategory,
                                 items: subcategory.items.map(item =>
-                                    item.id === itemId ? updatedItem : item
+                                    item._id === itemId ? updatedItem : item
                                 )
                             };
                         }
@@ -317,37 +367,17 @@ const Dashboard = () => {
 
         // Force a re-render by updating the selectedSubcategory
         const updatedSubcategory = updatedCategories
-            .find(cat => cat.id === categoryId)
-            ?.subcategories.find(sub => sub.id === subcategoryId);
+            .find(cat => cat._id === categoryId)
+            ?.subcategories.find(sub => sub._id === subcategoryId);
 
         if (updatedSubcategory) {
             setSelectedSubcategory({ ...updatedSubcategory });
         }
     };
 
-    const handleDeleteItem = (categoryId, subcategoryId, itemId) => {
-        setCategories(categories.map(category => {
-            if (category.id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: category.subcategories.map(subcategory => {
-                        if (subcategory.id === subcategoryId) {
-                            return {
-                                ...subcategory,
-                                items: subcategory.items.filter(item => item.id !== itemId)
-                            };
-                        }
-                        return subcategory;
-                    })
-                };
-            }
-            return category;
-        }));
-    };
-
     const toggleCategoryExpansion = (categoryId) => {
         setCategories(categories.map(category => {
-            if (category.id === categoryId) {
+            if (category._id === categoryId) {
                 return { ...category, isExpanded: !category.isExpanded };
             }
             return category;
@@ -356,20 +386,80 @@ const Dashboard = () => {
 
     console.log(categories, "categories in dashboard");
 
-    const handleOffcanvasSave = (itemData) => {
-        if (editingItem) {
-            handleEditItem(selectedCategory, selectedSubcategory.id, editingItem.id, itemData);
+    // Add new item to subcategory
+    const handleAddItemToSubcategory = async (categoryId, subcategoryId, itemData) => {
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
+                itemData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            fetchMenu(); // Refresh the menu data
+        } catch (error) {
+            console.error('Error adding item:', error);
+            setError('Error adding item');
+        }
+    };
+
+    // Update the category selection logic
+    const handleCategorySelect = (category) => {
+        setSelectedCategory(category._id);
+        // Set the first subcategory as selected when category is clicked
+        if (category.subcategories.length > 0) {
+            setSelectedSubcategory(category.subcategories[0]);
         } else {
-            handleAddItem(selectedCategory, selectedSubcategory.id, itemData);
+            setSelectedSubcategory(null);
+        }
+    };
+
+    // Update the subcategory selection logic
+    const handleSubcategorySelect = (subcategory, categoryId) => {
+        setSelectedCategory(categoryId);
+        setSelectedSubcategory(subcategory);
+    };
+
+    console.log(selectedCategory, "selectedCategory in handleOffcanvasSave");
+    console.log(selectedSubcategory, "selectedSubcategory in handleOffcanvasSave");
+
+    const handleOffcanvasSave = (itemData) => {
+        if (!selectedCategory || !selectedSubcategory) {
+            setError('Please select a category and subcategory first');
+            return;
+        }
+
+        if (editingItem) {
+            handleEditItem(selectedCategory, selectedSubcategory._id, editingItem._id, itemData);
+        } else {
+            handleAddItemToSubcategory(selectedCategory, selectedSubcategory._id, itemData);
         }
         setShowOffcanvas(false);
         setEditingItem(null);
         setIsAddingNewItem(false);
     };
 
+    // Update the item deletion button click handler
+    const handleItemDeleteClick = (categoryId, subcategoryId, itemId) => {
+        if (!categoryId || !subcategoryId || !itemId) {
+            setError('Missing required IDs for item deletion');
+            return;
+        }
+        handleDeleteItem(categoryId, subcategoryId, itemId);
+    };
+
+    if (!token) {
+        return <div>Please login to access the dashboard</div>;
+    }
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
+
     return (
         <div className="container-fluid">
-        
+
             {/* Replace Modal with ItemOffcanvas */}
             <ItemOffcanvas
                 show={showOffcanvas}
@@ -445,8 +535,8 @@ const Dashboard = () => {
                                         key={index}
                                         onClick={() => setActiveTab(tab.label.toLowerCase().replace(' ', '-'))}
                                         className={`btn btn-link text-decoration-none ${activeTab === tab.label.toLowerCase().replace(' ', '-')
-                                                ? 'text-primary border-bottom border-2 border-primary'
-                                                : 'text-dark'
+                                            ? 'text-primary border-bottom border-2 border-primary'
+                                            : 'text-dark'
                                             }`}
                                     >
                                         {tab.label}
@@ -479,105 +569,100 @@ const Dashboard = () => {
 
                                     {/* Category List */}
                                     <div className="list-group">
-                                        {categories.map(category => (
-                                            <div key={category.id} className="list-group-item">
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <span
-                                                        className={`cursor-pointer ${selectedCategory === category.id ? 'text-primary' : ''}`}
-                                                        onClick={() => {
-                                                            setSelectedCategory(category.id);
-                                                            // Set the first subcategory as selected when category is clicked
-                                                            if (category.subcategories.length > 0) {
-                                                                setSelectedSubcategory(category.subcategories[0]);
-                                                            } else {
-                                                                setSelectedSubcategory(null);
-                                                            }
-                                                        }}
-                                                    >
-                                                        {category.name} ({category.subcategories.reduce((acc, sub) => acc + sub.items.length, 0)})
-                                                    </span>
-                                                    <div>
-                                                        <div className="dropdown d-inline-block me-2">
-                                                            <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
-                                                                <i className="bi bi-three-dots-vertical"></i>
-                                                            </button>
-                                                            <ul className="dropdown-menu">
-                                                                <li>
-                                                                    <button
-                                                                        className="dropdown-item"
-                                                                        onClick={() => openModal('category', 'edit', category)}
-                                                                    >
-                                                                        Edit
-                                                                    </button>
-                                                                </li>
-                                                                <li>
-                                                                    <button
-                                                                        className="dropdown-item text-danger"
-                                                                        onClick={() => handleDeleteCategory(category.id)}
-                                                                    >
-                                                                        Delete
-                                                                    </button>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                        <button
-                                                            className="btn btn-link text-dark p-0"
-                                                            onClick={() => toggleCategoryExpansion(category.id)}
+                                        {categories.map((category) => {
+                                            console.log(category, "category in categories");
+                                            return (
+                                                <div key={category._id} className="list-group-item">
+                                                    <div className="d-flex justify-content-between align-items-center">
+                                                        <span
+                                                            className={`cursor-pointer ${selectedCategory === category._id ? 'text-primary' : ''}`}
+                                                            onClick={() => handleCategorySelect(category)}
                                                         >
-                                                            <i className={`bi bi-chevron-${category.isExpanded ? 'up' : 'down'}`}></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {category.isExpanded && (
-                                                    <>
-                                                        {category.subcategories.map(subcategory => (
-                                                            <div key={subcategory.id} className="ms-3 mt-2">
-                                                                <div className="d-flex justify-content-between align-items-center">
-                                                                    <span
-                                                                        className={`cursor-pointer ${selectedSubcategory?.id === subcategory.id ? 'text-primary' : ''}`}
-                                                                        onClick={() => setSelectedSubcategory(subcategory)}
-                                                                    >
-                                                                        {subcategory.name} ({subcategory.items.length})
-                                                                    </span>
-                                                                    <div className="dropdown">
-                                                                        <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
-                                                                            <i className="bi bi-three-dots-vertical"></i>
+                                                            {category.name} ({category.subcategories.reduce((acc, sub) => acc + sub.items.length, 0)})
+                                                        </span>
+                                                        <div>
+                                                            <div className="dropdown d-inline-block me-2">
+                                                                <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
+                                                                    <i className="bi bi-three-dots-vertical"></i>
+                                                                </button>
+                                                                <ul className="dropdown-menu">
+                                                                    <li>
+                                                                        <button
+                                                                            className="dropdown-item"
+                                                                            onClick={() => openModal('category', 'edit', category)}
+                                                                        >
+                                                                            Edit
                                                                         </button>
-                                                                        <ul className="dropdown-menu">
-                                                                            <li>
-                                                                                <button
-                                                                                    className="dropdown-item"
-                                                                                    onClick={() => openModal('subcategory', 'edit', subcategory, category.id)}
-                                                                                >
-                                                                                    Edit
-                                                                                </button>
-                                                                            </li>
-                                                                            <li>
-                                                                                <button
-                                                                                    className="dropdown-item text-danger"
-                                                                                    onClick={() => handleDeleteSubcategory(category.id, subcategory.id)}
-                                                                                >
-                                                                                    Delete
-                                                                                </button>
-                                                                            </li>
-                                                                        </ul>
+                                                                    </li>
+                                                                    <li>
+                                                                        <button
+                                                                            className="dropdown-item text-danger"
+                                                                            onClick={() => handleDeleteCategory(category._id)}
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                            <button
+                                                                className="btn btn-link text-dark p-0"
+                                                                onClick={() => toggleCategoryExpansion(category._id)}
+                                                            >
+                                                                <i className={`bi bi-chevron-${category.isExpanded ? 'up' : 'down'}`}></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    {category.isExpanded && (
+                                                        <>
+                                                            {category.subcategories.map(subcategory => (
+                                                                <div key={subcategory._id} className="ms-3 mt-2">
+                                                                    <div className="d-flex justify-content-between align-items-center">
+                                                                        <span
+                                                                            className={`cursor-pointer ${selectedSubcategory?._id === subcategory._id ? 'text-primary' : ''}`}
+                                                                            onClick={() => handleSubcategorySelect(subcategory, category._id)}
+                                                                        >
+                                                                            {subcategory.name} ({subcategory.items.length})
+                                                                        </span>
+                                                                        <div className="dropdown">
+                                                                            <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
+                                                                                <i className="bi bi-three-dots-vertical"></i>
+                                                                            </button>
+                                                                            <ul className="dropdown-menu">
+                                                                                <li>
+                                                                                    <button
+                                                                                        className="dropdown-item"
+                                                                                        onClick={() => openModal('subcategory', 'edit', subcategory, category._id)}
+                                                                                    >
+                                                                                        Edit
+                                                                                    </button>
+                                                                                </li>
+                                                                                <li>
+                                                                                    <button
+                                                                                        className="dropdown-item text-danger"
+                                                                                        onClick={() => handleDeleteSubcategory(category._id, subcategory._id)}
+                                                                                    >
+                                                                                        Delete
+                                                                                    </button>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
+                                                            ))}
+                                                            <div className="mt-2">
+                                                                <button
+                                                                    className="btn btn-link text-primary text-decoration-none p-0"
+                                                                    onClick={() => openModal('subcategory', 'add', null, category._id)}
+                                                                >
+                                                                    <i className="bi bi-plus-lg me-2"></i>
+                                                                    Add Subcategory
+                                                                </button>
                                                             </div>
-                                                        ))}
-                                                        <div className="mt-2">
-                                                            <button
-                                                                className="btn btn-link text-primary text-decoration-none p-0"
-                                                                onClick={() => openModal('subcategory', 'add', null, category.id)}
-                                                            >
-                                                                <i className="bi bi-plus-lg me-2"></i>
-                                                                Add Subcategory
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        ))}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -633,7 +718,7 @@ const Dashboard = () => {
                                                                         <li>
                                                                             <button
                                                                                 className="dropdown-item text-danger"
-                                                                                onClick={() => handleDeleteItem(selectedCategory, selectedSubcategory.id, item.id)}
+                                                                                onClick={() => handleItemDeleteClick(selectedCategory, selectedSubcategory._id, item._id)}
                                                                             >
                                                                                 Delete
                                                                             </button>
@@ -660,8 +745,8 @@ const Dashboard = () => {
                         </div>
                     ) : activeTab === 'manage-inventory' ? (
                         // Inventory Manager Content
-                        <InventoryManager 
-                            categories={categories} 
+                        <InventoryManager
+                            categories={categories}
                             onStockChange={handleStockChange}
                         />
                     ) : activeTab === 'orders' ? (

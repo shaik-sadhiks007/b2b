@@ -11,6 +11,8 @@ import Login from "./authentication/Login"
 import Register from "./authentication/Register"
 import Home from "./components/Home"
 import HotelDetails from "./components/HotelDetails"
+import { CartProvider } from './context/CartContext'
+import CartPage from './components/CartPage'
 
 function AppContent() {
   
@@ -24,6 +26,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/hotel/:id" element={<HotelDetails />} />
+        <Route path="/cart" element={<CartPage />} />
       </Routes>
 
      
@@ -33,13 +36,15 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <HotelDataProvider>
-        <ScrollProvider>
-          <AppContent />
-        </ScrollProvider>
-      </HotelDataProvider>
-    </Router>
+    <CartProvider>
+      <Router>
+        <HotelDataProvider>
+          <ScrollProvider>
+            <AppContent />
+          </ScrollProvider>
+        </HotelDataProvider>
+      </Router>
+    </CartProvider>
   )
 }
 

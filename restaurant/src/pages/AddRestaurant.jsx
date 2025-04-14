@@ -372,7 +372,7 @@ const AddRestaurant = () => {
                             // Step 1: Basic Information
                             formDataToSend.append('formData', JSON.stringify({
                                 restaurantName: formData.restaurantName,
-                                serviceType: formData.serviceType || 'DINE_IN',
+                                serviceType:  'DINE_IN',
                                 ownerName: formData.ownerName,
                                 sameAsOwnerPhone: formData.sameAsOwnerPhone || false,
                                 whatsappUpdates: formData.whatsappUpdates || false,
@@ -447,34 +447,21 @@ const AddRestaurant = () => {
                                     name: '',
                                     dateOfBirth: '',
                                     address: ''
+                                },
+                                images: {
+                                    profileImage: formData.images?.profileImage || '',
+                                    panCardImage: formData.images?.panCardImage || ''
                                 }
                             }));
                             
+                            // Handle profile image
+                            if (formData.images?.profileImage instanceof File) {
+                                formDataToSend.append('profileImage', formData.images.profileImage);
+                            }
+
                             // Handle PAN card image
-                            if (formData.images && formData.images.panCardImage) {
-                                if (formData.images.panCardImage instanceof File) {
-                                    formDataToSend.append('panCardImage', formData.images.panCardImage);
-                                } else if (typeof formData.images.panCardImage === 'string' && formData.images.panCardImage.startsWith('http')) {
-                                    formDataToSend.append('imageUrls.panCardImage', formData.images.panCardImage);
-                                }
-                            }
-
-                            // Handle GST image
-                            if (formData.images && formData.images.gstImage) {
-                                if (formData.images.gstImage instanceof File) {
-                                    formDataToSend.append('images.gstImage', formData.images.gstImage);
-                                } else if (typeof formData.images.gstImage === 'string' && formData.images.gstImage.startsWith('http')) {
-                                    formDataToSend.append('imageUrls.gstImage', formData.images.gstImage);
-                                }
-                            }
-
-                            // Handle FSSAI image
-                            if (formData.images && formData.images.fssaiImage) {
-                                if (formData.images.fssaiImage instanceof File) {
-                                    formDataToSend.append('images.fssaiImage', formData.images.fssaiImage);
-                                } else if (typeof formData.images.fssaiImage === 'string' && formData.images.fssaiImage.startsWith('http')) {
-                                    formDataToSend.append('imageUrls.fssaiImage', formData.images.fssaiImage);
-                                }
+                            if (formData.images?.panCardImage instanceof File) {
+                                formDataToSend.append('panCardImage', formData.images.panCardImage);
                             }
                             break;
 

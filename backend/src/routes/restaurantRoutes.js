@@ -304,4 +304,60 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// Get all restaurants (public route - no auth required)
+router.get('/public/all', async (req, res) => {
+    try {
+        const restaurants = await Restaurant.find({ status: 'published' })
+            .select('restaurantName images.profileImage description rating distance location')
+            .lean();
+
+        // Format the response to include only necessary fields
+        const formattedRestaurants = restaurants.map(restaurant => ({
+            _id: restaurant._id,
+            name: restaurant.restaurantName,
+            imageUrl: restaurant.images?.profileImage || null,
+            description: restaurant.description || '',
+            rating: restaurant.rating || 0,
+            distance: restaurant.distance || 0,
+            location: restaurant.location || ''
+        }));
+
+        res.json(formattedRestaurants);
+    } catch (error) {
+        console.error('Error getting public restaurants:', error);
+        res.status(500).json({ message: 'Error getting restaurants', error: error.message });
+    }
+});
+
+// Get a specific restaurant's public details
+router.get('/public/:id', async (req, res) => {
+    try {
+        const restaurant = await Restaurant.findOne({
+            _id: req.params.id,
+            status: 'published'
+        }).select('restaurantName images.profileImage description rating distance location menu');
+
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        // Format the response
+        const formattedRestaurant = {
+            _id: restaurant._id,
+            name: restaurant.restaurantName,
+            imageUrl: restaurant.images?.profileImage || null,
+            description: restaurant.description || '',
+            rating: restaurant.rating || 0,
+            distance: restaurant.distance || 0,
+            location: restaurant.location || '',
+            menu: restaurant.menu || []
+        };
+
+        res.json(formattedRestaurant);
+    } catch (error) {
+        console.error('Error getting public restaurant:', error);
+        res.status(500).json({ message: 'Error getting restaurant', error: error.message });
+    }
+});
+
 module.exports = router; 

@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 # Firebase keys
-backend/firebase-service-account.json
+firebase-service-account.json
 

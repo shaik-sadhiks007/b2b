@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useCart } from '../context/CartContext';
 import { Header } from './Header';
 
 const HotelDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { addToCart, cart, clearCart } = useCart();
     const [restaurant, setRestaurant] = useState(null);
     const [menu, setMenu] = useState(null);
+    const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedCategory, setExpandedCategory] = useState(null);
@@ -17,11 +16,14 @@ const HotelDetails = () => {
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
     const [currentRestaurant, setCurrentRestaurant] = useState(null);
     const [itemToAdd, setItemToAdd] = useState(null);
+    const [pendingAddItem, setPendingAddItem] = useState(null);
 
     useEffect(() => {
         const fetchRestaurantDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/restaurants/public/${id}`);
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.get(`http://localhost:5000/api/restaurants/public/${id}`, { headers });
                 setRestaurant(response.data);
             } catch (err) {
                 setError('Failed to fetch restaurant details');
@@ -31,7 +33,9 @@ const HotelDetails = () => {
 
         const fetchMenu = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/menu/public/${id}`);
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.get(`http://localhost:5000/api/menu/public/${id}`, { headers });
                 setMenu(response.data);
             } catch (err) {
                 setError('Failed to fetch menu');
@@ -41,42 +45,114 @@ const HotelDetails = () => {
             }
         };
 
+        const fetchCart = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setCart([]);
+                    return;
+                }
+                const response = await axios.get('http://localhost:5000/api/cart', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCart(response.data);
+            } catch (err) {
+                setCart([]);
+            }
+        };
+
         fetchRestaurantDetails();
         fetchMenu();
+        fetchCart();
     }, [id]);
 
     const isItemInCart = (itemId) => {
-        return cart.items?.some(item => item._id === itemId) || false;
+        return cart.some(cartDoc => cartDoc.items?.some(item => item.itemId === itemId));
     };
 
-    const handleAddToCart = (item) => {
-        if (isItemInCart(item._id)) {
-            navigate('/cart');
+    const handleAddToCart = async (item) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
             return;
         }
 
-        const itemWithRestaurant = {
-            ...item,
-            restaurantId: restaurant._id,
-            restaurantName: restaurant.name
-        };
-
-        const result = addToCart(itemWithRestaurant);
-
-        if (!result.success) {
-            setCurrentRestaurant(result.currentRestaurant);
-            setItemToAdd(itemWithRestaurant);
-            setShowRestaurantModal(true);
+        // Find if cart for this restaurant exists
+        const cartForRestaurant = cart.find(c => c.restaurantId === restaurant._id);
+        let items = [];
+        if (cartForRestaurant) {
+            // If item exists, update quantity, else add
+            const existingItem = cartForRestaurant.items.find(i => i.itemId === item._id);
+            if (existingItem) {
+                // Already in cart, navigate to cart page
+                navigate('/cart');
+                return;
+            } else {
+                items = [...cartForRestaurant.items, {
+                    itemId: item._id,
+                    name: item.name,
+                    quantity: 1,
+                    basePrice: Number(item.basePrice),
+                    packagingCharges: Number(item.packagingCharges),
+                    totalPrice: Number(item.totalPrice),
+                    isVeg: item.isVeg
+                }];
+            }
+        } else {
+            items = [{
+                itemId: item._id,
+                name: item.name,
+                quantity: 1,
+                basePrice: Number(item.basePrice),
+                packagingCharges: Number(item.packagingCharges),
+                totalPrice: Number(item.totalPrice),
+                isVeg: item.isVeg
+            }];
+        }
+        try {
+            await axios.post('http://localhost:5000/api/cart', {
+                restaurantId: restaurant._id,
+                restaurantName: restaurant.name,
+                items,
+                photos: restaurant.photos || []
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Refresh cart
+            const response = await axios.get('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCart(response.data);
+        } catch (err) {
+            if (err.response && err.response.status === 409) {
+                setPendingAddItem(item); // store item to add after reset
+                setShowRestaurantModal(true);
+            } else {
+                setError('Failed to add to cart');
+            }
         }
     };
 
-    const handleRestaurantModalResponse = (resetCart) => {
+    const handleRestaurantModalResponse = async (resetCart) => {
         if (resetCart) {
-            clearCart();
-            addToCart(itemToAdd);
+            try {
+                const token = localStorage.getItem('token');
+                await axios.delete('http://localhost:5000/api/cart', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCart([]);
+                setShowRestaurantModal(false);
+                // Retry add to cart
+                if (pendingAddItem) {
+                    setTimeout(() => handleAddToCart(pendingAddItem), 100);
+                }
+            } catch (err) {
+                setError('Failed to reset cart');
+            }
+        } else {
+            setShowRestaurantModal(false);
+            setPendingAddItem(null);
         }
-        setShowRestaurantModal(false);
-        setItemToAdd(null);
     };
 
     if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -85,26 +161,25 @@ const HotelDetails = () => {
 
     return (
         <>
-            <Header />
             {showRestaurantModal && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                         <h2 className="text-xl font-bold mb-4">Items already in cart</h2>
                         <p className="text-gray-600 mb-6">
-                            Your cart contains items from other restaurant. Would you like to reset your cart for adding items from this restaurant?
+                            Your cart contains items from another restaurant. Would you like to reset your cart for adding items from this restaurant?
                         </p>
                         <div className="flex gap-4">
                             <button
                                 onClick={() => handleRestaurantModalResponse(false)}
                                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
                             >
-                                NO
+                                Cancel
                             </button>
                             <button
                                 onClick={() => handleRestaurantModalResponse(true)}
                                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                             >
-                                YES, START AFRESH
+                                Yes, Reset Cart
                             </button>
                         </div>
                     </div>

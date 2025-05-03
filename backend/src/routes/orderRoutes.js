@@ -4,20 +4,17 @@ const {
     orderHistory,
     orderHistoryByUser,
     updateOrderStatus,
-    orderHistoryByPhone,
-    guestplaceOrder
+    instoreOrder
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
-
+const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const router = express.Router();
 
 router.post('/place-order',authMiddleware, placeOrder);
-router.post('/place-order/guest-login', guestplaceOrder);
-router.get("/order-history",authMiddleware,adminMiddleware, orderHistory);
-router.get('/order-history/user', authMiddleware, orderHistoryByUser); 
-router.get('/phone/:phone', orderHistoryByPhone); 
+router.get("/order-history/restaurant",authMiddleware,restaurantMiddleware, orderHistory);
+router.get('/order-history', authMiddleware, orderHistoryByUser); 
 router.patch('/:orderId', authMiddleware, updateOrderStatus); 
+router.post('/instore-order', authMiddleware, restaurantMiddleware, instoreOrder);
 
 
 module.exports = router;

@@ -1,29 +1,92 @@
 const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    user: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "User",
+        required: true 
+    },
+    customerName: {
+        type: String,
+        default: ""
+    },
+    customerPhone: {
+        type: Number,
+        default: null,
+        minlength: 10,
+    },
     items: [{
-        menuName: String,
-        quantity: Number,
-        price: Number
+        itemId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "MenuOfRestaurant",
+            required: true
+        },
+        name: {
+            type: String,
+            required: true
+        },
+        quantity: {
+            type: Number,
+            required: true
+        },
+        totalPrice: {
+            type: Number,
+            required: true
+        },
+        photos: [{
+            type: String
+        }],
+        isVeg: {
+            type: Boolean,
+            required: true
+        }
     }],
-    shippingDetails: {
-        name: String,
-        phone: String,
-        address: String,
-        city: String,
-        state: String,
-        pincode: String,
-        email: String
+    customerAddress: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CustomerAddress",
+        required: false
     },
-    totalAmount: Number,
-    paymentMethod: String,
-    status: { 
-        type: String, 
-        enum: ["Order Placed", "Ready to Pickup", "Cancelled", "Picked Up"],
-        default: "Order Placed" 
+    totalAmount: {
+        type: Number,
+        required: true
     },
-    createdAt: { type: Date, default: Date.now }
+    paymentMethod: {
+        type: String,
+        required: true,
+        enum: ["COD", "ONLINE"]
+    },
+    paymentStatus: {
+        type: String,
+        required: true,
+        enum: ["PENDING", "COMPLETED", "FAILED"]
+    },
+    status: {
+        type: String,
+        required: true,
+        enum: ["ORDER_PLACED", "ORDER_PREPARING", "ORDER_READY", "ORDER_DELIVERED", "ORDER_CANCELLED"],
+        default: "ORDER_PLACED"
+    },
+    restaurantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Restaurant",
+        required: true
+    },
+    restaurantName: {
+        type: String,
+        required: true
+    },
+    orderType: {
+        type: String,
+        required: true,
+        enum: ["PICKUP", "DELIVERY"]
+    },
+    deliveryTime: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0,
+        max: 120
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Order", orderSchema);

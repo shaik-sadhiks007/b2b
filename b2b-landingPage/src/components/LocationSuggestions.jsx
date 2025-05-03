@@ -23,7 +23,7 @@ function LocationSuggestions({ suggestions, onSelect, onAllowLocation, showAllow
       {suggestions.map((suggestion, index) => (
         <button
           key={index}
-          onClick={() => onSelect(suggestion)}
+          onMouseDown={() => onSelect(suggestion)}
           className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
         >
           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">

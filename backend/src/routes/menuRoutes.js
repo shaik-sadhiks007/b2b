@@ -9,7 +9,6 @@ const {
     updateMenuByDate
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
 const Menu = require('../models/Menu');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 

@@ -1,38 +1,129 @@
-import React from 'react';
-import { useCart } from '../context/CartContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import { Header } from './Header';
 
 const CartPage = () => {
-    const { cart, addToCart, removeFromCart, clearCart, updateQuantity } = useCart();
+    const [cart, setCart] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-    console.log(cart,"cart")
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        fetchCart();
+    }, [navigate]);
 
-    const handleQuantityChange = (item, change) => {
-        const newQuantity = item.quantity + change;
-        if (newQuantity > 0) {
-            updateQuantity(item._id, newQuantity);
+    const fetchCart = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCart(response.data[0]); // Get the first cart document
+        } catch (err) {
+            setError('Failed to fetch cart');
+            toast.error('Failed to fetch cart');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleRemoveItem = (itemId) => {
-        removeFromCart(itemId);
+    const handleQuantityChange = async (itemId, change) => {
+        try {
+            const token = localStorage.getItem('token');
+            // Find the current item in the cart
+            const cartItem = cart.items.find(item => item.itemId === itemId || item.itemId === itemId.toString());
+            if (!cartItem) {
+                toast.error('Item not found in cart');
+                return;
+            }
+            const newQuantity = cartItem.quantity + change;
+            if (newQuantity < 1) {
+                toast.error('Quantity cannot be less than 1');
+                return;
+            }
+            const response = await axios.patch(`http://localhost:5000/api/cart/${itemId}`, {
+                quantity: newQuantity
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data) {
+                fetchCart(); 
+            }
+        } catch (err) {
+            toast.error('Failed to update quantity');
+        }
+    };
+
+    const handleRemoveItem = async (itemId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/cart/${itemId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchCart(); // Refresh cart after removal
+            toast.success('Item removed from cart');
+        } catch (err) {
+            toast.error('Failed to remove item');
+        }
+    };
+
+    const handleClearCart = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCart(null);
+            toast.success('Cart cleared');
+        } catch (err) {
+            toast.error('Failed to clear cart');
+        }
     };
 
     const calculateTotal = () => {
-        return cart.items?.reduce((total, item) => {
-            return total + (parseFloat(item.totalPrice) * item.quantity);
-        }, 0) || 0;
+        if (!cart || !cart.items) return 0;
+        return cart.items.reduce((total, item) => {
+            return total + (item.totalPrice * item.quantity);
+        }, 0);
     };
+
+    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    if (error) return <div className="flex justify-center items-center h-screen">{error}</div>;
+    if (!cart) return (
+        <div className="flex justify-center items-center h-screen">
+            <div className="text-center">
+                <p className="text-gray-500 text-lg">Your cart is empty</p>
+                <button
+                    onClick={() => navigate('/')}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                    Continue Shopping
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <>
-            <Header />
             <div className="container mx-auto px-4 py-8 mt-16">
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-2xl font-bold mb-8">Your Cart</h1>
                     {!cart.items || cart.items.length === 0 ? (
                         <div className="text-center py-8">
                             <p className="text-gray-500 text-lg">Your cart is empty</p>
+                            <button
+                                onClick={() => navigate('/')}
+                                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                                Continue Shopping
+                            </button>
                         </div>
                     ) : (
                         <div className="bg-white rounded-lg shadow-lg">
@@ -42,7 +133,7 @@ const CartPage = () => {
                                 </div>
                                 <div className="space-y-4">
                                     {cart.items.map((item) => (
-                                        <div key={item._id} className="flex items-center gap-4 py-4 border-b">
+                                        <div key={item.itemId} className="flex items-center gap-4 py-4 border-b">
                                             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
                                                 <img
                                                     src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
@@ -67,24 +158,24 @@ const CartPage = () => {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <button
-                                                    onClick={() => handleQuantityChange(item, -1)}
+                                                    onClick={() => handleQuantityChange(item.itemId, -1)}
                                                     className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
                                                 >
                                                     −
                                                 </button>
                                                 <span className="w-8 text-center">{item.quantity}</span>
                                                 <button
-                                                    onClick={() => handleQuantityChange(item, 1)}
+                                                    onClick={() => handleQuantityChange(item.itemId, 1)}
                                                     className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
                                                 >
                                                     +
                                                 </button>
                                             </div>
                                             <div className="text-right min-w-[80px]">
-                                                ₹{(parseFloat(item.totalPrice) * item.quantity).toFixed(2)}
+                                                ₹{(item.totalPrice * item.quantity).toFixed(2)}
                                             </div>
                                             <button
-                                                onClick={() => handleRemoveItem(item._id)}
+                                                onClick={() => handleRemoveItem(item.itemId)}
                                                 className="text-red-600 hover:text-red-700"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -101,12 +192,13 @@ const CartPage = () => {
                                     </div>
                                     <div className="flex gap-4">
                                         <button
-                                            onClick={clearCart}
+                                            onClick={handleClearCart}
                                             className="flex-1 px-6 py-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
                                         >
                                             Clear Cart
                                         </button>
                                         <button
+                                            onClick={() => navigate('/checkout')}
                                             className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
                                         >
                                             Proceed to Checkout
@@ -122,4 +214,4 @@ const CartPage = () => {
     );
 };
 
-export default CartPage; 
+export default CartPage;

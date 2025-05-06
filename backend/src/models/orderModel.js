@@ -63,7 +63,7 @@ const orderSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ["ORDER_PLACED", "ORDER_PREPARING", "ORDER_READY", "ORDER_DELIVERED", "ORDER_CANCELLED"],
+        enum: ["ORDER_PLACED", "ACCEPTED", "ORDER_READY", "ORDER_DELIVERED", "CANCELLED", "ORDER_PICKED_UP","INSTORE_ORDER"],
         default: "ORDER_PLACED"
     },
     restaurantId: {

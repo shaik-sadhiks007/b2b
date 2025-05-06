@@ -2,53 +2,61 @@ const Order = require("../models/orderModel");
 const User = require("../models/userModel");
 const MenuOfRestaurant = require("../models/menu");
 const CustomerAddress = require("../models/customerAddress");
+const Restaurant = require("../models/Restaurant");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
 
 exports.placeOrder = async (req, res) => {
     try {
-        const { items, totalAmount, paymentMethod, orderType, deliveryTime, customerAddress, addressId } = req.body;
-        const userId = req.user._id;
+        const { items, totalAmount, paymentMethod, orderType, addressId, customerAddressData, restaurantId, restaurantName } = req.body;
+        const userId = req.user.id;
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: "Order must contain at least one item." });
         }
 
-        // Validate all items exist and get restaurant details
-        const firstItem = await MenuOfRestaurant.findById(items[0].itemId);
-        if (!firstItem) {
-            return res.status(404).json({ error: "Menu item not found" });
-        }
-
-        const restaurantId = firstItem.restaurantId;
-        const restaurantName = firstItem.restaurantName;
-
         let customerAddressId;
-        
-        // If addressId is provided, use existing address
+        let customerName;
+        let customerPhone;
+
+        // Handle address logic
         if (addressId) {
-            const existingAddress = await CustomerAddress.findById(addressId);
-            if (!existingAddress) {
+            // If addressId is provided, use it
+            const address = await CustomerAddress.findById(addressId);
+            if (!address) {
                 return res.status(404).json({ error: "Address not found" });
             }
             customerAddressId = addressId;
-        } 
-        // If customerAddress is provided, create new address
-        else if (customerAddress) {
+            customerName = address.fullName;
+            customerPhone = address.phone;
+        } else if (customerAddressData) {
+            // Check if this is the first address for the user
+            const existingAddresses = await CustomerAddress.find({ userId });
+            const isFirstAddress = existingAddresses.length === 0;
+
+            // If no addressId but customerAddressData is provided, create new address
             const newAddress = new CustomerAddress({
                 userId,
-                fullName: customerAddress.fullName,
-                street: customerAddress.street,
-                city: customerAddress.city,
-                state: customerAddress.state,
-                zip: customerAddress.zip,
-                country: customerAddress.country,
-                phone: customerAddress.phone,
-                isDefault: false
+                fullName: customerAddressData.fullName,
+                street: customerAddressData.street,
+                city: customerAddressData.city,
+                state: customerAddressData.state,
+                zip: customerAddressData.zip,
+                country: customerAddressData.country,
+                phone: customerAddressData.phone,
+                isDefault: isFirstAddress // Set as default if it's the first address
             });
             await newAddress.save();
             customerAddressId = newAddress._id;
+            customerName = newAddress.fullName;
+            customerPhone = newAddress.phone;
         } else {
-            return res.status(400).json({ error: "Either addressId or customerAddress is required" });
+            return res.status(400).json({ error: "Either addressId or customerAddressData is required" });
+        }
+
+        // Validate restaurant exists
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ error: "Restaurant not found" });
         }
 
         // Create new order
@@ -58,19 +66,22 @@ exports.placeOrder = async (req, res) => {
                 itemId: item.itemId,
                 name: item.name,
                 quantity: item.quantity,
+                basePrice: item.basePrice,
+                packagingCharges: item.packagingCharges || 0,
                 totalPrice: item.totalPrice,
                 photos: item.photos || [],
-                isVeg: item.isVeg
+                isVeg: item.isVeg || false
             })),
             totalAmount,
-            paymentMethod,
+            paymentMethod: paymentMethod || "COD",
             paymentStatus: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
             status: "ORDER_PLACED",
             restaurantId,
             restaurantName,
-            orderType,
-            deliveryTime,
-            customerAddress: customerAddressId
+            orderType: orderType || "DELIVERY",
+            customerAddress: customerAddressId,
+            customerName,
+            customerPhone
         });
 
         await newOrder.save();
@@ -94,10 +105,19 @@ exports.placeOrder = async (req, res) => {
 
 exports.orderHistory = async (req, res) => {
     try {
-
-        const orders = await Order.find({ restaurantId : req.restaurant._id })
-            .populate("customerAddress")
-            .sort({ createdAt: -1 });
+        const orders = await Order.find({ 
+            restaurantId: req.restaurant._id,
+            status: { 
+                $in: [
+                    'ORDER_DELIVERED',
+                    'ORDER_CANCELLED',
+                    'ORDER_PICKED_UP',
+                    'INSTORE_ORDER'
+                ]
+            }
+        })
+        .populate("customerAddress")
+        .sort({ createdAt: -1 });
 
         res.status(200).json(orders);
     } catch (error) {
@@ -114,7 +134,7 @@ exports.orderHistoryByUser = async (req, res) => {
 
         res.status(200).json(orders);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch order history" });
+        res.status(500).json({ error: "Failed to fetch order history", message: error.message });
     }
 };
 
@@ -197,5 +217,19 @@ exports.instoreOrder = async (req, res) => {
         console.error('Error placing instore order:', error);
         res.status(500).json({ error: "Failed to place instore order" });
     }
-};   
+};  
+
+exports.orderSuccess = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const order = await Order.findById(orderId);
+        if (!order) {   
+            return res.status(404).json({ error: "Order not found" });
+        }
+
+        res.status(200).json({ message: "Order placed successfully", order });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to place order" });
+    }
+};
 

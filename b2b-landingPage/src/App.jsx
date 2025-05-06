@@ -15,6 +15,9 @@ import { CartProvider } from './context/CartContext'
 import CartPage from './components/CartPage'
 import SearchPage from './pages/SearchPage'
 import LocationProvider from "./context/LocationContext"
+import Checkout from "./components/Checkout"
+import OrderSuccess from "./components/OrderSuccess"
+import Orders from "./components/Orders"
 
 function AppContent() {
   const routerLocation = useRouterLocation();
@@ -52,8 +55,9 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/hotel/:id" element={<HotelDetails />} />
         <Route path="/cart" element={<CartPage />} />
-        {/* <Route path="/checkout" element={<Checkout />} />
-        <Route path="/orders" element={<Orders />} /> */}
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders" element={<Orders />} /> 
+        <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
         <Route path="/search" element={<SearchPage/>} />
       </Routes>
     </div>

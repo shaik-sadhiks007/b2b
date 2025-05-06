@@ -4,7 +4,8 @@ const {
     orderHistory,
     orderHistoryByUser,
     updateOrderStatus,
-    instoreOrder
+    instoreOrder,
+    orderSuccess
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
@@ -15,6 +16,7 @@ router.get("/order-history/restaurant",authMiddleware,restaurantMiddleware, orde
 router.get('/order-history', authMiddleware, orderHistoryByUser); 
 router.patch('/:orderId', authMiddleware, updateOrderStatus); 
 router.post('/instore-order', authMiddleware, restaurantMiddleware, instoreOrder);
+router.get('/:orderId', authMiddleware, orderSuccess);
 
 
 module.exports = router;

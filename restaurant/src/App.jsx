@@ -9,6 +9,8 @@ import { AuthProvider } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
 import Orders from './components/Orders'
 import InventoryManager from './components/InventoryManager'
+import InStoreBilling from './components/InStoreBilling'
+import OrderHistory from './components/OrderHistory'
 
 
 function App() {
@@ -24,6 +26,8 @@ function App() {
           <Route path='/register' element={<Register />} />
           <Route path='/add-restaurant' element={<AddRestaurant />} />
           <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/instore-orders' element={<InStoreBilling />} />
+          <Route path='/order-history' element={<OrderHistory />} />
         </Routes>
       </Router>
     </AuthProvider>

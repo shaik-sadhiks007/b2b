@@ -34,7 +34,8 @@ const addressRoutes = require('./src/routes/addressRoutes');
 const menuTemplateRoutes = require('./src/routes/menuTemplateRoutes');
 const restaurantRoutes = require('./src/routes/restaurantRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
-
+const customerAddressRoutes = require('./src/routes/customerAddressRoutes');
+const searchRoutes = require('./src/routes/searchRoutes');
 
 const app = express();
 
@@ -49,10 +50,11 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/address', addressRoutes);
+app.use('/api/customer-address', customerAddressRoutes);
 app.use('/api/menu-templates', menuTemplateRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/upload', uploadRoutes);
-
+app.use('/api/search', searchRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB'))

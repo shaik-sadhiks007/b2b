@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HotelContext } from "../contextApi/HotelContextProvider";
-import { auth, googleProvider, signInWithPopup, sendPasswordResetEmail } from "../firebase/FIrebase";
+import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from "../firebase/FIrebase";
 
 const Login = () => {
   const { login } = useContext(HotelContext);
@@ -19,13 +19,17 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // Get user data from backend
       const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email: formData.email,
-        password: formData.password
+        email: user.email,
+        firebaseUid: user.uid
       });
 
-      // Check if token exists and is a string
-      if (response.data && response.data.token && typeof response.data.token === 'string') {
+      if (response.data && response.data.token) {
         login(response.data.token);
         navigate('/');
       } else {
@@ -33,7 +37,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.response?.data?.message || error.message || "Login failed!");
+      setError(error.message || "Login failed!");
     }
   };
 
@@ -45,10 +49,10 @@ const Login = () => {
       const response = await axios.post("http://localhost:5000/api/auth/google-login", {
         email: user.email,
         name: user.displayName,
+        firebaseUid: user.uid
       });
 
-      // Check if token exists and is a string
-      if (response.data && response.data.token && typeof response.data.token === 'string') {
+      if (response.data && response.data.token) {
         login(response.data.token);
         navigate('/');
       } else {
@@ -56,7 +60,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Google login error:', error);
-      setError(error.response?.data?.message || error.message || "Google Login failed!");
+      setError(error.message || "Google Login failed!");
     }
   };
 

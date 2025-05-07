@@ -4,6 +4,20 @@ const User = require('../models/userModel');
 const Order = require('../models/orderModel');
 const fs = require('fs');
 const path = require('path');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = require('../../serviceAccountKey.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error) {
+        console.error('Error initializing Firebase Admin:', error);
+        throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
+    }
+}
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -22,7 +36,14 @@ const generateOTP = () => {
 // Register user
 const register = async (req, res) => {
     try {
-        const { username, email, password, firebaseUid } = req.body;
+        const { username, email, firebaseUid } = req.body;
+
+        // Verify Firebase user and check email verification
+        const firebaseUser = await admin.auth().getUser(firebaseUid);
+        
+        if (!firebaseUser.emailVerified) {
+            return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
+        }
 
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -32,9 +53,8 @@ const register = async (req, res) => {
         const user = await User.create({
             username,
             email,
-            password,
             role: 'user',
-            firebaseUid // Store Firebase UID
+            firebaseUid 
         });
 
         const token = generateToken(user);
@@ -56,10 +76,10 @@ const register = async (req, res) => {
 // Login user
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, firebaseUid } = req.body;
         const user = await User.findOne({ email });
 
-        if (user && (await user.matchPassword(password))) {
+        if (user && user.firebaseUid === firebaseUid) {
             const token = generateToken(user);
             res.json({
                 token,
@@ -71,7 +91,7 @@ const login = async (req, res) => {
                 }
             });
         } else {
-            res.status(401).json({ message: 'Invalid email or password' });
+            res.status(401).json({ message: 'Invalid credentials' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -81,7 +101,7 @@ const login = async (req, res) => {
 // Google login
 const googleLogin = async (req, res) => {
     try {
-        const { email, name } = req.body;
+        const { email, name, firebaseUid } = req.body;
         let user = await User.findOne({ email });
 
         if (!user) {
@@ -89,9 +109,13 @@ const googleLogin = async (req, res) => {
             user = await User.create({
                 username: name,
                 email,
-                password: Math.random().toString(36).slice(-8), // Generate random password
-                role: 'user'
+                role: 'user',
+                firebaseUid
             });
+        } else {
+            // Update Firebase UID if user exists
+            user.firebaseUid = firebaseUid;
+            await user.save();
         }
 
         const token = generateToken(user);
@@ -183,15 +207,12 @@ const getProfile = async (req, res) => {
 // Update user profile
 const updateProfile = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email } = req.body;
         const user = await User.findById(req.user.id);
 
         if (user) {
             user.username = username || user.username;
             user.email = email || user.email;
-            if (password) {
-                user.password = password;
-            }
 
             const updatedUser = await user.save();
             const token = generateToken(updatedUser);

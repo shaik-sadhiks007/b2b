@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail } from "firebase/auth";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDmxqsBuOxxQ2DwIgAQQo-bTI8dV0nAtpA",
@@ -47,7 +47,8 @@ export {
     signInWithPopup,
     createUserWithEmailAndPassword,
     sendVerificationEmail as sendEmailVerification,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword
 };
 
 

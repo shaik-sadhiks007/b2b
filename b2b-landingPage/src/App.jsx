@@ -9,6 +9,7 @@ import { ScrollProvider } from "./context/ScrollContext"
 import HotelDataProvider from "./contextApi/HotelContextProvider"
 import Login from "./authentication/Login"
 import Register from "./authentication/Register"
+import ForgotPassword from "./authentication/ForgotPassword"
 import Home from "./components/Home"
 import HotelDetails from "./components/HotelDetails"
 import { CartProvider } from './context/CartContext'
@@ -53,6 +54,7 @@ function AppContent() {
         } />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/hotel/:id" element={<HotelDetails />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<Checkout />} />

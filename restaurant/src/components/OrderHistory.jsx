@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Clock, MapPin, Phone, Package, CheckCircle, XCircle, ShoppingBag } from 'lucide-react';
-import { format } from 'date-fns';
+import { toast } from 'react-toastify';
+import Navbar from './Navbar';
+import Sidebar from './Sidebar';
+import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin } from 'lucide-react';
 
 const OrderHistory = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchOrders();
@@ -16,141 +17,196 @@ const OrderHistory = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get('http://localhost:5000/api/orders/order-history/restaurant', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
             setOrders(response.data);
             setLoading(false);
-        } catch (err) {
-            setError('Failed to fetch orders');
+        } catch (error) {
+            toast.error('Failed to fetch orders');
             setLoading(false);
         }
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'ORDER_DELIVERED':
-                return 'bg-green-100 text-green-800';
-            case 'ORDER_CANCELLED':
-                return 'bg-red-100 text-red-800';
-            case 'ORDER_PICKED_UP':
-                return 'bg-blue-100 text-blue-800';
-            case 'INSTORE_ORDER':
-                return 'bg-purple-100 text-purple-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+    const handleCancelOrder = async (orderId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.patch(`http://localhost:5000/api/orders/${orderId}`, 
+                { status: 'CANCELLED' },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast.success('Order cancelled successfully');
+            fetchOrders(); // Refresh the orders list
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to cancel order');
         }
     };
 
     const getStatusIcon = (status) => {
         switch (status) {
+            case 'ORDER_PLACED':
+                return <Clock className="h-5 w-5 text-blue-500" />;
+            case 'ACCEPTED':
+                return <Package className="h-5 w-5 text-green-500" />;
+            case 'ORDER_READY':
+                return <Truck className="h-5 w-5 text-green-500" />;
             case 'ORDER_DELIVERED':
-                return <CheckCircle className="w-5 h-5" />;
-            case 'ORDER_CANCELLED':
-                return <XCircle className="w-5 h-5" />;
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
             case 'ORDER_PICKED_UP':
-                return <Package className="w-5 h-5" />;
-            case 'INSTORE_ORDER':
-                return <ShoppingBag className="w-5 h-5" />;
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
+            case 'CANCELLED':
+                return <XCircle className="h-5 w-5 text-red-500" />;
             default:
-                return null;
+                return <AlertCircle className="h-5 w-5 text-gray-500" />;
         }
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'ORDER_PLACED':
+                return 'bg-blue-100 text-blue-800';
+            case 'ACCEPTED':
+                return 'bg-green-100 text-green-800';
+            case 'ORDER_READY':
+                return 'bg-green-100 text-green-800';
+            case 'ORDER_DELIVERED':
+                return 'bg-green-100 text-green-800';
+            case 'ORDER_PICKED_UP':
+                return 'bg-green-100 text-green-800';
+            case 'CANCELLED':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const formatAddress = (address) => {
+        if (!address) return 'No address provided';
+        return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
     };
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex justify-center items-center h-screen text-red-600">
-                {error}
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading orders...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-6">Order History</h1>
-            <div className="space-y-6">
-                {orders.map((order) => (
-                    <div key={order._id} className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h2 className="text-xl font-semibold">Order #{order._id.slice(-6)}</h2>
-                                <p className="text-gray-600">
-                                    {format(new Date(order.createdAt), 'MMM dd, yyyy hh:mm a')}
-                                </p>
-                            </div>
-                            <div className={`px-3 py-1 rounded-full flex items-center gap-2 ${getStatusColor(order.status)}`}>
-                                {getStatusIcon(order.status)}
-                                <span className="font-medium">{order.status.replace('_', ' ')}</span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-gray-500" />
-                                    <span>Order Type: {order.orderType}</span>
+        <div className="container-fluid">
+            <Navbar />
+            <div className="row" style={{ marginTop: '48px' }}>
+                <div className="d-none d-lg-block col-lg-2 px-0">
+                    <Sidebar />
+                </div>
+                <div className="col-12 col-lg-10 px-0 ms-auto">
+                    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                        <div className="max-w-7xl mx-auto">
+                            <h1 className="text-3xl font-bold text-gray-900 mb-8">Order History</h1>
+                            {orders.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <p className="text-gray-500 text-lg">No orders found</p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-5 h-5 text-gray-500" />
-                                    <span>Phone: {order.customerPhone}</span>
-                                </div>
-                                {order.customerAddress && (
-                                    <div className="flex items-start gap-2">
-                                        <MapPin className="w-5 h-5 text-gray-500 mt-1" />
-                                        <div>
-                                            <p>Address:</p>
-                                            <p className="text-gray-600">
-                                                {order.customerAddress.street}, {order.customerAddress.city}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {orders.map((order) => (
+                                        <div key={order._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                                            <div className="p-6">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h2 className="text-xl font-semibold text-gray-900">
+                                                            Order #{order._id.slice(-6)}
+                                                        </h2>
+                                                        <p className="text-sm text-gray-500">
+                                                            {new Date(order.createdAt).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {getStatusIcon(order.status)}
+                                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                                                            {order.status.replace(/_/g, ' ')}
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                            <div>
-                                <h3 className="font-semibold mb-2">Items:</h3>
-                                <div className="space-y-2">
-                                    {order.items.map((item, index) => (
-                                        <div key={index} className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-gray-600">{item.quantity}x</span>
-                                                <span>{item.name}</span>
+                                                <div className="border-t border-gray-200 pt-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Restaurant</p>
+                                                            <p className="font-medium">{order.restaurantName}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Order Type</p>
+                                                            <p className="font-medium capitalize">{order.orderType}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Payment Method</p>
+                                                            <p className="font-medium">{order.paymentMethod}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Total Amount</p>
+                                                            <p className="font-medium">₹{order.totalAmount}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {order.customerAddress && (
+                                                        <div className="mt-4 mb-4">
+                                                            <div className="flex items-start gap-2">
+                                                                <MapPin className="h-5 w-5 text-gray-500 mt-1" />
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">Delivery Address</p>
+                                                                    <p className="text-sm font-medium">{order.customerAddress.fullName}</p>
+                                                                    <p className="text-sm text-gray-600">{formatAddress(order.customerAddress)}</p>
+                                                                    <p className="text-sm text-gray-600">Phone: {order.customerAddress.phone}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="mt-4">
+                                                        <h3 className="text-sm font-medium text-gray-900 mb-2">Order Items</h3>
+                                                        <div className="space-y-2">
+                                                            {order.items.map((item, index) => (
+                                                                <div key={index} className="flex justify-between items-center text-sm">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span>{item.name}</span>
+                                                                        {item.isVeg && (
+                                                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                                                                Veg
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <span className="text-gray-500">Qty: {item.quantity}</span>
+                                                                        <span className="font-medium">₹{item.totalPrice * item.quantity}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {order.status === 'ORDER_PLACED' && (
+                                                        <div className="mt-6 flex justify-end">
+                                                            <button
+                                                                onClick={() => handleCancelOrder(order._id)}
+                                                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200"
+                                                            >
+                                                                Cancel Order
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="font-medium">₹{item.totalPrice}</span>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
-
-                        <div className="border-t pt-4">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p className="text-gray-600">Payment Method: {order.paymentMethod}</p>
-                                    <p className="text-gray-600">Payment Status: {order.paymentStatus}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-lg font-semibold">Total: ₹{order.totalAmount}</p>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
-                ))}
-
-                {orders.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                        No orders found
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

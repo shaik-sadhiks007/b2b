@@ -8,12 +8,11 @@ const orderSchema = new mongoose.Schema({
     },
     customerName: {
         type: String,
-        default: ""
+        default: "Customer"
     },
     customerPhone: {
         type: Number,
-        default: null,
-        minlength: 10,
+        default: 0,
     },
     items: [{
         itemId: {

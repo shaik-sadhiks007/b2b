@@ -2,12 +2,13 @@ import axios from "axios";
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HotelContext } from "../contextApi/HotelContextProvider";
-import { auth, googleProvider, signInWithPopup } from "../firebase/FIrebase";
+import { auth, googleProvider, signInWithPopup, sendPasswordResetEmail } from "../firebase/FIrebase";
 
 const Login = () => {
   const { login } = useContext(HotelContext);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -59,11 +60,29 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, formData.email);
+      setSuccessMessage("Password reset email sent! Please check your inbox.");
+      setError("");
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setError(error.message || "Failed to send password reset email");
+      setSuccessMessage("");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-3xl font-bold text-center mb-8">Login</h2>
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">{error}</div>}
+        {successMessage && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">{successMessage}</div>}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-lg font-medium text-gray-700">
@@ -93,6 +112,15 @@ const Login = () => {
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-indigo-600 hover:text-indigo-500"
+            >
+              Forgot Password?
+            </Link>
           </div>
 
           <button

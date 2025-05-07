@@ -112,7 +112,8 @@ exports.orderHistory = async (req, res) => {
                     'ORDER_DELIVERED',
                     'ORDER_CANCELLED',
                     'ORDER_PICKED_UP',
-                    'INSTORE_ORDER'
+                    'INSTORE_ORDER',
+                    'CANCELLED'
                 ]
             }
         })
@@ -183,7 +184,7 @@ exports.instoreOrder = async (req, res) => {
     try {
         const { items, totalAmount, paymentMethod, customerName, customerPhone } = req.body;
         const restaurantId = req.restaurant._id;
-        const restaurantName = req.restaurant.name;
+        const restaurantName = req.restaurant.restaurantName;
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: "Order must contain at least one item." });
@@ -191,6 +192,7 @@ exports.instoreOrder = async (req, res) => {
 
         // Create new instore order
         const newOrder = new Order({
+            user: req.user.id,
             items: items.map(item => ({
                 itemId: item.itemId,
                 name: item.name,
@@ -202,7 +204,7 @@ exports.instoreOrder = async (req, res) => {
             totalAmount,
             paymentMethod,
             paymentStatus: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
-            status: "INSTORE",
+            status: "INSTORE_ORDER",
             restaurantId,
             restaurantName,
             orderType: "PICKUP",
@@ -232,4 +234,36 @@ exports.orderSuccess = async (req, res) => {
         res.status(500).json({ error: "Failed to place order" });
     }
 };
+
+exports.postRestaurantOrderStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const { orderId } = req.params; 
+
+        const order = await Order.findById(orderId);
+        console.log(order, "order");
+
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+
+        order.status = status;
+        if (!order.orderType) order.orderType = 'PICKUP';
+        await order.save(); 
+
+        res.status(200).json({ message: "Order status updated successfully", order });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update order status", message: error.message });
+    }
+};
+
+exports.getRestaurantOrderStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const orders = await Order.find({ status });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch order status", message: error.message });
+    }
+};  
 

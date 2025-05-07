@@ -7,6 +7,7 @@ import InventoryManager from '../components/InventoryManager';
 import Orders from '../components/Orders';
 import '../styles/Dashboard.css';
 import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
     const { user, token } = useContext(AuthContext);
@@ -40,21 +41,6 @@ const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('menu-editor');
 
     const navigate = useNavigate();
-
-    const menuItems = [
-        { icon: "bi-box", label: "Orders", path: "/orders", isNew: false },
-        { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
-        { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
-        { icon: "bi-graph-up", label: "Reporting", path: "/reporting" },
-        { icon: "bi-gift", label: "Offers", path: "/offers" },
-        { icon: "bi-wallet2", label: "Payout", path: "/payout" },
-        { icon: "bi-cart4", label: "Hyperpure", path: "/hyperpure" },
-        { icon: "bi-megaphone", label: "Ads", path: "/ads" },
-        { icon: "bi-shop", label: "Outlet info", path: "/outlet-info" },
-        { icon: "bi-exclamation-circle", label: "Customer complaints", path: "/complaints" },
-        { icon: "bi-star", label: "Reviews", path: "/reviews" },
-        { icon: "bi-question-circle", label: "Help centre", path: "/help" }
-    ];
 
     const tabs = [
         { label: "Menu editor", path: "/menu" },
@@ -518,14 +504,12 @@ const Dashboard = () => {
 
             <div className="row" style={{ marginTop: "48px" }}>
                 {/* Sidebar */}
-                <Sidebar
-                    menuItems={menuItems}
-                    logo="B2B"
-                    subtitle="restaurant partner"
-                />
+
+                <Navbar />
+                <Sidebar/>
 
                 {/* Main Content */}
-                <div className="col-md-10 ms-auto">
+                <div className="col-lg-10 ms-auto">
                     {/* Top Navigation */}
                     <div className="bg-white shadow-sm p-3 mb-4">
                         <div className="d-flex justify-content-between align-items-center">

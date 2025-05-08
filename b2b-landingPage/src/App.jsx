@@ -15,7 +15,8 @@ import { CartProvider } from './context/CartContext'
 import CartPage from './components/CartPage'
 import SearchPage from './pages/SearchPage'
 import LocationProvider from "./context/LocationContext"
-
+import AboutUs from "./components/About-us"
+import Contact from "./components/Contact"
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -55,6 +56,8 @@ function AppContent() {
         {/* <Route path="/checkout" element={<Checkout />} />
         <Route path="/orders" element={<Orders />} /> */}
         <Route path="/search" element={<SearchPage/>} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </div>
   )

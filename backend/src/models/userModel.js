@@ -3,11 +3,11 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
     username: { type: String },
-    email: { type: String, unique: true },
+    email: { type: String, unique: true, sparse: true },
     password: { type: String},
     phone: { type: Number },
     image: { type: String, default: 'https://cdn-icons-png.flaticon.com/512/4140/4140037.png' },
-    role: { type: String, enum: ['admin', 'user'], default: 'user' },
+    role: { type: String, enum: ['admin', 'user', 'guest'], default: 'user' },
     firebaseUid: { type: String, unique: true, sparse: true }
 }, {
     timestamps: true

@@ -20,6 +20,7 @@ const Login = () => {
     e.preventDefault();
     try {
       // Sign in with Firebase
+      
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
@@ -142,6 +143,14 @@ const Login = () => {
             <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google" className="w-6 h-6" />
             Sign in with Google
           </button>
+
+          <Link
+            to="/guest-login"
+            className="w-full py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center gap-2"
+          >
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Guest" className="w-6 h-6" />
+            Continue as Guest
+          </Link>
         </form>
 
         <div className="mt-6 flex items-center justify-between">

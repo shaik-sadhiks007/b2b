@@ -19,6 +19,9 @@ import LocationProvider from "./context/LocationContext"
 import Checkout from "./components/Checkout"
 import OrderSuccess from "./components/OrderSuccess"
 import Orders from "./components/Orders"
+import ProtectedRoute from './components/ProtectedRoute'
+import GuestLogin from "./components/GuestLogin"
+import Profile from "./components/Profile"
 
 function AppContent() {
   const routerLocation = useRouterLocation();
@@ -49,18 +52,30 @@ function AppContent() {
         />
       )}
       <Routes>
-        <Route path="/" element={
-          <Home/>
-        } />
+        <Route path="/" element={<Home/>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/hotel/:id" element={<HotelDetails />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/orders" element={<Orders />} /> 
+        <Route path="/cart" element={
+            <ProtectedRoute>
+                <CartPage />
+            </ProtectedRoute>
+        } />
+        <Route path="/checkout" element={
+            <ProtectedRoute>
+                <Checkout />
+            </ProtectedRoute>
+        } />
+        <Route path="/orders" element={
+            <ProtectedRoute>
+                <Orders />
+            </ProtectedRoute>
+        } />
         <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
         <Route path="/search" element={<SearchPage/>} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/guest-login" element={<GuestLogin />} />
       </Routes>
     </div>
   )

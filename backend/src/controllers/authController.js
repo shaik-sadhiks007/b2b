@@ -133,6 +133,42 @@ const googleLogin = async (req, res) => {
     }
 };
 
+// Guest login
+const guestLogin = async (req, res) => {
+    try {
+        const { firebaseUid } = req.body;
+
+        // Verify Firebase user exists
+        // const firebaseUser = await admin.auth().getUser(firebaseUid);
+
+        // Check if guest user already exists
+        let user = await User.findOne({ firebaseUid });
+
+        if (!user) {
+            // Create new guest user
+            user = await User.create({
+                username: `Guest_${firebaseUid.slice(0, 6)}`,
+                email: `guest_${firebaseUid.slice(0, 6)}@gmail.com`,
+                role: 'guest',
+                firebaseUid
+            }); 
+        }
+
+        const token = generateToken(user);
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Guest login error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Verify OTP
 const verifyOTP = async (req, res) => {
     const { userId, otp } = req.body;
@@ -197,6 +233,7 @@ const resendOTP = async (req, res) => {
 // Get user profile
 const getProfile = async (req, res) => {
     try {
+        console.log(req.user,"uuser");
         const user = await User.findById(req.user.id).select('-password');
         res.json(user);
     } catch (error) {
@@ -273,6 +310,7 @@ module.exports = {
     register,
     login,
     googleLogin,
+    guestLogin,
     verifyOTP,
     resendOTP,
     getProfile,

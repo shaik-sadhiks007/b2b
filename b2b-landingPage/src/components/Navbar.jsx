@@ -208,6 +208,17 @@ function Navbar({ alwaysVisible }) {
                       <div className="px-4 py-2 text-sm text-gray-500 border-b">
                         {user.email}
                       </div>
+
+                      <Link to="/profile">
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <User size={18} />
+
+                          Profile
+                        </button>
+                      </Link>
+
                       <button
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"

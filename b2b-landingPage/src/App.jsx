@@ -16,6 +16,7 @@ import { CartProvider } from './context/CartContext'
 import CartPage from './components/CartPage'
 import SearchPage from './pages/SearchPage'
 import LocationProvider from "./context/LocationContext"
+<<<<<<< HEAD
 import Checkout from "./components/Checkout"
 import OrderSuccess from "./components/OrderSuccess"
 import Orders from "./components/Orders"
@@ -23,6 +24,10 @@ import ProtectedRoute from './components/ProtectedRoute'
 import GuestLogin from "./components/GuestLogin"
 import Profile from "./components/Profile"
 
+=======
+import AboutUs from "./components/About-us"
+import Contact from "./components/Contact"
+>>>>>>> try
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -74,8 +79,13 @@ function AppContent() {
         } />
         <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
         <Route path="/search" element={<SearchPage/>} />
+<<<<<<< HEAD
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
+=======
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact" element={<Contact />} />
+>>>>>>> try
       </Routes>
     </div>
   )

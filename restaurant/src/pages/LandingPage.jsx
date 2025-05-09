@@ -122,7 +122,7 @@ const LandingPage = () => {
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 className="mb-2 fw-bold">Both food delivery & dining</h6>
-                                                <p className="mb-0 text-muted small">List your restaurant on both the delivery and dining sections</p>
+                                                <p className="mb-0 text-muted small">List your Business on both the delivery and dining sections</p>
                                             </div>
                                             <div className="fs-4 text-primary">
                                                 <i className="bi bi-arrow-right-circle"></i>
@@ -139,7 +139,7 @@ const LandingPage = () => {
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 className="mb-2 fw-bold">Food delivery only</h6>
-                                                <p className="mb-0 text-muted small">List your restaurant in the delivery section only</p>
+                                                <p className="mb-0 text-muted small">List your Business in the delivery section only</p>
                                             </div>
                                             <div className="fs-4 text-primary">
                                                 <i className="bi bi-arrow-right-circle"></i>
@@ -156,7 +156,7 @@ const LandingPage = () => {
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 className="mb-2 fw-bold">Dining only</h6>
-                                                <p className="mb-0 text-muted small">List your restaurant in the dining section only</p>
+                                                <p className="mb-0 text-muted small">List your Business in the dining section only</p>
                                             </div>
                                             <div className="fs-4 text-primary">
                                                 <i className="bi bi-arrow-right-circle"></i>
@@ -198,14 +198,14 @@ const LandingPage = () => {
                                 textAlign: 'center',
                                 padding: '0 20px'
                             }}>
-                            <h1 className="display-4 fw-bold mb-4 text-white">Welcome to Our Restaurant</h1>
+                            <h1 className="display-4 fw-bold mb-4 text-white">Welcome to Our Business</h1>
                             <p className="lead mb-4 text-white">Experience the finest dining with our exquisite menu and exceptional service</p>
                             <div className="d-flex gap-3">
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"
                                     onClick={() => setShowServiceModal(true)}
                                 >
-                                    Register your restaurant
+                                    Register your Business
                                 </button>
                             </div>
                         </div>
@@ -235,7 +235,7 @@ const LandingPage = () => {
                                 <div className="border rounded p-2 bg-dark text-white">
                                     <div className="d-flex justify-content-between mb-2">
                                         <div>
-                                            <small className="text-white-50">Simple 3 step process to get your restaurant live on B2B</small>
+                                            <small className="text-white-50">Simple 3 step process to get your Business live on B2B</small>
                                         </div>
                                         <div className="d-flex">
                                             <span className="mx-1 text-white-50">II</span>
@@ -298,13 +298,13 @@ const LandingPage = () => {
                 {/* Success Stories Section */}
                 <section className="py-5">
                     <div className="container">
-                        <h3 className="text-center fw-bold mb-5">Restaurant success stories</h3>
+                        <h3 className="text-center fw-bold mb-5">Business success stories</h3>
 
                         <div className="position-relative">
                             <div className="row">
                                 {[
                                     {
-                                        text: "I'm grateful to the team for helping me thrive in online ordering. It has been an amazing selling business!",
+                                        text: "I'm grateful to the team for helping me thrive in online ordering. It has been an amazing selling Business!",
                                         name: "Arshad Qureshi",
                                         location: "Vijayawada"
                                     },
@@ -451,7 +451,7 @@ const LandingPage = () => {
                         </div>
 
                         <div className="col-md-4 mb-4">
-                            <h6 className="text-uppercase fw-bold mb-3">For Restaurants</h6>
+                            <h6 className="text-uppercase fw-bold mb-3">For Businesses</h6>
                             <ul className="list-unstyled">
                                 {['Partner With Us', 'Apps For You'].map((item, index) => (
                                     <li key={index} className="mb-2">
@@ -529,14 +529,14 @@ const faqs = [
             "You'll need your PAN card, FSSAI license, GST number (if applicable), menu details, and bank account information to get started with B2B.",
     },
     {
-        question: "How long will it take for a restaurant to go live on B2B after submitting the documents?",
+        question: "How long will it take for a Business to go live on B2B after submitting the documents?",
         answer:
-            "Once all required documents are submitted and verified, your restaurant can typically go live within 7-10 business days.",
+            "Once all required documents are submitted and verified, your Business can typically go live within 7-10 Business days.",
     },
     {
         question: "What is the one-time onboarding fee? Do I have to pay it all the time of registration?",
         answer:
-            "There is a one-time onboarding fee that covers the cost of setting up your restaurant on our platform. This fee is payable at the time of registration and is non-recurring.",
+            "There is a one-time onboarding fee that covers the cost of setting up your Business on our platform. This fee is payable at the time of registration and is non-recurring.",
     },
     {
         question: "How can I get help and support from B2B if I get stuck?",
@@ -546,12 +546,12 @@ const faqs = [
     {
         question: "How much commission will be charged by B2B?",
         answer:
-            "Commission rates vary based on your restaurant type, location, and other factors. New partners enjoy 0% commission for the first month. After that, standard rates apply which will be discussed during onboarding.",
+            "Commission rates vary based on your Business type, location, and other factors. New partners enjoy 0% commission for the first month. After that, standard rates apply which will be discussed during onboarding.",
     },
     {
         question: "How will I get my payouts?",
         answer:
-            "Partner restaurants on B2B receive weekly payouts every Wednesday for transactions made from Monday to Sunday of the previous week. If you prefer daily payouts, you can request them through the main partner app once your restaurant is live for more orders.",
+            "Partner Businesses on B2B receive weekly payouts every Wednesday for transactions made from Monday to Sunday of the previous week. If you prefer daily payouts, you can request them through the main partner app once your Business is live for more orders.",
     },
 ];
 

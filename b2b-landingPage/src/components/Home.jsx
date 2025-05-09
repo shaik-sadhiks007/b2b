@@ -214,34 +214,51 @@ const Home = () => {
                         B2B
                     </h1>
 
-                    {/* Search bar with suggestions */}
-                    <div className="relative w-full">
-                        <input
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            onFocus={() => setShowSuggestions(true)}
-                            onBlur={() => {
-                                setTimeout(() => setShowSuggestions(false), 150)
-                            }}
-                            placeholder="Enter delivery location"
-                            className="w-full pl-10 pr-20 py-6 rounded-full border-2 focus:border-blue-500 text-lg outline-none"
-                        />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-
-                        {/* Location suggestions */}
-                        {showSuggestions && location && (
-                            <LocationSuggestions
-                                suggestions={suggestions}
-                                onSelect={(suggestion) => {
-                                    handleLocationSelect(suggestion)
-                                    setShowSuggestions(false)
+                    {/* Search and Location Inputs Row */}
+                    <div className="w-full flex gap-4">
+                        {/* Location Input */}
+                        <div className="relative flex-1">
+                            <input
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => {
+                                    setTimeout(() => setShowSuggestions(false), 150)
                                 }}
-                                onAllowLocation={() => {
-                                    handleAllowLocation()
-                                    setShowSuggestions(false)
-                                }}
+                                placeholder="Enter delivery location"
+                                className="w-full pl-10 pr-4 py-3 rounded-full border-2 focus:border-blue-500 text-lg outline-none"
                             />
-                        )}
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+
+                            {/* Location suggestions */}
+                            {showSuggestions && location && (
+                                <LocationSuggestions
+                                    suggestions={suggestions}
+                                    onSelect={(suggestion) => {
+                                        handleLocationSelect(suggestion)
+                                        setShowSuggestions(false)
+                                    }}
+                                    onAllowLocation={() => {
+                                        handleAllowLocation()
+                                        setShowSuggestions(false)
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        {/* Search Input */}
+                        <div 
+                            className="flex-1 flex items-center gap-2 bg-white rounded-full border-2 px-4 py-3 cursor-pointer hover:border-blue-500 transition-colors"
+                            onClick={() => navigate('/search')}
+                        >
+                            <Search className="text-gray-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Search for Products..."
+                                className="w-full outline-none text-gray-600"
+                                readOnly
+                            />
+                        </div>
                     </div>
 
                     {/* Category shortcuts */}

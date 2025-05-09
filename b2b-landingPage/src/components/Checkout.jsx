@@ -108,11 +108,13 @@ const Checkout = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            console.log(response.data,"response.data");
             if (response.data) {
                 await axios.delete('http://localhost:5000/api/cart', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                navigate(`/ordersuccess/${response.data._id}`);
+
+                navigate(`/ordersuccess/${response.data.order._id}`);
             }
         } catch (err) {
             console.error('Order placement error:', err);
@@ -128,6 +130,23 @@ const Checkout = () => {
     };
 
     if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+
+    if (!cart || !cart.items || cart.items.length === 0) {
+        return (
+            <div className="container mx-auto px-4 py-8 mt-16">
+                <div className="max-w-6xl mx-auto text-center">
+                    <h1 className="text-3xl font-bold mb-4 text-gray-800">Your Cart is Empty</h1>
+                    <p className="text-gray-600 mb-8">Please add some items to your cart before proceeding to checkout.</p>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-lg font-semibold"
+                    >
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 py-8 mt-16">

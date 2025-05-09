@@ -8,18 +8,17 @@ import debounce from 'lodash/debounce'
 import { useNavigate } from 'react-router-dom'
 
 const cuisines = [
-  { name: 'Biryani', img: 'https://img.freepik.com/free-photo/chicken-biryani-with-yogurt-dip_140725-1624.jpg' },
+  { name: 'Rice', img: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmljZXxlbnwwfHwwfHx8MA%3D%3D' },
+  { name: 'Ice Cream', img: 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aWNlY3JlYW18ZW58MHx8MHx8fDA%3D' },
+  { name: 'Idly', img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aWRsaXxlbnwwfHwwfHx8MA%3D%3D' },
+  { name: 'Dosa', img: 'https://images.unsplash.com/photo-1694849789325-914b71ab4075?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZG9zYXxlbnwwfHwwfHx8MA%3D%3D' },
+  { name: 'Biryani', img: 'https://images.unsplash.com/photo-1701579231305-d84d8af9a3fd?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmlyeWFuaXxlbnwwfHwwfHx8MA%3D%3D' },
   { name: 'Pizzas', img: 'https://img.freepik.com/free-photo/top-view-pepperoni-pizza-with-mushroom-sausages-bell-pepper-olive-corn-black-wooden_141793-2158.jpg' },
-  { name: 'Rolls', img: 'https://img.freepik.com/free-photo/close-up-chicken-wrap-with-vegetables_23-2148763775.jpg' },
-  { name: 'Burger', img: 'https://img.freepik.com/free-photo/fresh-tasty-burger_144627-27483.jpg' },
-  { name: 'Tea', img: 'https://img.freepik.com/free-photo/cup-tea-with-honey-lemon_23-2147877557.jpg' },
-  { name: 'Chinese', img: 'https://img.freepik.com/free-photo/top-view-table-full-delicious-food-composition_23-2149141352.jpg' },
-  { name: 'Cake', img: 'https://img.freepik.com/free-photo/sweet-pastry-assortment_23-2147802380.jpg' },
-  { name: 'Dessert', img: 'https://img.freepik.com/free-photo/assortment-ice-cream-balls_23-2148884485.jpg' },
-  { name: 'North Indian', img: 'https://img.freepik.com/free-photo/top-view-table-full-delicious-food-composition_23-2149141352.jpg' },
-  { name: 'South Indian', img: 'https://img.freepik.com/free-photo/delicious-south-indian-food-idli-sambar-vada_23-2148884485.jpg' },
-  { name: 'Sandwich', img: 'https://img.freepik.com/free-photo/fresh-tasty-sandwich_144627-27483.jpg' },
-  { name: 'Ice cream', img: 'https://img.freepik.com/free-photo/colorful-ice-cream-balls-cone_23-2148884485.jpg' },
+  // { name: 'Rolls', img: 'https://img.freepik.com/free-photo/close-up-chicken-wrap-with-vegetables_23-2148763775.jpg' },
+  // { name: 'Burger', img: 'https://img.freepik.com/free-photo/fresh-tasty-burger_144627-27483.jpg' },
+  // { name: 'Tea', img: 'https://img.freepik.com/free-photo/cup-tea-with-honey-lemon_23-2147877557.jpg' },
+  // { name: 'Chinese', img: 'https://img.freepik.com/free-photo/top-view-table-full-delicious-food-composition_23-2149141352.jpg' },
+  // { name: 'Cake', img: 'https://img.freepik.com/free-photo/sweet-pastry-assortment_23-2147802380.jpg' },
 ]
 
 function SearchPage() {
@@ -389,11 +388,18 @@ function SearchPage() {
           renderSearchResults()
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-6 ml-2">Popular Cuisines</h2>
+            <h2 className="text-2xl font-bold mb-6 ml-2">Popular Products</h2>
             <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
               {cuisines.map((cuisine) => (
-                <div key={cuisine.name} className="flex flex-col items-center min-w-[90px]">
-                  <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 shadow-sm mb-2">
+                <div 
+                  key={cuisine.name} 
+                  className="flex flex-col items-center min-w-[90px] cursor-pointer"
+                  onClick={() => {
+                    setSearchQuery(cuisine.name);
+                    performSearch(cuisine.name);
+                  }}
+                >
+                  <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 shadow-sm mb-2 hover:border-green-500 transition-colors">
                     <img
                       src={cuisine.img}
                       alt={cuisine.name}

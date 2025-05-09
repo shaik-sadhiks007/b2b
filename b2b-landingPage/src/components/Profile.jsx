@@ -168,11 +168,11 @@ const Profile = () => {
             await updatePassword(user, passwordData.newPassword);
 
             // Update password in backend
-            await axios.put(
-                'http://localhost:5000/api/auth/update-password',
-                { newPassword: passwordData.newPassword },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            // await axios.put(
+            //     'http://localhost:5000/api/auth/update-password',
+            //     { newPassword: passwordData.newPassword },
+            //     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+            // );
 
             setSuccess('Password updated successfully');
             setPasswordData({

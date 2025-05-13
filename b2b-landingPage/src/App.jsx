@@ -35,8 +35,8 @@ function AppContent() {
   const onLocationSelect = (suggestion) => {
     setLocation(suggestion.address || suggestion.name);
   };
-  const onAllowLocation = () => {};
-  const onLoginClick = () => {};
+  const onAllowLocation = () => { };
+  const onLoginClick = () => { };
 
   return (
     <div className="min-h-screen bg-white">
@@ -52,28 +52,28 @@ function AppContent() {
         />
       )}
       <Routes>
-        <Route path="/" element={<Home/>} />
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/hotel/:id" element={<HotelDetails />} />
         <Route path="/cart" element={
-            <ProtectedRoute>
-                <CartPage />
-            </ProtectedRoute>
+          <ProtectedRoute>
+            <CartPage />
+          </ProtectedRoute>
         } />
         <Route path="/checkout" element={
-            <ProtectedRoute>
-                <Checkout />
-            </ProtectedRoute>
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
         } />
         <Route path="/orders" element={
-            <ProtectedRoute>
-                <Orders />
-            </ProtectedRoute>
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
         } />
         <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
-        <Route path="/search" element={<SearchPage/>} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
       </Routes>

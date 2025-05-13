@@ -5,6 +5,7 @@ const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const auth = require('../middleware/auth');
 const Restaurant = require('../models/Restaurant');
+const geolib = require('geolib');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -30,7 +31,7 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
     try {
         // Parse the formData JSON string
         const formDataObj = JSON.parse(req.body.formData || '{}');
-        
+
         // Extract data directly from the parsed formData without restructuring
         const {
             restaurantName,
@@ -42,7 +43,7 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             sameAsOwnerPhone,
             whatsappUpdates,
             operatingHours
-        } = formDataObj;    
+        } = formDataObj;
 
         // Upload profile image to Cloudinary if provided
         let profileImageUrl = null;
@@ -57,7 +58,7 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             restaurantName,
             serviceType,
             ownerName,
-          
+
             contact: {
                 primaryPhone: contact?.primaryPhone || '',
                 whatsappNumber: contact?.whatsappNumber || '',
@@ -122,7 +123,7 @@ router.put('/:id/step/:step', auth, upload.fields([
         }
 
         const step = parseInt(req.params.step);
-        
+
         // Parse the formData JSON string and use it directly without restructuring
         const formDataObj = JSON.parse(req.body.formData || '{}');
         const updateData = { ...formDataObj };
@@ -133,16 +134,16 @@ router.put('/:id/step/:step', auth, upload.fields([
             if (!updateData.contact) {
                 updateData.contact = {};
             }
-            
+
             // Set contact fields from direct properties if they exist
             if (updateData.ownerEmail && !updateData.contact.email) {
                 updateData.contact.email = updateData.ownerEmail;
             }
-            
+
             if (updateData.contact?.primaryPhone && !updateData.contact.primaryPhone) {
                 updateData.contact.primaryPhone = updateData.contact?.primaryPhone;
             }
-            
+
             if (updateData.contact?.whatsappNumber && !updateData.contact.whatsappNumber) {
                 updateData.contact.whatsappNumber = updateData.contact?.whatsappNumber;
             }
@@ -151,7 +152,7 @@ router.put('/:id/step/:step', auth, upload.fields([
         // Handle file uploads
         if (req.files) {
             if (!updateData.images) updateData.images = {};
-            
+
             for (const [key, files] of Object.entries(req.files)) {
                 if (files && files.length > 0) {
                     const result = await cloudinary.uploader.upload(files[0].path);
@@ -170,7 +171,7 @@ router.put('/:id/step/:step', auth, upload.fields([
         // Handle image URLs passed directly
         if (req.body.imageUrls) {
             if (!updateData.images) updateData.images = {};
-            
+
             Object.entries(req.body.imageUrls).forEach(([key, value]) => {
                 updateData.images[key] = value;
             });
@@ -219,7 +220,7 @@ router.get('/', auth, async (req, res) => {
         // Ensure the contact structure is correct for each restaurant
         const formattedRestaurants = restaurants.map(restaurant => {
             const restaurantObj = restaurant.toObject();
-            
+
             if (!restaurantObj.contact) {
                 restaurantObj.contact = {
                     primaryPhone: restaurantObj.contact?.primaryPhone || '',
@@ -228,7 +229,7 @@ router.get('/', auth, async (req, res) => {
                     website: restaurantObj.contact?.website || ''
                 };
             }
-            
+
             return restaurantObj;
         });
 
@@ -307,22 +308,52 @@ router.delete('/:id', auth, async (req, res) => {
 // Get all restaurants (public route - no auth required)
 router.get('/public/all', async (req, res) => {
     try {
+        const { lat, lng } = req.query;
+        
+        // Get all published restaurants
         const restaurants = await Restaurant.find({ status: 'published' })
-            .select('restaurantName images.profileImage description rating distance location')
+            .select('restaurantName serviceType images.profileImage description rating location')
             .lean();
 
         // Format the response to include only necessary fields
-        const formattedRestaurants = restaurants.map(restaurant => ({
-            _id: restaurant._id,
-            name: restaurant.restaurantName,
-            imageUrl: restaurant.images?.profileImage || null,
-            description: restaurant.description || '',
-            rating: restaurant.rating || 0,
-            distance: restaurant.distance || 0,
-            location: restaurant.location || ''
-        }));
+        const formattedRestaurants = restaurants.map(restaurant => {
+            let distance = null;
+            if (lat && lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
+                // Calculate distance using geolib
+                const distanceInMeters = geolib.getDistance(
+                    { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+                    { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+                );
+                // Convert meters to kilometers
+                distance = distanceInMeters / 1000;
+            }
 
-        res.json(formattedRestaurants);
+            return {
+                _id: restaurant._id,
+                name: restaurant.restaurantName,
+                imageUrl: restaurant.images?.profileImage || null,
+                description: restaurant.description || '',
+                rating: restaurant.rating || 5,
+                distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
+                location: restaurant.location || null,
+                serviceType: restaurant.serviceType || ''
+            };
+        });
+
+        // If coordinates are provided, filter and sort by distance
+        if (lat && lng) {
+            // Filter restaurants within 50km range
+            const filteredRestaurants = formattedRestaurants.filter(restaurant => 
+                restaurant.distance !== null && restaurant.distance <= 50
+            );
+
+            // Sort by distance
+            filteredRestaurants.sort((a, b) => a.distance - b.distance);
+
+            res.json(filteredRestaurants);
+        } else {
+            res.json(formattedRestaurants);
+        }
     } catch (error) {
         console.error('Error getting public restaurants:', error);
         res.status(500).json({ message: 'Error getting restaurants', error: error.message });

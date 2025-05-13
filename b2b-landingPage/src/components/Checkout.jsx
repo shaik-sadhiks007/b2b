@@ -39,7 +39,17 @@ const Checkout = () => {
             const response = await axios.get('http://localhost:5000/api/cart', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setCart(response.data[0]);
+            const cartData = response.data[0];
+            setCart(cartData);
+            
+            // Set default order type based on service type
+            if (cartData.serviceType === 'pickup') {
+                setOrderType('PICKUP');
+            } else if (cartData.serviceType === 'delivery') {
+                setOrderType('DELIVERY');
+            } else if (cartData.serviceType === 'both') {
+                setOrderType('DELIVERY'); // Default to delivery if both options are available
+            }
         } catch (err) {
             toast.error('Failed to fetch cart');
         }
@@ -94,7 +104,7 @@ const Checkout = () => {
                 totalAmount: calculateTotal(),
                 paymentMethod: "COD",
                 orderType,
-                restaurantId: cart.restaurantId,
+                restaurantId: cart.restaurantId._id,
                 restaurantName: cart.restaurantName
             };
 
@@ -108,7 +118,6 @@ const Checkout = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            console.log(response.data,"response.data");
             if (response.data) {
                 await axios.delete('http://localhost:5000/api/cart', {
                     headers: { Authorization: `Bearer ${token}` }
@@ -333,34 +342,38 @@ const Checkout = () => {
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h2 className="text-xl font-semibold mb-4 text-gray-700">Order Type</h2>
                             <div className="flex gap-6">
-                                <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
-                                    <input
-                                        type="radio"
-                                        name="orderType"
-                                        value="DELIVERY"
-                                        checked={orderType === 'DELIVERY'}
-                                        onChange={(e) => setOrderType(e.target.value)}
-                                        className="h-5 w-5 text-blue-600"
-                                    />
-                                    <div>
-                                        <span className="font-medium text-gray-800">Delivery</span>
-                                        <p className="text-sm text-gray-500">Get your order delivered to your address</p>
-                                    </div>
-                                </label>
-                                <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
-                                    <input
-                                        type="radio"
-                                        name="orderType"
-                                        value="PICKUP"
-                                        checked={orderType === 'PICKUP'}
-                                        onChange={(e) => setOrderType(e.target.value)}
-                                        className="h-5 w-5 text-blue-600"
-                                    />
-                                    <div>
-                                        <span className="font-medium text-gray-800">Pickup</span>
-                                        <p className="text-sm text-gray-500">Pick up your order from the restaurant</p>
-                                    </div>
-                                </label>
+                                {(cart.serviceType === 'DELIVERY' || cart.serviceType === 'BOTH') && (
+                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
+                                        <input
+                                            type="radio"
+                                            name="orderType"
+                                            value="DELIVERY"
+                                            checked={orderType === 'DELIVERY'}
+                                            onChange={(e) => setOrderType(e.target.value)}
+                                            className="h-5 w-5 text-blue-600"
+                                        />
+                                        <div>
+                                            <span className="font-medium text-gray-800">Delivery</span>
+                                            <p className="text-sm text-gray-500">Get your order delivered to your address</p>
+                                        </div>
+                                    </label>
+                                )}
+                                {(cart.serviceType === 'PICKUP' || cart.serviceType === 'BOTH') && (
+                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
+                                        <input
+                                            type="radio"
+                                            name="orderType"
+                                            value="PICKUP"
+                                            checked={orderType === 'PICKUP'}
+                                            onChange={(e) => setOrderType(e.target.value)}
+                                            className="h-5 w-5 text-blue-600"
+                                        />
+                                        <div>
+                                            <span className="font-medium text-gray-800">Pickup</span>
+                                            <p className="text-sm text-gray-500">Pick up your order from the store</p>
+                                        </div>
+                                    </label>
+                                )}
                             </div>
                         </div>
 

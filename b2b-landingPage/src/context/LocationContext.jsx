@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LocationContext = createContext();
 
@@ -7,6 +8,7 @@ export function useLocationContext() {
 }
 
 export default function LocationProvider({ children }) {
+  const navigate = useNavigate();
   const [location, setLocation] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -48,6 +50,7 @@ export default function LocationProvider({ children }) {
       location: suggestion.address,
       coordinates: { lat: parseFloat(suggestion.lat), lng: parseFloat(suggestion.lng) }
     }));
+    navigate('/');
   };
 
   const onAllowLocation = () => {

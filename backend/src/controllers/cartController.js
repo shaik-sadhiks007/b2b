@@ -55,8 +55,19 @@ const getCartItems = async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
         const userId = user._id;
 
-        const carts = await Cart.find({ userId });
-        res.json(carts);
+        const carts = await Cart.find({ userId })
+            .populate({
+                path: 'restaurantId',
+                select: 'serviceType' // Only select the serviceType field
+            });
+
+        // Transform the response to include serviceType
+        const transformedCarts = carts.map(cart => ({
+            ...cart.toObject(),
+            serviceType: cart.restaurantId?.serviceType || null
+        }));
+
+        res.json(transformedCarts);
     } catch (error) {
         console.error('Error in getCartItems:', error);
         res.status(500).json({ message: "Error fetching cart items", error: error.message });

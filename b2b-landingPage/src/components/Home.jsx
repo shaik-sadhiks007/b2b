@@ -180,7 +180,16 @@ const Home = () => {
     useEffect(() => {
         const fetchRestaurants = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/restaurants/public/all');
+                // Get location from localStorage if available
+                const savedLocation = localStorage.getItem('userLocation');
+                let url = 'http://localhost:5000/api/restaurants/public/all';
+                
+                if (savedLocation) {
+                    const { coordinates } = JSON.parse(savedLocation);
+                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
+                }
+
+                const response = await axios.get(url);
                 setRestaurants(response.data);
                 setLoading(false);
             } catch (err) {
@@ -189,9 +198,8 @@ const Home = () => {
                 console.error('Error fetching restaurants:', err);
             }
         };
-
         fetchRestaurants();
-    }, []);
+    }, [localStorage.getItem('userLocation')]);
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -286,31 +294,40 @@ const Home = () => {
 
                         {/* Tab content */}
                         {activeTab === "all" && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {restaurants.map((restaurant) => (
-                                    <div
-                                        key={restaurant._id}
-                                        className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                                        onClick={() => handleRestaurantClick(restaurant)}
-                                    >
-                                        <div className="h-48 w-full">
-                                            <img
-                                                src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
-                                                alt={restaurant.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <div className="p-4">
-                                            <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
-                                            <p className="text-gray-600 mb-2">{restaurant.description}</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-yellow-500">★ {restaurant.rating}</span>
-                                                <span className="text-gray-500">{restaurant.distance} mi away</span>
-                                            </div>
-                                        </div>
+                            <>
+                                {restaurants.length === 0 ? (
+                                    <div className="text-center py-8 col-span-full">
+                                        <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
+                                        <p className="text-gray-500">Please try searching in a different area</p>
                                     </div>
-                                ))}
-                            </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {restaurants.map((restaurant) => (
+                                            <div
+                                                key={restaurant._id}
+                                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                                                onClick={() => handleRestaurantClick(restaurant)}
+                                            >
+                                                <div className="h-48 w-full">
+                                                    <img
+                                                        src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
+                                                        alt={restaurant.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="p-4">
+                                                    <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
+                                                    <p className="text-gray-600 mb-2">{restaurant.description}</p>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-yellow-500">★ {restaurant.rating}</span>
+                                                        <span className="text-gray-500">{restaurant.distance} km away</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         )}
                         {activeTab === "popular" && <div className="text-center py-8">Popular services will appear here</div>}
                         {activeTab === "nearby" && <div className="text-center py-8">Nearby services will appear here</div>}

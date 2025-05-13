@@ -157,22 +157,8 @@ const Profile = () => {
                 throw new Error('No user found');
             }
 
-            // Reauthenticate user
-            const credential = EmailAuthProvider.credential(
-                user.email,
-                passwordData.currentPassword
-            );
-            await reauthenticateWithCredential(user, credential);
-
-            // Update password
+            // Update password directly without reauthentication
             await updatePassword(user, passwordData.newPassword);
-
-            // Update password in backend
-            // await axios.put(
-            //     'http://localhost:5000/api/auth/update-password',
-            //     { newPassword: passwordData.newPassword },
-            //     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-            // );
 
             setSuccess('Password updated successfully');
             setPasswordData({
@@ -183,7 +169,15 @@ const Profile = () => {
             setShowPasswordForm(false);
         } catch (error) {
             console.error('Password update error:', error);
-            setError(error.message || 'Failed to update password');
+            if (error.code === 'auth/requires-recent-login') {
+                setError('Please login again to change your password');
+                localStorage.removeItem('token');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                setError(error.message || 'Failed to update password');
+            }
         }
     };
 
@@ -230,13 +224,9 @@ const Profile = () => {
                                     </label>
                                     <input
                                         type="password"
-                                        value={passwordData.currentPassword}
-                                        onChange={(e) => setPasswordData({
-                                            ...passwordData,
-                                            currentPassword: e.target.value
-                                        })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                        required
+                                        value="********"
+                                        disabled
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100 cursor-not-allowed"
                                     />
                                 </div>
                                 <div>

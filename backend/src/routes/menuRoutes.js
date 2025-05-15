@@ -11,6 +11,7 @@ const {
 const authMiddleware = require('../middleware/authMiddleware');
 const Menu = require('../models/Menu');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
+const { cloudinary, upload, uploadMultipleBase64Images } = require('../config/cloudinary');
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ const router = express.Router();
 // Get all menu items for a specific restaurant
 router.get('/', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        console.log(req.restaurant._id,"restaurant details");
+        console.log(req.restaurant._id, "restaurant details");
         const menu = await Menu.find({ restaurantId: req.restaurant._id });
         res.json(menu);
     } catch (error) {
@@ -52,9 +53,9 @@ router.post('/', authMiddleware, restaurantMiddleware, async (req, res) => {
 // Add subcategory to a category
 router.post('/:categoryId/subcategories', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.categoryId,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -68,7 +69,7 @@ router.post('/:categoryId/subcategories', authMiddleware, restaurantMiddleware, 
 
         category.subcategories.push(newSubcategory);
         const updatedCategory = await category.save();
-        
+
         res.status(201).json(updatedCategory);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -76,51 +77,70 @@ router.post('/:categoryId/subcategories', authMiddleware, restaurantMiddleware, 
 });
 
 // Add item to a subcategory
-router.post('/:categoryId/subcategories/:subcategoryId/items', authMiddleware, restaurantMiddleware, async (req, res) => {
-    try {
-        const category = await Menu.findOne({ 
-            _id: req.params.categoryId,
-            restaurantId: req.restaurant._id 
-        });
+router.post('/:categoryId/subcategories/:subcategoryId/items', 
+    authMiddleware, 
+    restaurantMiddleware, 
+    async (req, res) => {
+        try {
+            const category = await Menu.findOne({ 
+                _id: req.params.categoryId,
+                restaurantId: req.restaurant._id 
+            });
 
-        if (!category) {
-            return res.status(404).json({ message: 'Category not found' });
+            if (!category) {
+                return res.status(404).json({ message: 'Category not found' });
+            }
+
+            const subcategory = category.subcategories.id(req.params.subcategoryId);
+            if (!subcategory) {
+                return res.status(404).json({ message: 'Subcategory not found' });
+            }
+
+            // Handle photo uploads
+            let photoUrls = [];
+            if (req.body.photos && req.body.photos.length > 0) {
+                photoUrls = await uploadMultipleBase64Images(req.body.photos);
+            }
+
+            // Validate required fields
+            if (!req.body.name || !req.body.basePrice) {
+                return res.status(400).json({ message: 'Name and base price are required' });
+            }
+
+            const newItem = {
+                name: req.body.name,
+                foodType: req.body.foodType || 'regular',
+                customisable: req.body.customisable || false,
+                basePrice: parseFloat(req.body.basePrice),
+                description: req.body.description || '',
+                isVeg: req.body.isVeg || false,
+                photos: photoUrls,
+                serviceType: req.body.serviceType || 'DINE_IN',
+                totalPrice: parseFloat(req.body.totalPrice) || parseFloat(req.body.basePrice),
+                packagingCharges: parseFloat(req.body.packagingCharges) || 0,
+                inStock: req.body.inStock !== undefined ? req.body.inStock : true
+            };
+
+            subcategory.items.push(newItem);
+            const updatedCategory = await category.save();
+            
+            res.status(201).json(updatedCategory);
+        } catch (error) {
+            console.error('Error in item creation:', error);
+            res.status(400).json({ 
+                message: error.message,
+                details: 'Error occurred while creating menu item'
+            });
         }
-
-        const subcategory = category.subcategories.id(req.params.subcategoryId);
-        if (!subcategory) {
-            return res.status(404).json({ message: 'Subcategory not found' });
-        }
-
-        const newItem = {
-            name: req.body.name,
-            foodType: req.body.foodType,
-            customisable: req.body.customisable || false,
-            basePrice: req.body.basePrice,
-            description: req.body.description,
-            isVeg: req.body.isVeg,
-            photos: req.body.photos || [],
-            serviceType: req.body.serviceType,
-            totalPrice: req.body.totalPrice,
-            packagingCharges: req.body.packagingCharges,
-            inStock: req.body.inStock !== undefined ? req.body.inStock : true
-        };
-
-        subcategory.items.push(newItem);
-        const updatedCategory = await category.save();
-        
-        res.status(201).json(updatedCategory);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
     }
-});
+);
 
 // Update a category
 router.put('/:id', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.id,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -141,9 +161,9 @@ router.put('/:id', authMiddleware, restaurantMiddleware, async (req, res) => {
 // Delete a category
 router.delete('/:id', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.id,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -160,9 +180,9 @@ router.delete('/:id', authMiddleware, restaurantMiddleware, async (req, res) => 
 // Delete a subcategory
 router.delete('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.categoryId,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -176,7 +196,7 @@ router.delete('/:categoryId/subcategories/:subcategoryId', authMiddleware, resta
 
         category.subcategories.pull(req.params.subcategoryId);
         await category.save();
-        
+
         res.json({ message: 'Subcategory deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -186,9 +206,9 @@ router.delete('/:categoryId/subcategories/:subcategoryId', authMiddleware, resta
 // Delete an item from a subcategory
 router.delete('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.categoryId,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -207,7 +227,7 @@ router.delete('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMid
 
         subcategory.items.pull(req.params.itemId);
         await category.save();
-        
+
         res.json({ message: 'Item deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -217,9 +237,9 @@ router.delete('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMid
 // Update a subcategory
 router.put('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        const category = await Menu.findOne({ 
+        const category = await Menu.findOne({
             _id: req.params.categoryId,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
         if (!category) {
@@ -246,8 +266,8 @@ router.put('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaura
 // Get menu items for a specific restaurant (public route - no auth required)
 router.get('/public/:restaurantId', async (req, res) => {
     try {
-        const menu = await Menu.find({ 
-            restaurantId: req.params.restaurantId 
+        const menu = await Menu.find({
+            restaurantId: req.params.restaurantId
         }).select('name subcategories');
 
         if (!menu || menu.length === 0) {

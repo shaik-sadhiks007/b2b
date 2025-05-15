@@ -55,6 +55,7 @@ app.use('/api/menu-templates', menuTemplateRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', searchRoutes);
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB'))

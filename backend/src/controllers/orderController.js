@@ -1,6 +1,6 @@
 const Order = require("../models/orderModel");
 const User = require("../models/userModel");
-const MenuOfRestaurant = require("../models/menu");
+const MenuOfRestaurant = require("../models/Menu");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/Restaurant");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
@@ -247,6 +247,11 @@ exports.postRestaurantOrderStatus = async (req, res) => {
             return res.status(404).json({ error: "Order not found" });
         }
 
+        // Check if the order belongs to the restaurant making the request
+        if (order.restaurantId.toString() !== req.restaurant._id.toString()) {
+            return res.status(403).json({ error: "You are not authorized to update this order" });
+        }
+
         order.status = status;
         if (!order.orderType) order.orderType = 'PICKUP';
         await order.save(); 
@@ -260,7 +265,10 @@ exports.postRestaurantOrderStatus = async (req, res) => {
 exports.getRestaurantOrderStatus = async (req, res) => {
     try {
         const { status } = req.params;
-        const orders = await Order.find({ status });
+        const orders = await Order.find({ 
+            status,
+            restaurantId: req.restaurant._id 
+        });
         res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });

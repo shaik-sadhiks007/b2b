@@ -12,8 +12,8 @@ const restaurantSchema = new mongoose.Schema({
     },
     serviceType: {
         type: String,
-        enum: ['DELIVERY', 'DINE_IN', 'BOTH'],
-        default: 'DINE_IN'
+        enum: ['DELIVERY', 'PICKUP', 'BOTH'],
+        default: 'DELIVERY'
     },
     ownerName: {
         type: String,
@@ -76,7 +76,7 @@ const restaurantSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['draft', 'published', 'archived'],
+        enum: ['draft', 'published', 'archived','review','rejected'],
         default: 'draft'
     },
     currentStep: {

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import banner from "../assets/banner.jpeg";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
+import { AuthContext } from '../context/AuthContext';
 
 const LandingPage = () => {
     const navigate = useNavigate();
+    const { user, restaurant, loading, updateToken } = useContext(AuthContext);
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [showServiceModal, setShowServiceModal] = useState(false);
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Check for token in localStorage first
@@ -18,6 +18,7 @@ const LandingPage = () => {
         if (transferToken) {
             localStorage.setItem('token', transferToken);
             localStorage.removeItem('transferToken');
+            updateToken(transferToken);
             console.log('Token received from transfer');
         }
 
@@ -26,8 +27,7 @@ const LandingPage = () => {
             if (event.origin !== "http://localhost:5173") return;  // Verify origin
             const { token } = event.data;
             if (token) {
-                localStorage.setItem("token", token);
-                fetchUserData(token);
+                updateToken(token);
                 console.log("Token received and stored:", token);
             }
         };
@@ -35,39 +35,18 @@ const LandingPage = () => {
         // Add event listener
         window.addEventListener("message", messageHandler);
 
-        // Check if token exists and fetch user data
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetchUserData(token);
-        } else {
-            setLoading(false);
-        }
-
         // Cleanup
         return () => {
             window.removeEventListener('message', messageHandler);
         };
-    }, []);
+    }, [updateToken]);
 
-    const fetchUserData = async (token) => {
-        try {
-            const response = await axios.get('http://localhost:5000/api/auth/profile', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUser(response.data);
-        } catch (error) {
-            console.error('Error fetching user data:', error);
-            // localStorage.removeItem('token');
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        // Check if user is logged in and has a published restaurant
+        if (user && restaurant && restaurant.status === 'published') {
+            navigate('/dashboard');
         }
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-        window.location.reload();
-    };
+    }, [user, restaurant, navigate]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -87,8 +66,7 @@ const LandingPage = () => {
     };
 
     const handleServiceSelection = (type) => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!user) {
             navigate('/login');
             return;
         }
@@ -203,9 +181,15 @@ const LandingPage = () => {
                             <div className="d-flex gap-3">
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"
-                                    onClick={() => setShowServiceModal(true)}
+                                    onClick={() => {
+                                        if (user && restaurant && restaurant.status === 'published') {
+                                            navigate('/dashboard');
+                                        } else {
+                                            setShowServiceModal(true);
+                                        }
+                                    }}
                                 >
-                                    Register your Business
+                                    {user && restaurant && restaurant.status === 'published' ? 'Go to Dashboard' : 'Register your Business'}
                                 </button>
                             </div>
                         </div>

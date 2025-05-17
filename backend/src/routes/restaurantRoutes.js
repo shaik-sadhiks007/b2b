@@ -4,8 +4,11 @@ const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const auth = require('../middleware/auth');
+const authMiddleware = require('../middleware/authMiddleware');
+const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const Restaurant = require('../models/Restaurant');
 const geolib = require('geolib');
+const { uploadBase64ToCloudinary } = require('../config/cloudinary');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -210,6 +213,78 @@ router.get('/my-restaurants', auth, async (req, res) => {
     }
 });
 
+// Get restaurant profile
+router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) => {
+    try {
+        // Use the restaurant ID from the authenticated user
+
+        console.log(req.restaurant,"req.restaurant");
+        const restaurant = await Restaurant.findById(req.restaurant._id);
+
+
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        res.json(restaurant);   
+        
+    } catch (error) {
+        console.error('Error getting restaurant profile:', error);
+        res.status(500).json({ message: 'Error getting restaurant profile', error: error.message });
+    }
+});
+
+// Update restaurant profile
+router.patch('/profile', auth, restaurantMiddleware, async (req, res) => {
+    try {
+        const updateData = { ...req.body };
+        
+        // Handle image upload if new image is provided
+        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+            try {
+                const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
+                if (imageUrl) {
+                    updateData.images = {
+                        ...updateData.images,
+                        profileImage: imageUrl
+                    };
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                return res.status(500).json({ message: 'Error uploading image' });
+            }
+        }
+
+        // Remove undefined and null values from updateData
+        Object.keys(updateData).forEach(key => {
+            if (updateData[key] === undefined || updateData[key] === null) {
+                delete updateData[key];
+            }
+        });
+
+        // Update only the provided fields
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.restaurant._id,
+            { $set: updateData },
+            { 
+                new: true, 
+                runValidators: true,
+                // Only return the updated fields
+                select: Object.keys(updateData).join(' ')
+            }
+        );
+
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        res.json(restaurant);
+    } catch (error) {
+        console.error('Error updating restaurant profile:', error);
+        res.status(500).json({ message: 'Error updating restaurant profile', error: error.message });
+    }
+});
+
 // Get all restaurants for a user
 router.get('/', auth, async (req, res) => {
     try {
@@ -308,11 +383,23 @@ router.delete('/:id', auth, async (req, res) => {
 // Get all restaurants (public route - no auth required)
 router.get('/public/all', async (req, res) => {
     try {
-        const { lat, lng } = req.query;
+        const { lat, lng, category } = req.query;
+        
+        // Build query based on filters
+        let query = { status: 'published' };
+        
+        // Add category filter if provided and not "all"
+        if (category && category !== "all") {
+            // Search in both serviceType and category fields
+            query.$or = [
+                { serviceType: category },
+                { category: category }
+            ];
+        }
         
         // Get all published restaurants
-        const restaurants = await Restaurant.find({ status: 'published' })
-            .select('restaurantName serviceType images.profileImage description rating location')
+        const restaurants = await Restaurant.find(query)
+            .select('restaurantName serviceType images.profileImage description rating location category')
             .lean();
 
         // Format the response to include only necessary fields
@@ -336,7 +423,8 @@ router.get('/public/all', async (req, res) => {
                 rating: restaurant.rating || 5,
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
                 location: restaurant.location || null,
-                serviceType: restaurant.serviceType || ''
+                serviceType: restaurant.serviceType || '',
+                category: restaurant.category || ''
             };
         });
 
@@ -390,5 +478,7 @@ router.get('/public/:id', async (req, res) => {
         res.status(500).json({ message: 'Error getting restaurant', error: error.message });
     }
 });
+
+
 
 module.exports = router; 

@@ -263,6 +263,77 @@ router.put('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaura
     }
 });
 
+// Update an item in a subcategory
+router.put('/:categoryId/subcategories/:subcategoryId/items/:itemId', 
+    authMiddleware, 
+    restaurantMiddleware, 
+    async (req, res) => {
+        try {
+            const category = await Menu.findOne({ 
+                _id: req.params.categoryId,
+                restaurantId: req.restaurant._id 
+            });
+
+            if (!category) {
+                return res.status(404).json({ message: 'Category not found' });
+            }
+
+            const subcategory = category.subcategories.id(req.params.subcategoryId);
+            if (!subcategory) {
+                return res.status(404).json({ message: 'Subcategory not found' });
+            }
+
+            const item = subcategory.items.id(req.params.itemId);
+            if (!item) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+
+            // Handle photo uploads if new photos are provided
+            let photoUrls = item.photos; // Keep existing photos by default
+            if (req.body.photos && req.body.photos.length > 0) {
+                // Delete old photos from Cloudinary
+                for (const oldPhotoUrl of item.photos) {
+                    try {
+                        const publicId = oldPhotoUrl.split('/').pop().split('.')[0];
+                        await cloudinary.uploader.destroy(publicId);
+                    } catch (deleteError) {
+                        console.error('Error deleting old image from Cloudinary:', deleteError);
+                    }
+                }
+                // Upload new photos
+                photoUrls = await uploadMultipleBase64Images(req.body.photos);
+            }
+
+            // Update item fields
+            item.name = req.body.name || item.name;
+            item.foodType = req.body.foodType || item.foodType;
+            item.customisable = req.body.customisable !== undefined ? req.body.customisable : item.customisable;
+            item.basePrice = req.body.basePrice ? parseFloat(req.body.basePrice) : item.basePrice;
+            item.description = req.body.description || item.description;
+            item.isVeg = req.body.isVeg !== undefined ? req.body.isVeg : item.isVeg;
+            item.photos = photoUrls;
+            item.serviceType = req.body.serviceType || item.serviceType;
+            item.totalPrice = req.body.totalPrice ? parseFloat(req.body.totalPrice) : item.totalPrice;
+            item.packagingCharges = req.body.packagingCharges ? parseFloat(req.body.packagingCharges) : item.packagingCharges;
+            item.inStock = req.body.inStock !== undefined ? req.body.inStock : item.inStock;
+
+            const updatedCategory = await category.save();
+            
+            // Find and return the updated item
+            const updatedSubcategory = updatedCategory.subcategories.id(req.params.subcategoryId);
+            const updatedItem = updatedSubcategory.items.id(req.params.itemId);
+            
+            res.json(updatedItem);
+        } catch (error) {
+            console.error('Error updating item:', error);
+            res.status(400).json({ 
+                message: error.message,
+                details: 'Error occurred while updating menu item'
+            });
+        }
+    }
+);
+
 // Get menu items for a specific restaurant (public route - no auth required)
 router.get('/public/:restaurantId', async (req, res) => {
     try {

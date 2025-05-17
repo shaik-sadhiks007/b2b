@@ -11,14 +11,15 @@ import axios from 'axios'
 
 
 const categories = [
-    { name: "Hotel", icon: "🏨", color: "bg-red-100" },
-    { name: "Grocery", icon: "🛒", color: "bg-green-100" },
-    { name: "Medical", icon: "💊", color: "bg-blue-100" },
-    { name: "Electronics", icon: "📱", color: "bg-yellow-100" },
-    { name: "Fashion", icon: "👔", color: "bg-purple-100" },
-    { name: "Books", icon: "📚", color: "bg-orange-100" },
-    { name: "Furniture", icon: "🪑", color: "bg-teal-100" },
-    { name: "Sports", icon: "⚽", color: "bg-indigo-100" },
+    { name: "All", value: "all",  icon: "🌐", color: "bg-indigo-100" },
+    { name: "Restaurant", value: "restaurant", icon: "🏨", color: "bg-red-100" },
+    { name: "Grocery", value: "grocery", icon: "🛒", color: "bg-green-100" },
+    { name: "Medical", value: "medical", icon: "💊", color: "bg-blue-100" },
+    { name: "Electronics", value: "electronics", icon: "📱", color: "bg-yellow-100" },
+    { name: "Fashion", value: "fashion", icon: "👔", color: "bg-purple-100" },
+    { name: "Books", value: "books", icon: "📚", color: "bg-orange-100" },
+    { name: "Furniture", value: "furniture", icon: "🪑", color: "bg-teal-100" },
+    { name: "Sports", value: "sports", icon: "⚽", color: "bg-indigo-100" },
     // { name: "Add", icon: "➕", color: "bg-gray-100" },
 ]
 
@@ -28,6 +29,7 @@ const Home = () => {
     const [showLocationModal, setShowLocationModal] = useState(false)
     const [location, setLocation] = useState("")
     const [activeTab, setActiveTab] = useState("all")
+    const [selectedCategory, setSelectedCategory] = useState("all")
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
@@ -183,10 +185,15 @@ const Home = () => {
                 // Get location from localStorage if available
                 const savedLocation = localStorage.getItem('userLocation');
                 let url = 'http://localhost:5000/api/restaurants/public/all';
-                
+
+                // Add category to query params if not "all"
+                if (selectedCategory !== "all") {
+                    url += `?category=${encodeURIComponent(selectedCategory)}`;
+                }
+
                 if (savedLocation) {
                     const { coordinates } = JSON.parse(savedLocation);
-                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
+                    url += `${selectedCategory !== "all" ? '&' : '?'}lat=${coordinates.lat}&lng=${coordinates.lng}`;
                 }
 
                 const response = await axios.get(url);
@@ -199,7 +206,7 @@ const Home = () => {
             }
         };
         fetchRestaurants();
-    }, [localStorage.getItem('userLocation')]);
+    }, [localStorage.getItem('userLocation'), selectedCategory]);
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -255,7 +262,7 @@ const Home = () => {
                         </div>
 
                         {/* Search Input */}
-                        <div 
+                        <div
                             className="flex-1 flex items-center gap-2 bg-white rounded-full border-2 px-4 py-3 cursor-pointer hover:border-blue-500 transition-colors"
                             onClick={() => navigate('/search')}
                         >
@@ -269,8 +276,6 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Category shortcuts */}
-                    <CategoryShortcuts categories={categories} />
                 </div>
 
                 {/* Additional content to enable scrolling */}
@@ -295,13 +300,20 @@ const Home = () => {
                         {/* Tab content */}
                         {activeTab === "all" && (
                             <>
+                                {/* Category shortcuts */}
+                                <CategoryShortcuts 
+                                    categories={categories} 
+                                    selectedCategory={selectedCategory}
+                                    onCategorySelect={(category) => setSelectedCategory(category.value)}
+                                />
+
                                 {restaurants.length === 0 ? (
-                                    <div className="text-center py-8 col-span-full">
+                                    <div className="text-center py-8 col-span-full mt-5">
                                         <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
                                         <p className="text-gray-500">Please try searching in a different area</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
                                         {restaurants.map((restaurant) => (
                                             <div
                                                 key={restaurant._id}

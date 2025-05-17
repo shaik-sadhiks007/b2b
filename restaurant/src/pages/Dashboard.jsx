@@ -8,6 +8,7 @@ import Orders from '../components/Orders';
 import '../styles/Dashboard.css';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
+import { toast } from 'react-toastify';
 
 const Dashboard = () => {
     const { user, token } = useContext(AuthContext);
@@ -323,41 +324,62 @@ const Dashboard = () => {
         );
     };
 
-    const handleEditItem = (categoryId, subcategoryId, itemId, itemData) => {
-        // Create a new item with updated data
-        const updatedItem = itemData;
+    const handleEditItem = async (categoryId, subcategoryId, itemId, itemData) => {
+        try {
+            // First update the backend
+            const response = await fetch(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(itemData)
+            });
 
-        // Update the categories state with the edited item
-        const updatedCategories = categories.map(category => {
-            if (category._id === categoryId) {
-                return {
-                    ...category,
-                    subcategories: category.subcategories.map(subcategory => {
-                        if (subcategory._id === subcategoryId) {
-                            return {
-                                ...subcategory,
-                                items: subcategory.items.map(item =>
-                                    item._id === itemId ? updatedItem : item
-                                )
-                            };
-                        }
-                        return subcategory;
-                    })
-                };
+            if (!response.ok) {
+                throw new Error('Failed to update item');
             }
-            return category;
-        });
 
-        // Update the state with the new categories
-        setCategories(updatedCategories);
+            const updatedItem = await response.json();
 
-        // Force a re-render by updating the selectedSubcategory
-        const updatedSubcategory = updatedCategories
-            .find(cat => cat._id === categoryId)
-            ?.subcategories.find(sub => sub._id === subcategoryId);
+            // Update the categories state with the edited item
+            const updatedCategories = categories.map(category => {
+                if (category._id === categoryId) {
+                    return {
+                        ...category,
+                        subcategories: category.subcategories.map(subcategory => {
+                            if (subcategory._id === subcategoryId) {
+                                return {
+                                    ...subcategory,
+                                    items: subcategory.items.map(item =>
+                                        item._id === itemId ? updatedItem : item
+                                    )
+                                };
+                            }
+                            return subcategory;
+                        })
+                    };
+                }
+                return category;
+            });
 
-        if (updatedSubcategory) {
-            setSelectedSubcategory({ ...updatedSubcategory });
+            // Update the state with the new categories
+            setCategories(updatedCategories);
+
+            // Force a re-render by updating the selectedSubcategory
+            const updatedSubcategory = updatedCategories
+                .find(cat => cat._id === categoryId)
+                ?.subcategories.find(sub => sub._id === subcategoryId);
+
+            if (updatedSubcategory) {
+                setSelectedSubcategory({ ...updatedSubcategory });
+            }
+
+            // Show success message
+            toast.success('Item updated successfully');
+        } catch (error) {
+            console.error('Error updating item:', error);
+            toast.error('Failed to update item');
         }
     };
 

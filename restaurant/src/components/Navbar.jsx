@@ -1,14 +1,21 @@
 import { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MobileMenuContext } from '../context/MobileMenuContext';
+import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
     const [isOnline, setIsOnline] = useState(false);
-    const [user, setUser] = useState(null);
+    const { user, handleLogout } = useContext(AuthContext);
     const { setIsMobileMenuOpen } = useContext(MobileMenuContext);
+    const navigate = useNavigate();
 
     const onStatusChange = (status) => {
         setIsOnline(status === 'online');
+    };
+
+    const handleLogoutClick = () => {
+        handleLogout();
+        navigate('/');
     };
 
     return (
@@ -28,14 +35,14 @@ const Navbar = () => {
                     </div>
                 </div>
                 <div className="d-flex align-items-center gap-4">
-                    <button className="btn btn-link text-dark p-0">
+                    {/* <button className="btn btn-link text-dark p-0">
                         <i className="bi bi-bell fs-5"></i>
                     </button>
                     <button className="btn btn-link text-dark p-0">
                         <i className="bi bi-gear fs-5"></i>
-                    </button>
+                    </button> */}
                     <div className="d-flex align-items-center gap-2">
-                        <div className="dropdown">
+                        {/* <div className="dropdown">
                             <button
                                 className="btn btn-sm dropdown-toggle d-flex align-items-center gap-1"
                                 type="button"
@@ -63,17 +70,16 @@ const Navbar = () => {
                                     </button>
                                 </li>
                             </ul>
-                        </div>
+                        </div> */}
                         <div className="dropdown">
                             <button className="btn btn-link text-dark p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                                 <span className="text-dark">{user?.username || 'User'}</span>
                                 <i className="bi bi-person-circle fs-5"></i>
                             </button>
                             <ul className="dropdown-menu dropdown-menu-end rounded-3 shadow-sm">
-                                <li><a className="dropdown-item rounded-2" href="#">Profile</a></li>
-                                <li><a className="dropdown-item rounded-2" href="#">Settings</a></li>
+                                <li><Link className="dropdown-item rounded-2" to="/profile">Profile</Link></li>
                                 <li><hr className="dropdown-divider" /></li>
-                                <li><a className="dropdown-item rounded-2" href="#">Logout</a></li>
+                                <li><button className="dropdown-item rounded-2" onClick={handleLogoutClick}>Logout</button></li>
                             </ul>
                         </div>
                     </div>

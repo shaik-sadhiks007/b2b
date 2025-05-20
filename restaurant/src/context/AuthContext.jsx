@@ -4,7 +4,7 @@ import axios from 'axios';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState([]);
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [restaurant, setRestaurant] = useState(null);
@@ -79,6 +79,12 @@ export const AuthProvider = ({ children }) => {
         setToken(newToken);
         await fetchUserData(newToken);
     }, [fetchUserData]);
+
+    // Login function
+    const login = useCallback(async (newToken) => {
+        console.log('Logging in with token:', newToken);
+        await updateToken(newToken);
+    }, [updateToken]);
 
     // Function to handle restaurant registration click
     const handleRestaurantRegistration = useCallback(() => {
@@ -172,7 +178,8 @@ export const AuthProvider = ({ children }) => {
         fetchUserData,
         updateToken,
         handleRestaurantRegistration,
-        fetchRestaurantData
+        fetchRestaurantData,
+        login
     };
 
     return (

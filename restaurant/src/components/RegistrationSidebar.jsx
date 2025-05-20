@@ -4,7 +4,7 @@ const RegistrationSidebar = ({ currentStep, onStepClick }) => {
     const steps = [
         {
             number: 1,
-            title: 'Restaurant Information',
+            title: 'Business Information',
             icon: 'bi-shop'
         },
         {

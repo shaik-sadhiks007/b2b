@@ -412,7 +412,7 @@ const Profile = () => {
                 setIsEditing(false);
                 return;
             }
-
+            
             const response = await axios.patch('http://localhost:5000/api/restaurants/profile', changedData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -922,34 +922,34 @@ const Profile = () => {
                                                         </div>
                                                     </div>
                                                     <div className="col-md-9">
-                                                        <div className="row g-3">
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Restaurant Name</h6>
-                                                                <p className="mb-0">{restaurant?.restaurantName}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Owner Name</h6>
-                                                                <p className="mb-0">{restaurant?.ownerName}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
-                                                                <p className="mb-0">{restaurant?.serviceType}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Primary Phone</h6>
-                                                                <p className="mb-0">{restaurant?.contact?.primaryPhone}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">WhatsApp Number</h6>
-                                                                <p className="mb-0">{restaurant?.contact?.whatsappNumber}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Email</h6>
-                                                                <p className="mb-0">{restaurant?.contact?.email}</p>
-                                                            </div>
-                                                            <div className="col-md-6">
-                                                                <h6 className="text-muted mb-2 fw-medium">Website</h6>
-                                                                <p className="mb-0">{restaurant?.contact?.website || 'Not provided'}</p>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Restaurant Name</h6>
+                                                <p className="mb-0">{restaurant?.restaurantName}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Owner Name</h6>
+                                                <p className="mb-0">{restaurant?.ownerName}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
+                                                <p className="mb-0">{restaurant?.serviceType}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Primary Phone</h6>
+                                                <p className="mb-0">{restaurant?.contact?.primaryPhone}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">WhatsApp Number</h6>
+                                                <p className="mb-0">{restaurant?.contact?.whatsappNumber}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Email</h6>
+                                                <p className="mb-0">{restaurant?.contact?.email}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Website</h6>
+                                                <p className="mb-0">{restaurant?.contact?.website || 'Not provided'}</p>
                                                             </div>
                                                         </div>
                                                     </div>

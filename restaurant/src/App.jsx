@@ -14,6 +14,7 @@ import InStoreBilling from './components/InStoreBilling'
 import OrderHistory from './components/OrderHistory'
 import { ToastContainer } from 'react-toastify'
 import Profile from './components/Profile'
+import ForgotPassword from './pages/ForgotPassword'
 
 
 
@@ -36,6 +37,7 @@ function App() {
             <Route path='/instore-orders' element={<InStoreBilling />} />
             <Route path='/order-history' element={<OrderHistory />} />
             <Route path='/profile' element={<Profile />} />
+            <Route path='/forgot-password' element={<ForgotPassword />} />
           </Routes>
         </Router>
       </AuthProvider>

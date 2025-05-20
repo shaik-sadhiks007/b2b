@@ -94,13 +94,13 @@ const LandingPage = () => {
                                     {/* Both food delivery & dining */}
                                     <div
                                         className="p-4 border rounded cursor-pointer hover-shadow"
-                                        onClick={() => handleServiceSelection('both')}
+                                        onClick={() => handleServiceSelection('BOTH')}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <h6 className="mb-2 fw-bold">Both food delivery & dining</h6>
-                                                <p className="mb-0 text-muted small">List your Business on both the delivery and dining sections</p>
+                                                <h6 className="mb-2 fw-bold">Both Delivery & Pickup</h6>
+                                                <p className="mb-0 text-muted small">List your Business on both the delivery and pickup sections</p>
                                             </div>
                                             <div className="fs-4 text-primary">
                                                 <i className="bi bi-arrow-right-circle"></i>
@@ -111,12 +111,12 @@ const LandingPage = () => {
                                     {/* Food delivery only */}
                                     <div
                                         className="p-4 border rounded cursor-pointer hover-shadow"
-                                        onClick={() => handleServiceSelection('delivery')}
+                                        onClick={() => handleServiceSelection('DELIVERY')}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <h6 className="mb-2 fw-bold">Food delivery only</h6>
+                                                <h6 className="mb-2 fw-bold">Delivery only</h6>
                                                 <p className="mb-0 text-muted small">List your Business in the delivery section only</p>
                                             </div>
                                             <div className="fs-4 text-primary">
@@ -128,13 +128,13 @@ const LandingPage = () => {
                                     {/* Dining only */}
                                     <div
                                         className="p-4 border rounded cursor-pointer hover-shadow"
-                                        onClick={() => handleServiceSelection('dining')}
+                                        onClick={() => handleServiceSelection('PICKUP')}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <h6 className="mb-2 fw-bold">Dining only</h6>
-                                                <p className="mb-0 text-muted small">List your Business in the dining section only</p>
+                                                <h6 className="mb-2 fw-bold">Pickup only</h6>
+                                                <p className="mb-0 text-muted small">List your Business in the pickup section only</p>
                                             </div>
                                             <div className="fs-4 text-primary">
                                                 <i className="bi bi-arrow-right-circle"></i>

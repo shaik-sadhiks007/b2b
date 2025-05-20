@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
     const { user, loading, handleLogout, token } = useContext(AuthContext);
@@ -24,7 +25,7 @@ const Header = () => {
             style={{ transition: 'all 0.3s ease-in-out' }}
         >
             <div className="container">
-                <a className={`navbar-brand fw-bold ${isScrolled ? 'text-dark' : 'text-white'}`} href="/">B2B</a>
+                <Link className={`navbar-brand fw-bold ${isScrolled ? 'text-dark' : 'text-white'}`} to="/">B2B</Link>
                 <div className="ms-auto">
                     {loading ? (
                         <div className="spinner-border spinner-border-sm text-primary" role="status">
@@ -43,11 +44,11 @@ const Header = () => {
                             </button>
                         </div>
                     ) : (
-                        <a href="http://localhost:5174/login" target="_blank" rel="noopener noreferrer">
+                        <Link to="/login">
                             <button className={`btn ${isScrolled ? 'btn-outline-primary' : 'btn-outline-light'}`}>
                                 Login
                             </button>
-                        </a>
+                        </Link>
                     )}
                 </div>
             </div>

@@ -142,7 +142,7 @@ const RestaurantInfo = ({
     return (
         <form onSubmit={handleSubmit} className="restaurant-info-form">
             <div className="mb-3">
-                <label className="form-label">Restaurant Name</label>
+                <label className="form-label">Business Name</label>
                 <input
                     type="text"
                     className="form-control"
@@ -174,6 +174,7 @@ const RestaurantInfo = ({
                     value={formData.contact?.email || ''}
                     onChange={handleChange}
                     required
+                    disabled
                 />
             </div>
 

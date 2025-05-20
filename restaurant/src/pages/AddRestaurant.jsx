@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
@@ -14,6 +14,8 @@ import RegistrationSidebar from '../components/RegistrationSidebar';
 import Header from '../components/Header';
 import axios from 'axios';
 import restaurantService from '../services/restaurantService';
+import { AuthContext } from '../context/AuthContext';
+import { CloudCog } from 'lucide-react';
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -51,10 +53,12 @@ const AddRestaurant = () => {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
+    const { user } = useContext(AuthContext);
+
     const [formData, setFormData] = useState({
         restaurantName: '',
         ownerName: '',
-        serviceType: 'DINE_IN',
+        serviceType: serviceType || '',
         address: {
             shopNo: '',
             floor: '',
@@ -66,7 +70,7 @@ const AddRestaurant = () => {
         contact: {
             primaryPhone: '',
             whatsappNumber: '',
-            email: '',
+            email: '',  // Initialize as empty string
             website: ''
         },
         sameAsOwnerPhone: false,
@@ -157,6 +161,19 @@ const AddRestaurant = () => {
     useEffect(() => {
         validateForm();
     }, [formData, selectedLocation]);
+
+    // Add useEffect to update email when user data is loaded
+    useEffect(() => {
+        if (user?.email) {
+            setFormData(prev => ({
+                ...prev,
+                contact: {
+                    ...prev.contact,
+                    email: user.email
+                }
+            }));
+        }
+    }, [user]);
 
     // Debounced search function
     const debouncedSearch = useCallback(
@@ -372,7 +389,7 @@ const AddRestaurant = () => {
                             // Step 1: Basic Information
                             formDataToSend.append('formData', JSON.stringify({
                                 restaurantName: formData.restaurantName,
-                                serviceType:  'DINE_IN',
+                                serviceType:  formData.serviceType,
                                 ownerName: formData.ownerName,
                                 sameAsOwnerPhone: formData.sameAsOwnerPhone || false,
                                 whatsappUpdates: formData.whatsappUpdates || false,
@@ -828,7 +845,7 @@ const AddRestaurant = () => {
         <div className="container-fluid p-0">
             <Header />
             <div className="container mt-5 pt-5">
-                <h2>Add Your Restaurant</h2>
+                <h2>Add Your Business</h2>
                 <p>Selected service type: {serviceType}</p>
                 <div className="row">
                     <div className="col-md-3">

@@ -6,18 +6,18 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-    try {
-        const serviceAccount = require('../../serviceAccountKey.json');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-    } catch (error) {
-        console.error('Error initializing Firebase Admin:', error);
-        throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
-    }
-}
+// // Initialize Firebase Admin if not already initialized
+// if (!admin.apps.length) {
+//     try {
+//         const serviceAccount = require('../../serviceAccountKey.json');
+//         admin.initializeApp({
+//             credential: admin.credential.cert(serviceAccount)
+//         });
+//     } catch (error) {
+//         console.error('Error initializing Firebase Admin:', error);
+//         throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
+//     }
+// }
 
 // Generate JWT token
 const generateToken = (user) => {

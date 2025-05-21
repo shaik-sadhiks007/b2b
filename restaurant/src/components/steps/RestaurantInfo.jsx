@@ -4,6 +4,7 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { toast } from 'react-toastify';
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -92,12 +93,43 @@ const RestaurantInfo = ({
     isFormValid,
     onNext
 }) => {
+    const validatePhoneNumber = (phone) => {
+        // Remove any non-digit characters for validation
+        const digitsOnly = phone.replace(/\D/g, '');
+        // Check if the number is 10 digits
+        return digitsOnly.length === 10;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!isFormValid) return;
+        
+        // Validate required fields
+        const errors = [];
+        if (!formData.restaurantName) errors.push('Business Name is required');
+        if (!formData.ownerName) errors.push('Owner Name is required');
+        
+        // Phone number validation
+        if (!formData.contact?.primaryPhone) {
+            errors.push('Primary Phone Number is required');
+        } else if (!validatePhoneNumber(formData.contact.primaryPhone)) {
+            errors.push('Primary Phone Number must be 10 digits');
+        }
 
-        // Ensure address object exists
-        const address = formData.address || {};
+        // WhatsApp number validation (optional)
+        if (formData.contact?.whatsappNumber && !validatePhoneNumber(formData.contact.whatsappNumber)) {
+            errors.push('WhatsApp Number must be 10 digits');
+        }
+
+        if (!formData.address?.shopNo) errors.push('Shop No. / Building No. is required');
+        if (!formData.address?.locality) errors.push('Area / Sector / Locality is required');
+        if (!selectedLocation) errors.push('Please select a location on the map');
+
+
+        console.log(errors,"errors")
+        if (errors.length > 0) {
+            errors.forEach(error => toast.error(error));
+            return;
+        }
 
         // Create the step data with the exact structure needed
         const stepData = {
@@ -113,11 +145,11 @@ const RestaurantInfo = ({
                 website: formData.contact?.website || ''
             },
             address: {
-                shopNo: address.shopNo || '',
-                floor: address.floor || '',
-                locality: address.locality || '',
-                landmark: address.landmark || '',
-                city: address.city || '',
+                shopNo: formData.address?.shopNo || '',
+                floor: formData.address?.floor || '',
+                locality: formData.address?.locality || '',
+                landmark: formData.address?.landmark || '',
+                city: formData.address?.city || '',
                 fullAddress: selectedLocation ? selectedLocation.display_name : ''
             },
             location: {
@@ -127,6 +159,21 @@ const RestaurantInfo = ({
         };
 
         onNext(stepData);
+    };
+
+    const handlePhoneChange = (e) => {
+        const { name, value } = e.target;
+        // Remove any non-digit characters
+        const digitsOnly = value.replace(/\D/g, '');
+        // Limit to 10 digits
+        const truncatedValue = digitsOnly.slice(0, 10);
+        
+        handleChange({
+            target: {
+                name,
+                value: truncatedValue
+            }
+        });
     };
 
     const handleAddressChange = (e) => {
@@ -142,31 +189,29 @@ const RestaurantInfo = ({
     return (
         <form onSubmit={handleSubmit} className="restaurant-info-form">
             <div className="mb-3">
-                <label className="form-label">Business Name</label>
+                <label className="form-label">Business Name <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
                     name="restaurantName"
                     value={formData.restaurantName}
                     onChange={handleChange}
-                    required
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Owner Name</label>
+                <label className="form-label">Owner Name <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
                     name="ownerName"
                     value={formData.ownerName}
                     onChange={handleChange}
-                    required
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Email</label>
+                <label className="form-label">Email <span className="text-danger">*</span></label>
                 <input
                     type="email"
                     className="form-control"
@@ -179,27 +224,35 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Primary Phone Number</label>
-                <input
-                    type="tel"
-                    className="form-control"
-                    name="contact.primaryPhone"
-                    value={formData.contact?.primaryPhone || ''}
-                    onChange={handleChange}
-                    required
-                />
+                <label className="form-label">Primary Phone Number <span className="text-danger">*</span></label>
+                <div className="input-group">
+                    <span className="input-group-text">+91</span>
+                    <input
+                        type="tel"
+                        className="form-control"
+                        name="contact.primaryPhone"
+                        value={formData.contact?.primaryPhone || ''}
+                        onChange={handlePhoneChange}
+                        placeholder="Enter 10 digit mobile number"
+                        maxLength="10"
+                    />
+                </div>
             </div>
 
             <div className="mb-3">
-                <label className="form-label">WhatsApp Number</label>
-                <input
-                    type="tel"
-                    className="form-control"
-                    name="contact.whatsappNumber"
-                    value={formData.contact?.whatsappNumber || ''}
-                    onChange={handleChange}
-                    required
-                />
+                <label className="form-label">WhatsApp Number <span className="text-muted">(Optional)</span></label>
+                <div className="input-group">
+                    <span className="input-group-text">+91</span>
+                    <input
+                        type="tel"
+                        className="form-control"
+                        name="contact.whatsappNumber"
+                        value={formData.contact?.whatsappNumber || ''}
+                        onChange={handlePhoneChange}
+                        placeholder="Enter 10 digit mobile number"
+                        maxLength="10"
+                    />
+                </div>
             </div>
 
             <div className="mb-3">
@@ -245,7 +298,7 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Website (Optional)</label>
+                <label className="form-label">Website <span className="text-muted">(Optional)</span></label>
                 <input
                     type="url"
                     className="form-control"
@@ -256,19 +309,18 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Shop No. / Building No.</label>
+                <label className="form-label">Shop No. / Building No. <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
                     name="shopNo"
                     value={formData.address?.shopNo || ''}
                     onChange={handleAddressChange}
-                    required
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Floor / Tower (optional)</label>
+                <label className="form-label">Floor / Tower <span className="text-muted">(Optional)</span></label>
                 <input
                     type="text"
                     className="form-control"
@@ -279,19 +331,18 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Area / Sector / Locality</label>
+                <label className="form-label">Area / Sector / Locality <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
                     name="locality"
                     value={formData.address?.locality || ''}
                     onChange={handleAddressChange}
-                    required
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Landmark (optional)</label>
+                <label className="form-label">Landmark <span className="text-muted">(Optional)</span></label>
                 <input
                     type="text"
                     className="form-control"
@@ -302,7 +353,7 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Search Location</label>
+                <label className="form-label">Search Location <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
@@ -397,7 +448,6 @@ const RestaurantInfo = ({
             <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={!isFormValid}
             >
                 Next
             </button>

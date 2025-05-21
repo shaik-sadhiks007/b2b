@@ -182,8 +182,16 @@ const LandingPage = () => {
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"
                                     onClick={() => {
-                                        if (user && restaurant && restaurant.status === 'published') {
-                                            navigate('/dashboard');
+                                        if (user && restaurant) {
+                                            if (restaurant.status === 'published') {
+                                                navigate('/dashboard');
+                                            } else if (restaurant.status === 'review') {
+                                                navigate('/review');
+                                            } else if (restaurant.status === 'draft') {
+                                                navigate('/add-restaurant');
+                                            } else {
+                                                setShowServiceModal(true);
+                                            }
                                         } else {
                                             setShowServiceModal(true);
                                         }

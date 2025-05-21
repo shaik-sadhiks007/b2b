@@ -15,6 +15,7 @@ import OrderHistory from './components/OrderHistory'
 import { ToastContainer } from 'react-toastify'
 import Profile from './components/Profile'
 import ForgotPassword from './pages/ForgotPassword'
+import Review from './components/Review'
 
 
 
@@ -38,6 +39,7 @@ function App() {
             <Route path='/order-history' element={<OrderHistory />} />
             <Route path='/profile' element={<Profile />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
+            <Route path='/review' element={<Review />} />
           </Routes>
         </Router>
       </AuthProvider>

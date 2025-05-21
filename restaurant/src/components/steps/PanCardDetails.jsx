@@ -1,39 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const PanCardDetails = ({
     panDetails,
     setPanDetails,
-    panCardImage,
-    setPanCardImage,
-    fileInputRef,
-    handleImageUpload,
+    formData,
+    setFormData,
     isFormValid,
-    onNext
+    onNext,
 }) => {
-    const [previewImage, setPreviewImage] = useState(null);
+    const [previewImages, setPreviewImages] = useState({
+        profileImage: null,
+        panCardImage: null,
+        gstImage: null,
+        fssaiImage: null
+    });
 
-    const handleProfileImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
-            handleImageUpload(file, 'profileImage');
+    // Initialize preview images from formData if they exist
+    useEffect(() => {
+        if (formData?.images) {
+            setPreviewImages(prev => ({
+                ...prev,
+                profileImage: formData.images.profileImage || null,
+                panCardImage: formData.images.panCardImage || null,
+                gstImage: formData.images.gstImage || null,
+                fssaiImage: formData.images.fssaiImage || null
+            }));
         }
+    }, [formData]);
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
+    const validateFileSize = (file) => {
+        if (file.size > MAX_FILE_SIZE) {
+            toast.error('File size should not exceed 5MB');
+            return false;
+        }
+        return true;
     };
 
-    const handlePanCardImageChange = (e) => {
+    const handleImageChange = (e, type) => {
         const file = e.target.files[0];
         if (file) {
-            handleImageUpload(file, 'panCardImage');
+            // Validate file size
+            if (!validateFileSize(file)) {
+                e.target.value = ''; // Clear the input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewImages(prev => ({
+                    ...prev,
+                    [type]: reader.result
+                }));
+                
+                // Update formData with the image
+                setFormData(prev => ({
+                    ...prev,
+                    images: {
+                        ...prev.images,
+                        [type]: reader.result // Store base64 image
+                    }
+                }));
+            };
+            reader.readAsDataURL(file);
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!isFormValid) return;
+        
+        // Validate profile image
+        if (!previewImages.profileImage) {
+            toast.error('Profile Image is required');
+            return;
+        }
 
         const stepData = {
             panDetails: {
@@ -43,122 +85,149 @@ const PanCardDetails = ({
                 address: panDetails.address || '',
             },
             images: {
-                profileImage: previewImage ? panCardImage : null,
-                panCardImage: panCardImage
+                profileImage: previewImages.profileImage,
+                panCardImage: previewImages.panCardImage,
+                gstImage: previewImages.gstImage,
+                fssaiImage: previewImages.fssaiImage
             }
         };
 
         onNext(stepData);
     };
 
+    const renderImageUpload = (type, label, isRequired = false) => (
+        <div className="col-md-6 mb-4">
+            <div className="card h-100">
+                <div className="card-body">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                        {label} {isRequired && <span className="text-danger">*</span>}
+                    </label>
+                    <div className="d-flex align-items-center justify-content-center" 
+                         style={{ height: '200px', border: '2px dashed #dee2e6', borderRadius: '4px', overflow: 'hidden' }}>
+                        {previewImages[type] ? (
+                            <div className="position-relative w-100 h-100">
+                                <img 
+                                    src={previewImages[type]} 
+                                    alt={`${label} Preview`} 
+                                    className="img-fluid" 
+                                    style={{ 
+                                        maxHeight: '100%', 
+                                        width: '100%', 
+                                        objectFit: 'cover' 
+                                    }} 
+                                />
+                                {!previewImages[type].startsWith('data:image') && (
+                                    <div className="position-absolute top-0 end-0 p-2">
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-danger"
+                                            onClick={() => {
+                                                setPreviewImages(prev => ({
+                                                    ...prev,
+                                                    [type]: null
+                                                }));
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    images: {
+                                                        ...prev.images,
+                                                        [type]: null
+                                                    }
+                                                }));
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-center">
+                                <span className="text-muted mb-2">Upload Image</span>
+                                {isRequired && <div className="text-danger small mt-1">Required</div>}
+                                <div className="text-muted small mt-1">Max size: 5MB</div>
+                            </div>
+                        )}
+                    </div>
+                    {(!previewImages[type] || previewImages[type].startsWith('data:image')) && (
+                        <input
+                            type="file"
+                            className="form-control mt-3"
+                            accept="image/*"
+                            onChange={(e) => handleImageChange(e, type)}
+                            required={isRequired}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <form onSubmit={handleSubmit} className="pan-card-details-form">
             <div className="container mx-auto px-4 py-8">
                 <div className="max-w-2xl mx-auto">
-                    <h2 className="text-2xl font-semibold mb-6">PAN Card Details</h2>
+                    <h2 className="text-2xl font-semibold mb-6">Business Documents</h2>
                     
-                    {/* Profile Image Upload */}
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
-                            Profile Image
-                        </label>
-                        <div className="flex items-center space-x-4">
-                            <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                                {previewImage ? (
-                                    <img 
-                                        src={previewImage} 
-                                        alt="Profile Preview" 
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-gray-400">Upload Image</span>
-                                )}
-                            </div>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleProfileImageChange}
-                                className="hidden"
-                                id="profile-image"
-                            />
-                            <label 
-                                htmlFor="profile-image"
-                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 cursor-pointer"
-                            >
-                                Choose Image
+                    {/* Image Uploads */}
+                    <div className="row">
+                        {renderImageUpload('profileImage', 'Profile Image Of Business', true)}
+                        {renderImageUpload('panCardImage', 'PAN Card Image')}
+                        {/* {renderImageUpload('gstImage', 'GST Certificate')}
+                        {renderImageUpload('fssaiImage', 'FSSAI Certificate')} */}
+                    </div>
+
+                    {/* PAN Card Details */}
+                    <div className="mt-4">
+                        <div className="mb-6">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                PAN Card Number
                             </label>
+                            <input
+                                type="text"
+                                value={panDetails.panNumber || ''}
+                                onChange={(e) => setPanDetails({ ...panDetails, panNumber: e.target.value })}
+                                className="form-control"
+                                placeholder="Enter PAN Card Number"
+                            />
                         </div>
-                        <p className="text-sm text-gray-500 mt-2">
-                            Upload a clear, recent photo of yourself
-                        </p>
-                    </div>
 
-                    {/* Existing PAN Card fields */}
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
-                            PAN Card Number
-                        </label>
-                        <input
-                            type="text"
-                            value={panDetails.panNumber || ''}
-                            onChange={(e) => setPanDetails({ ...panDetails, panNumber: e.target.value })}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            placeholder="Enter PAN Card Number"
-                        />
-                    </div>
+                        <div className="mb-3">
+                            <label className="form-label">Name on PAN</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={panDetails.name || ''}
+                                onChange={(e) => setPanDetails({ ...panDetails, name: e.target.value })}
+                            />
+                        </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Name on PAN</label>
-                        <input
-                            type="text"
-                            className="form-control"
-                            value={panDetails.name || ''}
-                            onChange={(e) => setPanDetails({ ...panDetails, name: e.target.value })}
-                        />
-                    </div>
+                        <div className="mb-3">
+                            <label className="form-label">Date of Birth</label>
+                            <input
+                                type="date"
+                                className="form-control"
+                                value={panDetails.dateOfBirth || ''}
+                                onChange={(e) => setPanDetails({ ...panDetails, dateOfBirth: e.target.value })}
+                            />
+                        </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Date of Birth</label>
-                        <input
-                            type="date"
-                            className="form-control"
-                            value={panDetails.dateOfBirth || ''}
-                            onChange={(e) => setPanDetails({ ...panDetails, dateOfBirth: e.target.value })}
-                        />
-                    </div>
+                        <div className="mb-3">
+                            <label className="form-label">Address</label>
+                            <textarea
+                                className="form-control"
+                                value={panDetails.address || ''}
+                                onChange={(e) => setPanDetails({ ...panDetails, address: e.target.value })}
+                                rows="3"
+                            ></textarea>
+                        </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Address</label>
-                        <textarea
-                            className="form-control"
-                            value={panDetails.address || ''}
-                            onChange={(e) => setPanDetails({ ...panDetails, address: e.target.value })}
-                            rows="3"
-                        ></textarea>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                        >
+                            Next
+                        </button>
                     </div>
-
-                    <div className="mb-3">
-                        <label className="form-label">Upload PAN Card Image</label>
-                        <input
-                            type="file"
-                            className="form-control"
-                            accept="image/*"
-                            ref={fileInputRef}
-                            onChange={handlePanCardImageChange}
-                        />
-                        {panCardImage && typeof panCardImage === 'string' && (
-                            <div className="mt-2">
-                                <img src={panCardImage} alt="PAN Card" className="img-thumbnail" style={{ maxHeight: '200px' }} />
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                    >
-                        Next
-                    </button>
                 </div>
             </div>
         </form>

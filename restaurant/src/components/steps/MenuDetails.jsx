@@ -5,16 +5,12 @@ const MenuDetails = ({
     categories,
     selectedCategory,
     setSelectedCategory,
-    operatingHours,
-    setOperatingHours,
+    formData,
+    setFormData,
     isFormValid,
     onNext
 }) => {
     const [showTimeSlots, setShowTimeSlots] = useState(false);
-    const [defaultTimes, setDefaultTimes] = useState({
-        openTime: operatingHours.defaultOpenTime || '09:00',
-        closeTime: operatingHours.defaultCloseTime || '22:00'
-    });
 
     const getCategoryIcon = (categoryName) => {
         switch(categoryName.toLowerCase()) {
@@ -24,16 +20,16 @@ const MenuDetails = ({
                 return <FaShoppingCart size={32} />;
             case 'pharmacy':
                 return <FaPrescriptionBottleAlt size={32} />;
-            case 'bakery':
-                return <FaCoffee size={32} />;
-            case 'fruits & vegetables':
-                return <FaAppleAlt size={32} />;
-            case 'meat & fish':
-                return <FaFish size={32} />;
-            case 'dairy products':
-                return <FaGlassWhiskey size={32} />;
-            case 'stationery':
-                return <FaPencilAlt size={32} />;
+            // case 'bakery':
+            //     return <FaCoffee size={32} />;
+            // case 'fruits & vegetables':
+            //     return <FaAppleAlt size={32} />;
+            // case 'meat & fish':
+            //     return <FaFish size={32} />;
+            // case 'dairy products':
+            //     return <FaGlassWhiskey size={32} />;
+            // case 'stationery':
+            //     return <FaPencilAlt size={32} />;
             default:
                 return <FaHotel size={32} />;
         }
@@ -46,58 +42,56 @@ const MenuDetails = ({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!isFormValid) return;
+        
+        if (!isFormValid) {
+            console.log('Form is not valid, returning');
+            return;
+        }
 
         const stepData = {
-            category: selectedCategory?._id || '',
-            operatingHours: {
-                defaultOpenTime: defaultTimes.openTime,
-                defaultCloseTime: defaultTimes.closeTime,
-                timeSlots: {
-                    monday: operatingHours.monday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    tuesday: operatingHours.tuesday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    wednesday: operatingHours.wednesday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    thursday: operatingHours.thursday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    friday: operatingHours.friday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    saturday: operatingHours.saturday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime },
-                    sunday: operatingHours.sunday || { isOpen: true, openTime: defaultTimes.openTime, closeTime: defaultTimes.closeTime }
-                }
-            }
+            category: selectedCategory?.id || '',
+            operatingHours: formData.operatingHours
         };
 
+        console.log(stepData,'md steps')
         onNext(stepData);
     };
 
     const handleOperatingHoursChange = (day, field, value) => {
-        setOperatingHours(prev => ({
+        setFormData(prev => ({
             ...prev,
-            [day]: {
-                ...prev[day],
-                [field]: value
+            operatingHours: {
+                ...prev.operatingHours,
+                timeSlots: {
+                    ...prev.operatingHours.timeSlots,
+                    [day]: {
+                        ...prev.operatingHours.timeSlots[day],
+                        [field]: value
+                    }
+                }
             }
         }));
     };
 
     const handleDefaultTimeChange = (field, value) => {
-        setDefaultTimes(prev => ({
+        setFormData(prev => ({
             ...prev,
-            [field]: value
-        }));
-
-        // Update all open days with the new default time
-        const updatedHours = {};
-        Object.keys(operatingHours).forEach(day => {
-            if (day !== 'defaultOpenTime' && day !== 'defaultCloseTime' && operatingHours[day].isOpen) {
-                updatedHours[day] = {
-                    ...operatingHours[day],
-                    [field]: value
-                };
+            operatingHours: {
+                ...prev.operatingHours,
+                defaultOpenTime: field === 'openTime' ? value : prev.operatingHours.defaultOpenTime,
+                defaultCloseTime: field === 'closeTime' ? value : prev.operatingHours.defaultCloseTime,
+                timeSlots: Object.keys(prev.operatingHours.timeSlots).reduce((acc, day) => {
+                    if (prev.operatingHours.timeSlots[day].isOpen) {
+                        acc[day] = {
+                            ...prev.operatingHours.timeSlots[day],
+                            [field]: value
+                        };
+                    } else {
+                        acc[day] = prev.operatingHours.timeSlots[day];
+                    }
+                    return acc;
+                }, {})
             }
-        });
-        
-        setOperatingHours(prev => ({
-            ...prev,
-            ...updatedHours
         }));
     };
 
@@ -118,7 +112,7 @@ const MenuDetails = ({
     return (
         <form onSubmit={handleSubmit} className="menu-details-form">
             <div className="mb-4">
-                <h5 className="mb-3">Select Restaurant Category</h5>
+                <h5 className="mb-3">Select Business Category</h5>
                 <div className="category-grid">
                     {categories.map((category) => (
                         <div
@@ -151,7 +145,7 @@ const MenuDetails = ({
                                 <input
                                     type="time"
                                     className="form-control"
-                                    value={defaultTimes.openTime}
+                                    value={formData.operatingHours.defaultOpenTime}
                                     onChange={(e) => handleDefaultTimeChange('openTime', e.target.value)}
                                 />
                             </div>
@@ -163,7 +157,7 @@ const MenuDetails = ({
                                 <input
                                     type="time"
                                     className="form-control"
-                                    value={defaultTimes.closeTime}
+                                    value={formData.operatingHours.defaultCloseTime}
                                     onChange={(e) => handleDefaultTimeChange('closeTime', e.target.value)}
                                 />
                             </div>
@@ -195,21 +189,21 @@ const MenuDetails = ({
                                         type="checkbox"
                                         className="form-check-input"
                                         id={`${day.id}-open`}
-                                        checked={operatingHours[day.id]?.isOpen !== false}
+                                        checked={formData.operatingHours.timeSlots[day.id]?.isOpen !== false}
                                         onChange={(e) => handleOperatingHoursChange(day.id, 'isOpen', e.target.checked)}
                                     />
                                     <label className="form-check-label" htmlFor={`${day.id}-open`}>
                                         {day.name}
                                     </label>
                                 </div>
-                                {showTimeSlots && operatingHours[day.id]?.isOpen !== false && (
+                                {showTimeSlots && formData.operatingHours.timeSlots[day.id]?.isOpen !== false && (
                                     <div className="time-slots mt-2">
                                         <div className="row">
                                             <div className="col-6">
                                                 <input
                                                     type="time"
                                                     className="form-control form-control-sm"
-                                                    value={operatingHours[day.id]?.openTime || defaultTimes.openTime}
+                                                    value={formData.operatingHours.timeSlots[day.id]?.openTime || formData.operatingHours.defaultOpenTime}
                                                     onChange={(e) => handleOperatingHoursChange(day.id, 'openTime', e.target.value)}
                                                 />
                                             </div>
@@ -217,7 +211,7 @@ const MenuDetails = ({
                                                 <input
                                                     type="time"
                                                     className="form-control form-control-sm"
-                                                    value={operatingHours[day.id]?.closeTime || defaultTimes.closeTime}
+                                                    value={formData.operatingHours.timeSlots[day.id]?.closeTime || formData.operatingHours.defaultCloseTime}
                                                     onChange={(e) => handleOperatingHoursChange(day.id, 'closeTime', e.target.value)}
                                                 />
                                             </div>

@@ -113,6 +113,8 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
 router.put('/:id/step/:step', auth, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'panCardImage', maxCount: 1 },
+    { name: 'gstImage', maxCount: 1 },
+    { name: 'fssaiImage', maxCount: 1 },
     { name: 'images.*', maxCount: 10 }
 ]), async (req, res) => {
     try {
@@ -152,18 +154,49 @@ router.put('/:id/step/:step', auth, upload.fields([
             }
         }
 
-        // Handle file uploads
-        if (req.files) {
+        // Handle file uploads for step 3
+        if (step === 3) {
+            if (!updateData.images) updateData.images = {};
+
+            // Handle profile image (required)
+            if (req.files?.profileImage?.[0]) {
+                const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
+                updateData.images.profileImage = result.secure_url;
+            } else if (updateData.images?.profileImage?.startsWith('data:image')) {
+                const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
+                if (imageUrl) {
+                    updateData.images.profileImage = imageUrl;
+                }
+            }
+
+            // Handle optional images
+            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            for (const imageType of optionalImages) {
+                if (req.files?.[imageType]?.[0]) {
+                    const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
+                    updateData.images[imageType] = result.secure_url;
+                } else if (updateData.images?.[imageType]?.startsWith('data:image')) {
+                    const imageUrl = await uploadBase64ToCloudinary(updateData.images[imageType]);
+                    if (imageUrl) {
+                        updateData.images[imageType] = imageUrl;
+                    }
+                }
+            }
+
+            // Validate required profile image
+            if (!updateData.images.profileImage) {
+                return res.status(400).json({ message: 'Profile image is required' });
+            }
+        }
+
+        // Handle other file uploads for other steps
+        if (req.files && step !== 3) {
             if (!updateData.images) updateData.images = {};
 
             for (const [key, files] of Object.entries(req.files)) {
                 if (files && files.length > 0) {
                     const result = await cloudinary.uploader.upload(files[0].path);
-                    if (key === 'profileImage') {
-                        updateData.images.profileImage = result.secure_url;
-                    } else if (key === 'panCardImage') {
-                        updateData.images.panCardImage = result.secure_url;
-                    } else if (key.startsWith('images.')) {
+                    if (key.startsWith('images.')) {
                         const imageKey = key.replace('images.', '');
                         updateData.images[imageKey] = result.secure_url;
                     }
@@ -186,7 +219,7 @@ router.put('/:id/step/:step', auth, upload.fields([
         // Handle step 4 - Terms and Conditions
         if (step === 4) {
             updateData.termsAccepted = true;
-            updateData.status = 'published';
+            updateData.status = 'review';
         }
 
         // Update restaurant with the exact structure from frontend

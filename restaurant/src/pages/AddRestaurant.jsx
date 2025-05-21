@@ -127,7 +127,7 @@ const AddRestaurant = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        
+
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
             setFormData(prev => ({
@@ -383,13 +383,13 @@ const AddRestaurant = () => {
                 if (validateStep(currentStep)) {
                     // Prepare form data based on current step
                     const formDataToSend = new FormData();
-                    
+
                     switch (currentStep) {
                         case 1:
                             // Step 1: Basic Information
                             formDataToSend.append('formData', JSON.stringify({
                                 restaurantName: formData.restaurantName,
-                                serviceType:  formData.serviceType,
+                                serviceType: formData.serviceType,
                                 ownerName: formData.ownerName,
                                 sameAsOwnerPhone: formData.sameAsOwnerPhone || false,
                                 whatsappUpdates: formData.whatsappUpdates || false,
@@ -425,7 +425,7 @@ const AddRestaurant = () => {
                                     }
                                 }
                             }));
-                            
+
                             // Handle profile image
                             if (formData.images && formData.images.profileImage) {
                                 if (formData.images.profileImage instanceof File) {
@@ -438,6 +438,9 @@ const AddRestaurant = () => {
 
                         case 2:
                             // Step 2: Menu & Operations
+
+                            console.log(formData.operatingHours, "hours in cas2")
+
                             formDataToSend.append('formData', JSON.stringify({
                                 category: formData.category || '',
                                 operatingHours: {
@@ -467,10 +470,11 @@ const AddRestaurant = () => {
                                 },
                                 images: {
                                     profileImage: formData.images?.profileImage || '',
-                                    panCardImage: formData.images?.panCardImage || ''
+                                    panCardImage: formData.images?.panCardImage || '',
+                                    gstImage: formData.images?.gstImage || '',
+                                    fssaiImage: formData.images?.fssaiImage || ''
                                 }
                             }));
-                            
                             // Handle profile image
                             if (formData.images?.profileImage instanceof File) {
                                 formDataToSend.append('profileImage', formData.images.profileImage);
@@ -486,7 +490,7 @@ const AddRestaurant = () => {
                             // Step 4: Terms and Conditions
                             formDataToSend.append('formData', JSON.stringify({
                                 termsAccepted: true,
-                                status: 'published'
+                                status: 'review'
                             }));
                             break;
                     }
@@ -534,8 +538,6 @@ const AddRestaurant = () => {
         setCategorySearch('');
         setIsMenuOpen(false);
     };
-
-    console.log(selectedCategory, "11category");
 
     const handleDayToggle = (day) => {
         setFormData(prev => ({
@@ -591,7 +593,6 @@ const AddRestaurant = () => {
                     formData.ownerName &&
                     formData.contact?.email &&
                     formData.contact?.primaryPhone &&
-                    formData.contact?.whatsappNumber &&
                     formData.address?.shopNo &&
                     formData.address?.locality &&
                     formData.location?.lat &&
@@ -599,7 +600,7 @@ const AddRestaurant = () => {
             case 2:
                 // Check if a category is selected and at least one day is open
                 return formData.category &&
-                    formData.operatingHours?.timeSlots 
+                    formData.operatingHours?.timeSlots
             case 3:
                 // All fields are optional for step 3
                 return true;
@@ -660,6 +661,8 @@ const AddRestaurant = () => {
             case 2:
                 return (
                     <MenuDetails
+                        formData={formData}
+                        setFormData={setFormData}
                         categories={categories}
                         selectedCategory={categories.find(c => c.id === formData.category) || ''}
                         setSelectedCategory={handleCategorySelect}
@@ -680,6 +683,8 @@ const AddRestaurant = () => {
                 return (
                     <PanCardDetails
                         panDetails={formData.panDetails || {}}
+                        formData={formData}
+                        setFormData={setFormData}
                         setPanDetails={(details) => setFormData(prev => ({ ...prev, panDetails: details }))}
                         panCardImage={formData.images?.panCardImage}
                         setPanCardImage={(image) => setFormData(prev => ({ ...prev, images: { ...prev.images, panCardImage: image } }))}
@@ -710,12 +715,11 @@ const AddRestaurant = () => {
 
     // Update validation state for step 1
     useEffect(() => {
-        const isStep1Valid = formData.restaurantName && 
-            formData.ownerName && 
-            formData.contact?.email && 
+        const isStep1Valid = formData.restaurantName &&
+            formData.ownerName &&
+            formData.contact?.email &&
             formData.contact?.primaryPhone &&
-            formData.contact?.whatsappNumber &&
-            formData.address?.shopNo && 
+            formData.address?.shopNo &&
             formData.address?.locality &&
             formData.location?.lat &&
             formData.location?.lng;
@@ -724,7 +728,7 @@ const AddRestaurant = () => {
 
     // Update validation state for step 2
     useEffect(() => {
-        const isStep2Valid = formData.category && 
+        const isStep2Valid = formData.category &&
             formData.operatingHours?.timeSlots &&
             Object.values(formData.operatingHours.timeSlots || {}).some(day => day.isOpen);
         setStepValidation(prev => ({ ...prev, step2: isStep2Valid }));
@@ -750,20 +754,20 @@ const AddRestaurant = () => {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                
+
                 if (response.data && response.data.length > 0) {
                     const restaurantData = response.data[0];
                     console.log("Restaurant data:", restaurantData);
-                    
+
                     // Check if restaurant is published
                     if (restaurantData.status === 'published') {
                         navigate('/dashboard');
                         return;
                     }
-                    
+
                     // If restaurant is in draft, continue with the current flow
                     setFormData(restaurantData);
-                    
+
                     // Set current step based on the response
                     if (restaurantData.currentStep) {
                         // If currentStep is 1, directly open the second step
@@ -773,12 +777,12 @@ const AddRestaurant = () => {
                             setCurrentStep(restaurantData.currentStep);
                         }
                     }
-                    
+
                     // Set location if available
                     if (restaurantData.location && restaurantData.location.lat && restaurantData.location.lng) {
                         // Set the map center
                         setMapCenter([restaurantData.location.lat, restaurantData.location.lng]);
-                        
+
                         // Set the selected location for the map marker
                         setSelectedLocation({
                             lat: restaurantData.location.lat.toString(),
@@ -789,18 +793,18 @@ const AddRestaurant = () => {
                                 city: restaurantData.address?.city || ''
                             }
                         });
-                        
+
                         // Set the search query to the full address
                         if (restaurantData.address?.fullAddress) {
                             setSearchQuery(restaurantData.address.fullAddress);
                         }
                     }
-                    
+
                     // Set operating hours if available
                     if (restaurantData.operatingHours) {
                         setOperatingHours(restaurantData.operatingHours);
                     }
-                    
+
                     // Set pan details if available
                     if (restaurantData.panDetails) {
                         setFormData(prev => ({
@@ -808,7 +812,7 @@ const AddRestaurant = () => {
                             panDetails: restaurantData.panDetails
                         }));
                     }
-                    
+
                     // Set images if available
                     if (restaurantData.images) {
                         setFormData(prev => ({
@@ -837,7 +841,7 @@ const AddRestaurant = () => {
                 console.error("Error fetching restaurant data:", error);
             }
         };
-        
+
         fetchRestaurant();
     }, [navigate]);
 
@@ -846,7 +850,7 @@ const AddRestaurant = () => {
             <Header />
             <div className="container mt-5 pt-5">
                 <h2>Add Your Business</h2>
-                <p>Selected service type: {serviceType}</p>
+                <p>Selected service type: {formData.serviceType == "BOTH" ? "Both delivery and pickup" : formData.serviceType} </p>
                 <div className="row">
                     <div className="col-md-3">
                         <RegistrationSidebar

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { Header } from './Header';
 import { useCart } from '../context/CartContext';
 
 const HotelDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { carts, addToCart, isItemInCart, fetchCart } = useCart();
+    const { carts, addToCart, isItemInCart, fetchCart, clearCart } = useCart();
     const [restaurant, setRestaurant] = useState(null);
     const [menu, setMenu] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ const HotelDetails = () => {
         if (token) {
             fetchCart();
         }
-    }, []); // Empty dependency array means it only runs once on mount
+    }, [fetchCart]); // Add fetchCart to dependencies
 
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prevCategories => {
@@ -76,12 +77,14 @@ const HotelDetails = () => {
     const handleAddToCart = async (item) => {
         const token = localStorage.getItem('token');
         if (!token) {
+            toast.error('Please login to add items to cart');
             navigate('/login');
             return;
         }
 
         // Check if item is already in cart first
         if (isItemInCart(item._id)) {
+            toast.info('Item already in cart');
             navigate('/cart');
             return;
         }
@@ -123,8 +126,10 @@ const HotelDetails = () => {
                 setPendingAddItem(item);
                 setShowRestaurantModal(true);
             } else {
-                setError('Failed to add to cart');
+                toast.error(result.error || 'Failed to add to cart');
             }
+        } else {
+            toast.success('Item added to cart successfully');
         }
     };
 
@@ -132,12 +137,14 @@ const HotelDetails = () => {
         if (resetCart) {
             try {
                 await clearCart();
+                toast.success('Cart cleared successfully');
                 setShowRestaurantModal(false);
                 // Retry add to cart
                 if (pendingAddItem) {
                     setTimeout(() => handleAddToCart(pendingAddItem), 100);
                 }
             } catch (err) {
+                toast.error('Failed to reset cart');
                 setError('Failed to reset cart');
             }
         } else {
@@ -162,13 +169,13 @@ const HotelDetails = () => {
                         <div className="flex gap-4">
                             <button
                                 onClick={() => handleRestaurantModalResponse(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 cursor-pointer transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => handleRestaurantModalResponse(true)}
-                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer transition-colors"
                             >
                                 Yes, Reset Cart
                             </button>
@@ -208,7 +215,7 @@ const HotelDetails = () => {
                                         <div key={category._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleCategory(category._id)}
-                                                className="w-full p-4 flex justify-between items-center hover:bg-gray-50"
+                                                className="w-full p-4 flex justify-between items-center hover:bg-gray-50 cursor-pointer transition-colors"
                                             >
                                                 <h3 className="text-xl font-semibold">{category.name}</h3>
                                                 <span className="text-xl font-bold">
@@ -259,7 +266,7 @@ const HotelDetails = () => {
                                                                             className={`self-center px-4 py-2 ${isItemInCart(item._id)
                                                                                 ? 'bg-green-600 text-white'
                                                                                 : 'border border-green-600 text-green-600'
-                                                                                } rounded hover:bg-green-700 hover:text-white transition-colors`}
+                                                                                } rounded hover:bg-green-700 hover:text-white transition-colors cursor-pointer`}
                                                                         >
                                                                             {isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>

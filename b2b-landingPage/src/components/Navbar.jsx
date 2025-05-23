@@ -5,7 +5,7 @@ import { useState, useEffect, useContext } from "react"
 import { HotelContext } from "../contextApi/HotelContextProvider"
 import { useNavigate, Link } from "react-router-dom"
 import { useLocationContext } from "../context/LocationContext"
-import axios from 'axios'
+import { useCart } from "../context/CartContext"
 import { toast } from 'react-toastify'
 
 
@@ -16,6 +16,7 @@ function Navbar({ alwaysVisible }) {
   const [showLoginOptions, setShowLoginOptions] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, logout } = useContext(HotelContext)
+  const { cartCount, fetchCart } = useCart()
   const navigate = useNavigate()
   const {
     location,
@@ -28,7 +29,6 @@ function Navbar({ alwaysVisible }) {
     onAllowLocation,
     onLoginClick
   } = useLocationContext();
-  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,30 +51,14 @@ function Navbar({ alwaysVisible }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetchCartCount();
+      fetchCart();
     }
-  }, []);
-
-  const fetchCartCount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/cart', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const totalItems = response.data.reduce((sum, cart) =>
-        sum + cart.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      );
-      setCartCount(totalItems);
-    } catch (err) {
-      console.error('Failed to fetch cart count:', err);
-    }
-  };
+  }, [fetchCart]);
 
   const handleLogout = () => {
     logout()
     setShowLoginOptions(false)
     localStorage.removeItem('token')
-    setCartCount(0)
     toast.success('Logged out successfully')
   }
 

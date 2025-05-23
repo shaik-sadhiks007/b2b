@@ -1,42 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Header } from './Header';
+import { useCart } from '../context/CartContext';
 
 const CartPage = () => {
-    const [cart, setCart] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { carts, fetchCart, clearCart, updateCartItem, removeCartItem } = useCart();
+    const cart = carts[0]; // Get the first cart document
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
+            toast.error('Please login to view your cart');
             navigate('/login');
             return;
         }
-        fetchCart();
-    }, [navigate]);
-
-    const fetchCart = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/cart', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCart(response.data[0]); // Get the first cart document
-        } catch (err) {
-            setError('Failed to fetch cart');
-            toast.error('Failed to fetch cart');
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchCart().finally(() => setLoading(false));
+    }, [navigate, fetchCart]);
 
     const handleQuantityChange = async (itemId, change) => {
         try {
-            const token = localStorage.getItem('token');
             // Find the current item in the cart
             const cartItem = cart.items.find(item => item.itemId === itemId || item.itemId === itemId.toString());
             if (!cartItem) {
@@ -48,13 +34,12 @@ const CartPage = () => {
                 toast.error('Quantity cannot be less than 1');
                 return;
             }
-            const response = await axios.patch(`http://localhost:5000/api/cart/${itemId}`, {
-                quantity: newQuantity
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.data) {
-                fetchCart(); 
+
+            const result = await updateCartItem(itemId, newQuantity);
+            if (result.success) {
+                toast.success('Cart updated successfully');
+            } else {
+                toast.error(result.error || 'Failed to update quantity');
             }
         } catch (err) {
             toast.error('Failed to update quantity');
@@ -63,12 +48,12 @@ const CartPage = () => {
 
     const handleRemoveItem = async (itemId) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/cart/${itemId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchCart(); // Refresh cart after removal
-            toast.success('Item removed from cart');
+            const result = await removeCartItem(itemId);
+            if (result.success) {
+                toast.success('Item removed from cart');
+            } else {
+                toast.error(result.error || 'Failed to remove item');
+            }
         } catch (err) {
             toast.error('Failed to remove item');
         }
@@ -76,12 +61,8 @@ const CartPage = () => {
 
     const handleClearCart = async () => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete('http://localhost:5000/api/cart', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCart(null);
-            toast.success('Cart cleared');
+            await clearCart();
+            toast.success('Cart cleared successfully');
         } catch (err) {
             toast.error('Failed to clear cart');
         }
@@ -102,7 +83,7 @@ const CartPage = () => {
                 <p className="text-gray-500 text-lg">Your cart is empty</p>
                 <button
                     onClick={() => navigate('/')}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer transition-colors"
                 >
                     Continue Shopping
                 </button>
@@ -120,7 +101,7 @@ const CartPage = () => {
                             <p className="text-gray-500 text-lg">Your cart is empty</p>
                             <button
                                 onClick={() => navigate('/')}
-                                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer transition-colors"
                             >
                                 Continue Shopping
                             </button>
@@ -159,14 +140,14 @@ const CartPage = () => {
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => handleQuantityChange(item.itemId, -1)}
-                                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
+                                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"
                                                 >
                                                     −
                                                 </button>
                                                 <span className="w-8 text-center">{item.quantity}</span>
                                                 <button
                                                     onClick={() => handleQuantityChange(item.itemId, 1)}
-                                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
+                                                    className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"
                                                 >
                                                     +
                                                 </button>
@@ -176,7 +157,7 @@ const CartPage = () => {
                                             </div>
                                             <button
                                                 onClick={() => handleRemoveItem(item.itemId)}
-                                                className="text-red-600 hover:text-red-700"
+                                                className="text-red-600 hover:text-red-700 cursor-pointer transition-colors"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
@@ -193,13 +174,13 @@ const CartPage = () => {
                                     <div className="flex gap-4">
                                         <button
                                             onClick={handleClearCart}
-                                            className="flex-1 px-6 py-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                                            className="flex-1 px-6 py-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
                                         >
                                             Clear Cart
                                         </button>
                                         <button
                                             onClick={() => navigate('/checkout')}
-                                            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer transition-colors"
                                         >
                                             Proceed to Checkout
                                         </button>

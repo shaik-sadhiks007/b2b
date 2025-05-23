@@ -32,10 +32,21 @@ const addToCart = async (req, res) => {
                 items,
             });
         } else {
-            // Replace the items array directly
-            cart.items = items;
+            // Merge new items with existing items
+            for (const newItem of items) {
+                const existingItemIndex = cart.items.findIndex(
+                    item => item.itemId.toString() === newItem.itemId.toString()
+                );
+                
+                if (existingItemIndex !== -1) {
+                    // Update quantity if item already exists
+                    cart.items[existingItemIndex].quantity += newItem.quantity;
+                } else {
+                    // Add new item if it doesn't exist
+                    cart.items.push(newItem);
+                }
+            }
             cart.restaurantName = restaurantName;
-
         }
 
         await cart.save();

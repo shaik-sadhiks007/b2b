@@ -2,21 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Header } from './Header';
+import { useCart } from '../context/CartContext';
 
 const HotelDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { carts, addToCart, isItemInCart, fetchCart } = useCart();
     const [restaurant, setRestaurant] = useState(null);
     const [menu, setMenu] = useState(null);
-    const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [expandedCategory, setExpandedCategory] = useState(null);
-    const [showCartModal, setShowCartModal] = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState([]);
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
-    const [currentRestaurant, setCurrentRestaurant] = useState(null);
-    const [itemToAdd, setItemToAdd] = useState(null);
     const [pendingAddItem, setPendingAddItem] = useState(null);
+
+    // Debug expanded categories
+    useEffect(() => {
+        console.log('Expanded categories:', expandedCategories);
+    }, [expandedCategories]);
 
     useEffect(() => {
         const fetchRestaurantDetails = async () => {
@@ -37,6 +40,10 @@ const HotelDetails = () => {
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const response = await axios.get(`http://localhost:5000/api/menu/public/${id}`, { headers });
                 setMenu(response.data);
+                // Set first category as expanded by default
+                if (response.data && response.data.length > 0) {
+                    setExpandedCategories([response.data[0]._id]);
+                }
             } catch (err) {
                 setError('Failed to fetch menu');
                 console.error(err);
@@ -45,29 +52,25 @@ const HotelDetails = () => {
             }
         };
 
-        const fetchCart = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    setCart([]);
-                    return;
-                }
-                const response = await axios.get('http://localhost:5000/api/cart', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setCart(response.data);
-            } catch (err) {
-                setCart([]);
-            }
-        };
-
         fetchRestaurantDetails();
         fetchMenu();
-        fetchCart();
     }, [id]);
 
-    const isItemInCart = (itemId) => {
-        return cart.some(cartDoc => cartDoc.items?.some(item => item.itemId === itemId));
+    // Separate useEffect for cart fetching
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetchCart();
+        }
+    }, []); // Empty dependency array means it only runs once on mount
+
+    const toggleCategory = (categoryId) => {
+        setExpandedCategories(prevCategories => {
+            if (prevCategories.includes(categoryId)) {
+                return prevCategories.filter(id => id !== categoryId);
+            }
+            return [...prevCategories, categoryId];
+        });
     };
 
     const handleAddToCart = async (item) => {
@@ -77,27 +80,25 @@ const HotelDetails = () => {
             return;
         }
 
+        // Check if item is already in cart first
+        if (isItemInCart(item._id)) {
+            navigate('/cart');
+            return;
+        }
+
         // Find if cart for this restaurant exists
-        const cartForRestaurant = cart.find(c => c.restaurantId === restaurant._id);
+        const cartForRestaurant = carts.find(c => c.restaurantId === restaurant._id);
         let items = [];
         if (cartForRestaurant) {
-            // If item exists, update quantity, else add
-            const existingItem = cartForRestaurant.items.find(i => i.itemId === item._id);
-            if (existingItem) {
-                // Already in cart, navigate to cart page
-                navigate('/cart');
-                return;
-            } else {
-                items = [...cartForRestaurant.items, {
-                    itemId: item._id,
-                    name: item.name,
-                    quantity: 1,
-                    basePrice: Number(item.basePrice),
-                    packagingCharges: Number(item.packagingCharges),
-                    totalPrice: Number(item.totalPrice),
-                    isVeg: item.isVeg
-                }];
-            }
+            items = [...cartForRestaurant.items, {
+                itemId: item._id,
+                name: item.name,
+                quantity: 1,
+                basePrice: Number(item.basePrice),
+                packagingCharges: Number(item.packagingCharges),
+                totalPrice: Number(item.totalPrice),
+                isVeg: item.isVeg
+            }];
         } else {
             items = [{
                 itemId: item._id,
@@ -109,23 +110,17 @@ const HotelDetails = () => {
                 isVeg: item.isVeg
             }];
         }
-        try {
-            await axios.post('http://localhost:5000/api/cart', {
-                restaurantId: restaurant._id,
-                restaurantName: restaurant.name,
-                items,
-                photos: restaurant.photos || []
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            // Refresh cart
-            const response = await axios.get('http://localhost:5000/api/cart', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCart(response.data);
-        } catch (err) {
-            if (err.response && err.response.status === 409) {
-                setPendingAddItem(item); // store item to add after reset
+
+        const result = await addToCart(
+            restaurant._id,
+            restaurant.name,
+            items,
+            restaurant.photos || []
+        );
+
+        if (!result.success) {
+            if (result.error === 'Different restaurant') {
+                setPendingAddItem(item);
                 setShowRestaurantModal(true);
             } else {
                 setError('Failed to add to cart');
@@ -136,11 +131,7 @@ const HotelDetails = () => {
     const handleRestaurantModalResponse = async (resetCart) => {
         if (resetCart) {
             try {
-                const token = localStorage.getItem('token');
-                await axios.delete('http://localhost:5000/api/cart', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setCart([]);
+                await clearCart();
                 setShowRestaurantModal(false);
                 // Retry add to cart
                 if (pendingAddItem) {
@@ -198,10 +189,10 @@ const HotelDetails = () => {
                                 <h1 className="text-3xl font-bold mb-2">{restaurant.restaurantName}</h1>
                                 <p className="text-gray-600 mb-4">{restaurant.description}</p>
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center">
+                                    {/* <div className="flex items-center">
                                         <span className="text-yellow-500">★</span>
                                         <span className="ml-1">{restaurant.rating}</span>
-                                    </div>
+                                    </div> */}
                                     <div className="text-gray-500">
                                         {restaurant.distance} km away
                                     </div>
@@ -216,15 +207,15 @@ const HotelDetails = () => {
                                     {menu.map(category => (
                                         <div key={category._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                                             <button
-                                                onClick={() => setExpandedCategory(
-                                                    expandedCategory === category._id ? null : category._id
-                                                )}
+                                                onClick={() => toggleCategory(category._id)}
                                                 className="w-full p-4 flex justify-between items-center hover:bg-gray-50"
                                             >
                                                 <h3 className="text-xl font-semibold">{category.name}</h3>
-                                                <span>{expandedCategory === category._id ? '−' : '+'}</span>
+                                                <span className="text-xl font-bold">
+                                                    {expandedCategories.includes(category._id) ? '−' : '+'}
+                                                </span>
                                             </button>
-                                            {expandedCategory === category._id && (
+                                            {expandedCategories.includes(category._id) && (
                                                 <div className="p-4 border-t">
                                                     {category.subcategories.map(subcategory => (
                                                         <div key={subcategory._id} className="mb-6">
@@ -266,8 +257,8 @@ const HotelDetails = () => {
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
                                                                             className={`self-center px-4 py-2 ${isItemInCart(item._id)
-                                                                                    ? 'bg-green-600 text-white'
-                                                                                    : 'border border-green-600 text-green-600'
+                                                                                ? 'bg-green-600 text-white'
+                                                                                : 'border border-green-600 text-green-600'
                                                                                 } rounded hover:bg-green-700 hover:text-white transition-colors`}
                                                                         >
                                                                             {isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}

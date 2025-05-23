@@ -10,6 +10,9 @@ const restaurantSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+    },
     serviceType: {
         type: String,
         enum: ['DELIVERY', 'PICKUP', 'BOTH'],
@@ -78,6 +81,10 @@ const restaurantSchema = new mongoose.Schema({
         type: String,
         enum: ['draft', 'published', 'archived','review','rejected'],
         default: 'draft'
+    },
+    online: {
+        type: Boolean,
+        default: false
     },
     currentStep: {
         type: Number,

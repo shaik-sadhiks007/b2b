@@ -77,12 +77,51 @@ const PanCardDetails = ({
             return;
         }
 
+        // Validate PAN Card Number
+        if (!panDetails.panNumber?.trim()) {
+            toast.error('PAN Card Number is required');
+            return;
+        }
+
+        // Validate Name on PAN
+        if (!panDetails.name?.trim()) {
+            toast.error('Name on PAN is required');
+            return;
+        }
+
+        // Validate Date of Birth and Age
+        if (!panDetails.dateOfBirth) {
+            toast.error('Date of Birth is required');
+            return;
+        }
+
+        // Calculate age
+        const birthDate = new Date(panDetails.dateOfBirth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (age < 18) {
+            toast.error('Age must be at least 18 years');
+            return;
+        }
+
+        // Validate Address
+        if (!panDetails.address?.trim()) {
+            toast.error('Address is required');
+            return;
+        }
+
         const stepData = {
             panDetails: {
-                panNumber: panDetails.panNumber || '',
-                name: panDetails.name || '',
-                dateOfBirth: panDetails.dateOfBirth || '',
-                address: panDetails.address || '',
+                panNumber: panDetails.panNumber.trim(),
+                name: panDetails.name.trim(),
+                dateOfBirth: panDetails.dateOfBirth,
+                address: panDetails.address.trim(),
             },
             images: {
                 profileImage: previewImages.profileImage,
@@ -172,15 +211,15 @@ const PanCardDetails = ({
                     <div className="row">
                         {renderImageUpload('profileImage', 'Profile Image Of Business', true)}
                         {renderImageUpload('panCardImage', 'PAN Card Image')}
-                        {/* {renderImageUpload('gstImage', 'GST Certificate')}
-                        {renderImageUpload('fssaiImage', 'FSSAI Certificate')} */}
+                        {renderImageUpload('gstImage', 'GST Certificate')}
+                        {renderImageUpload('fssaiImage', 'FSSAI Certificate')}
                     </div>
 
                     {/* PAN Card Details */}
                     <div className="mt-4">
                         <div className="mb-6">
                             <label className="block text-gray-700 text-sm font-bold mb-2">
-                                PAN Card Number
+                                PAN Card Number <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -188,36 +227,46 @@ const PanCardDetails = ({
                                 onChange={(e) => setPanDetails({ ...panDetails, panNumber: e.target.value })}
                                 className="form-control"
                                 placeholder="Enter PAN Card Number"
+                                
                             />
                         </div>
 
                         <div className="mb-3">
-                            <label className="form-label">Name on PAN</label>
+                            <label className="form-label">
+                                Name on PAN <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 className="form-control"
                                 value={panDetails.name || ''}
                                 onChange={(e) => setPanDetails({ ...panDetails, name: e.target.value })}
+                                
                             />
                         </div>
 
                         <div className="mb-3">
-                            <label className="form-label">Date of Birth</label>
+                            <label className="form-label">
+                                Date of Birth <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="date"
                                 className="form-control"
                                 value={panDetails.dateOfBirth || ''}
                                 onChange={(e) => setPanDetails({ ...panDetails, dateOfBirth: e.target.value })}
+                                
                             />
                         </div>
 
                         <div className="mb-3">
-                            <label className="form-label">Address</label>
+                            <label className="form-label">
+                                Address <span className="text-red-500">*</span>
+                            </label>
                             <textarea
                                 className="form-control"
                                 value={panDetails.address || ''}
                                 onChange={(e) => setPanDetails({ ...panDetails, address: e.target.value })}
                                 rows="3"
+                                
                             ></textarea>
                         </div>
 

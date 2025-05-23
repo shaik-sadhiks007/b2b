@@ -20,7 +20,15 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage: storage,
+    limits: {
+        fieldSize: 10 * 1024 * 1024, // 10MB limit for field size
+        fileSize: 5 * 1024 * 1024,   // 5MB limit for file size
+        fields: 10                    // max number of fields
+    }
+});
+
 
 // Configure Cloudinary
 cloudinary.config({
@@ -114,8 +122,7 @@ router.put('/:id/step/:step', auth, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'panCardImage', maxCount: 1 },
     { name: 'gstImage', maxCount: 1 },
-    { name: 'fssaiImage', maxCount: 1 },
-    { name: 'images.*', maxCount: 10 }
+    { name: 'fssaiImage', maxCount: 1 }
 ]), async (req, res) => {
     try {
         const restaurant = await Restaurant.findOne({
@@ -156,16 +163,34 @@ router.put('/:id/step/:step', auth, upload.fields([
 
         // Handle file uploads for step 3
         if (step === 3) {
-            if (!updateData.images) updateData.images = {};
+            // Initialize images object if it doesn't exist
+            if (!updateData.images) {
+                updateData.images = {};
+            }
 
             // Handle profile image (required)
             if (req.files?.profileImage?.[0]) {
-                const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
-                updateData.images.profileImage = result.secure_url;
-            } else if (updateData.images?.profileImage?.startsWith('data:image')) {
-                const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
-                if (imageUrl) {
-                    updateData.images.profileImage = imageUrl;
+                try {
+                    const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
+                    updateData.images.profileImage = result.secure_url;
+                } catch (error) {
+                    console.error('Error uploading profile image:', error);
+                    return res.status(500).json({ message: 'Error uploading profile image' });
+                }
+            } else if (formDataObj.images?.profileImage) {
+                try {
+                    if (formDataObj.images.profileImage.startsWith('data:image')) {
+                        const imageUrl = await uploadBase64ToCloudinary(formDataObj.images.profileImage);
+                        if (imageUrl) {
+                            updateData.images.profileImage = imageUrl;
+                        }
+                    } else if (formDataObj.images.profileImage.includes('cloudinary')) {
+                        // If it's already a Cloudinary URL, use it directly
+                        updateData.images.profileImage = formDataObj.images.profileImage;
+                    }
+                } catch (error) {
+                    console.error('Error uploading profile image:', error);
+                    return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
 
@@ -173,12 +198,27 @@ router.put('/:id/step/:step', auth, upload.fields([
             const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
-                    const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
-                    updateData.images[imageType] = result.secure_url;
-                } else if (updateData.images?.[imageType]?.startsWith('data:image')) {
-                    const imageUrl = await uploadBase64ToCloudinary(updateData.images[imageType]);
-                    if (imageUrl) {
-                        updateData.images[imageType] = imageUrl;
+                    try {
+                        const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
+                        updateData.images[imageType] = result.secure_url;
+                    } catch (error) {
+                        console.error(`Error uploading ${imageType}:`, error);
+                        return res.status(500).json({ message: `Error uploading ${imageType}` });
+                    }
+                } else if (formDataObj.images?.[imageType]) {
+                    try {
+                        if (formDataObj.images[imageType].startsWith('data:image')) {
+                            const imageUrl = await uploadBase64ToCloudinary(formDataObj.images[imageType]);
+                            if (imageUrl) {
+                                updateData.images[imageType] = imageUrl;
+                            }
+                        } else if (formDataObj.images[imageType].includes('cloudinary')) {
+                            // If it's already a Cloudinary URL, use it directly
+                            updateData.images[imageType] = formDataObj.images[imageType];
+                        }
+                    } catch (error) {
+                        console.error(`Error uploading ${imageType}:`, error);
+                        return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
             }
@@ -187,30 +227,6 @@ router.put('/:id/step/:step', auth, upload.fields([
             if (!updateData.images.profileImage) {
                 return res.status(400).json({ message: 'Profile image is required' });
             }
-        }
-
-        // Handle other file uploads for other steps
-        if (req.files && step !== 3) {
-            if (!updateData.images) updateData.images = {};
-
-            for (const [key, files] of Object.entries(req.files)) {
-                if (files && files.length > 0) {
-                    const result = await cloudinary.uploader.upload(files[0].path);
-                    if (key.startsWith('images.')) {
-                        const imageKey = key.replace('images.', '');
-                        updateData.images[imageKey] = result.secure_url;
-                    }
-                }
-            }
-        }
-
-        // Handle image URLs passed directly
-        if (req.body.imageUrls) {
-            if (!updateData.images) updateData.images = {};
-
-            Object.entries(req.body.imageUrls).forEach(([key, value]) => {
-                updateData.images[key] = value;
-            });
         }
 
         // Set the current step
@@ -251,7 +267,7 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
     try {
         // Use the restaurant ID from the authenticated user
 
-        console.log(req.restaurant,"req.restaurant");
+        console.log(req.restaurant, "req.restaurant");
         const restaurant = await Restaurant.findById(req.restaurant._id);
 
 
@@ -259,8 +275,8 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
             return res.status(404).json({ message: 'Restaurant not found' });
         }
 
-        res.json(restaurant);   
-        
+        res.json(restaurant);
+
     } catch (error) {
         console.error('Error getting restaurant profile:', error);
         res.status(500).json({ message: 'Error getting restaurant profile', error: error.message });
@@ -271,7 +287,7 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
 router.patch('/profile', auth, restaurantMiddleware, async (req, res) => {
     try {
         const updateData = { ...req.body };
-        
+
         // Handle image upload if new image is provided
         if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
             try {
@@ -299,8 +315,8 @@ router.patch('/profile', auth, restaurantMiddleware, async (req, res) => {
         const restaurant = await Restaurant.findByIdAndUpdate(
             req.restaurant._id,
             { $set: updateData },
-            { 
-                new: true, 
+            {
+                new: true,
                 runValidators: true,
                 // Only return the updated fields
                 select: Object.keys(updateData).join(' ')
@@ -417,10 +433,10 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/public/all', async (req, res) => {
     try {
         const { lat, lng, category } = req.query;
-        
+
         // Build query based on filters
         let query = { status: 'published' };
-        
+
         // Add category filter if provided and not "all"
         if (category && category !== "all") {
             // Search in both serviceType and category fields
@@ -429,7 +445,7 @@ router.get('/public/all', async (req, res) => {
                 { category: category }
             ];
         }
-        
+
         // Get all published restaurants
         const restaurants = await Restaurant.find(query)
             .select('restaurantName serviceType images.profileImage description rating location category')
@@ -453,7 +469,7 @@ router.get('/public/all', async (req, res) => {
                 name: restaurant.restaurantName,
                 imageUrl: restaurant.images?.profileImage || null,
                 description: restaurant.description || '',
-                rating: restaurant.rating || 5,
+                // rating: restaurant.rating || 5,
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
                 location: restaurant.location || null,
                 serviceType: restaurant.serviceType || '',
@@ -464,7 +480,7 @@ router.get('/public/all', async (req, res) => {
         // If coordinates are provided, filter and sort by distance
         if (lat && lng) {
             // Filter restaurants within 50km range
-            const filteredRestaurants = formattedRestaurants.filter(restaurant => 
+            const filteredRestaurants = formattedRestaurants.filter(restaurant =>
                 restaurant.distance !== null && restaurant.distance <= 50
             );
 

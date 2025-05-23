@@ -331,7 +331,7 @@ const Home = () => {
                                                     <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
                                                     <p className="text-gray-600 mb-2">{restaurant.description}</p>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-yellow-500">★ {restaurant.rating}</span>
+                                                        {/* <span className="text-yellow-500">★ {restaurant.rating}</span> */}
                                                         <span className="text-gray-500">{restaurant.distance} km away</span>
                                                     </div>
                                                 </div>

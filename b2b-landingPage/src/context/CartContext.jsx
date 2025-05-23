@@ -1,94 +1,143 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const [cart, setCart] = useState({
-        restaurantId: null,
-        restaurantName: null,
-        items: []
-    });
+    const [carts, setCarts] = useState([]);
+    const [cartCount, setCartCount] = useState(0);
 
-    const addToCart = (item) => {
-        // If cart is empty, add the item
-        if (cart.items.length === 0) {
-            setCart({
-                restaurantId: item.restaurantId,
-                restaurantName: item.restaurantName,
-                items: [{ ...item, quantity: 1 }]
+    const fetchCart = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setCarts([]);
+                setCartCount(0);
+                return;
+            }
+            const response = await axios.get('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${token}` }
             });
-            return { success: true };
+            setCarts(response.data);
+            // Update cart count
+            const totalItems = response.data.reduce((sum, cart) =>
+                sum + cart.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+            );
+            setCartCount(totalItems);
+        } catch (err) {
+            console.error('Failed to fetch cart:', err);
+            setCarts([]);
+            setCartCount(0);
         }
+    }, []); // Empty dependency array since it doesn't depend on any props or state
 
-        // If item is from the same restaurant, add it
-        if (cart.restaurantId === item.restaurantId) {
-            const existingItemIndex = cart.items.findIndex(i => i._id === item._id);
-            
-            if (existingItemIndex !== -1) {
-                const updatedItems = [...cart.items];
-                updatedItems[existingItemIndex].quantity += 1;
-                setCart(prev => ({ ...prev, items: updatedItems }));
-            } else {
-                setCart(prev => ({
-                    ...prev,
-                    items: [...prev.items, { ...item, quantity: 1 }]
-                }));
-            }
+    const addToCart = useCallback(async (restaurantId, restaurantName, items, photos = []) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return { success: false, error: 'Not logged in' };
+
+            await axios.post('http://localhost:5000/api/cart', {
+                restaurantId,
+                restaurantName,
+                items,
+                photos
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Refresh cart after adding
+            await fetchCart();
             return { success: true };
-        }
-
-        // If item is from a different restaurant, return false
-        return { 
-            success: false,
-            currentRestaurant: {
-                id: cart.restaurantId,
-                name: cart.restaurantName
+        } catch (err) {
+            if (err.response?.status === 409) {
+                return { 
+                    success: false, 
+                    error: 'Different restaurant',
+                    currentRestaurant: {
+                        id: err.response.data.restaurantId,
+                        name: err.response.data.restaurantName
+                    }
+                };
             }
-        };
-    };
+            return { success: false, error: err.message };
+        }
+    }, [fetchCart]);
 
-    const removeFromCart = (itemId) => {
-        setCart(prevCart => ({
-            ...prevCart,
-            items: prevCart.items.filter(item => item._id !== itemId)
-        }));
-    };
+    const updateCartItem = useCallback(async (itemId, quantity) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return { success: false, error: 'Not logged in' };
 
-    const updateQuantity = (itemId, newQuantity) => {
-        if (newQuantity < 1) return;
+            const response = await axios.patch(`http://localhost:5000/api/cart/${itemId}`, {
+                quantity
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-        setCart(prevCart => ({
-            ...prevCart,
-            items: prevCart.items.map(item =>
-                item._id === itemId
-                    ? { ...item, quantity: newQuantity }
-                    : item
-            )
-        }));
-    };
+            if (response.data) {
+                await fetchCart();
+                return { success: true };
+            }
+            return { success: false, error: 'Failed to update cart' };
+        } catch (err) {
+            console.error('Failed to update cart item:', err);
+            return { success: false, error: err.message };
+        }
+    }, [fetchCart]);
 
-    const clearCart = () => {
-        setCart({
-            restaurantId: null,
-            restaurantName: null,
-            items: []
-        });
-    };
+    const removeCartItem = useCallback(async (itemId) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return { success: false, error: 'Not logged in' };
 
-    const getCartTotal = () => {
-        return cart.items.reduce((total, item) => 
-            total + (item.totalPrice * item.quantity), 0
-        );
-    };
+            await axios.delete(`http://localhost:5000/api/cart/${itemId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            await fetchCart();
+            return { success: true };
+        } catch (err) {
+            console.error('Failed to remove cart item:', err);
+            return { success: false, error: err.message };
+        }
+    }, [fetchCart]);
+
+    const clearCart = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            await axios.delete('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            await fetchCart();
+        } catch (err) {
+            console.error('Failed to clear cart:', err);
+        }
+    }, [fetchCart]);
+
+    const isItemInCart = useCallback((itemId) => {
+        return carts.some(cart => cart.items?.some(item => item.itemId === itemId));
+    }, [carts]);
+
+    // Initial cart fetch
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetchCart();
+        }
+    }, [fetchCart]);
 
     return (
         <CartContext.Provider value={{
-            cart,
+            carts,
+            cartCount,
+            fetchCart,
             addToCart,
-            removeFromCart,
-            updateQuantity,
+            updateCartItem,
+            removeCartItem,
             clearCart,
-            getCartTotal
+            isItemInCart
         }}>
             {children}
         </CartContext.Provider>

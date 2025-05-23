@@ -118,11 +118,11 @@ const AddRestaurant = () => {
         { id: 'restaurant', name: 'Restaurant', icon: 'bi-building' },
         { id: 'grocery', name: 'Grocery Store', icon: 'bi-cart4' },
         { id: 'pharmacy', name: 'Pharmacy', icon: 'bi-capsule' },
-        { id: 'bakery', name: 'Bakery', icon: 'bi-cup-hot' },
-        { id: 'fruits', name: 'Fruits & Vegetables', icon: 'bi-apple' },
-        { id: 'meat', name: 'Meat & Fish', icon: 'bi-egg-fried' },
-        { id: 'dairy', name: 'Dairy Products', icon: 'bi-cup-straw' },
-        { id: 'stationery', name: 'Stationery', icon: 'bi-pencil' }
+        // { id: 'bakery', name: 'Bakery', icon: 'bi-cup-hot' },
+        // { id: 'fruits', name: 'Fruits & Vegetables', icon: 'bi-apple' },
+        // { id: 'meat', name: 'Meat & Fish', icon: 'bi-egg-fried' },
+        // { id: 'dairy', name: 'Dairy Products', icon: 'bi-cup-straw' },
+        // { id: 'stationery', name: 'Stationery', icon: 'bi-pencil' }
     ];
 
     const handleChange = (e) => {

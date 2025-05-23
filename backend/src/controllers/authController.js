@@ -233,7 +233,6 @@ const resendOTP = async (req, res) => {
 // Get user profile
 const getProfile = async (req, res) => {
     try {
-        console.log(req.user,"uuser");
         const user = await User.findById(req.user.id).select('-password');
         res.json(user);
     } catch (error) {

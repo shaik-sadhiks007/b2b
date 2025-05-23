@@ -16,11 +16,11 @@ const categories = [
     { name: "Restaurant", value: "restaurant", icon: "🏨", color: "bg-red-100" },
     { name: "Grocery", value: "grocery", icon: "🛒", color: "bg-green-100" },
     { name: "Medical", value: "medical", icon: "💊", color: "bg-blue-100" },
-    { name: "Electronics", value: "electronics", icon: "📱", color: "bg-yellow-100" },
-    { name: "Fashion", value: "fashion", icon: "👔", color: "bg-purple-100" },
-    { name: "Books", value: "books", icon: "📚", color: "bg-orange-100" },
-    { name: "Furniture", value: "furniture", icon: "🪑", color: "bg-teal-100" },
-    { name: "Sports", value: "sports", icon: "⚽", color: "bg-indigo-100" },
+    // { name: "Electronics", value: "electronics", icon: "📱", color: "bg-yellow-100" },
+    // { name: "Fashion", value: "fashion", icon: "👔", color: "bg-purple-100" },
+    // { name: "Books", value: "books", icon: "📚", color: "bg-orange-100" },
+    // { name: "Furniture", value: "furniture", icon: "🪑", color: "bg-teal-100" },
+    // { name: "Sports", value: "sports", icon: "⚽", color: "bg-indigo-100" },
     // { name: "Add", icon: "➕", color: "bg-gray-100" },
 ]
 

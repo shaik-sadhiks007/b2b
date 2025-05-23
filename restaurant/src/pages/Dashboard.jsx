@@ -46,9 +46,9 @@ const Dashboard = () => {
 
     const tabs = [
         { label: "Menu editor", path: "/menu" },
-        { label: "Manage inventory", path: "/inventory" },
-        { label: "Taxes", path: "/taxes" },
-        { label: "Charges", path: "/charges" }
+        // { label: "Manage inventory", path: "/inventory" },
+        // { label: "Taxes", path: "/taxes" },
+        // { label: "Charges", path: "/charges" }
     ];
 
     // Configure axios defaults

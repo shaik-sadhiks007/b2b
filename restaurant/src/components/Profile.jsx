@@ -463,7 +463,7 @@ const Profile = () => {
                             <div className="card border-0 shadow-sm rounded-3">
                                 <div className="card-header bg-white py-3 border-bottom">
                                     <div className="d-flex justify-content-between align-items-center">
-                                        <h5 className="mb-0 fw-bold">Restaurant Profile</h5>
+                                        <h5 className="mb-0 fw-bold">Business Profile</h5>
                                         <button 
                                             className="btn btn-primary px-4"
                                             onClick={() => setIsEditing(!isEditing)}
@@ -478,7 +478,7 @@ const Profile = () => {
                                             <div className="row g-3">
                                                 {/* Restaurant Image Section */}
                                                 <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Restaurant Image</h6>
+                                                    <h6 className="fw-medium mb-3">Business Image</h6>
                                                     <div className="row g-3">
                                                         <div className="col-md-6">
                                                             <div className="card">
@@ -499,7 +499,7 @@ const Profile = () => {
                                                                         ) : (
                                                                             <div className="text-center">
                                                                                 <ImageIcon size={48} className="text-muted mb-2" />
-                                                                                <p className="mb-0">Upload Restaurant Image</p>
+                                                                                <p className="mb-0">Upload Business Image</p>
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -520,7 +520,7 @@ const Profile = () => {
                                                     <h6 className="fw-medium mb-3">Basic Information</h6>
                                                     <div className="row g-3">
                                                         <div className="col-md-6">
-                                                            <label className="form-label fw-medium">Restaurant Name</label>
+                                                            <label className="form-label fw-medium">Business Name</label>
                                                             <input
                                                                 type="text"
                                                                 className="form-control"
@@ -551,7 +551,7 @@ const Profile = () => {
                                                                 required
                                                             >
                                                                 <option value="">Select Service Type</option>
-                                                                <option value="DINE_IN">Dine In</option>
+                                                                <option value="BOTH">BOTH</option>
                                                                 <option value="DELIVERY">Delivery</option>
                                                                 <option value="PICKUP">Pickup</option>
                                                             </select>
@@ -924,7 +924,7 @@ const Profile = () => {
                                                     <div className="col-md-9">
                                         <div className="row g-3">
                                             <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Restaurant Name</h6>
+                                                <h6 className="text-muted mb-2 fw-medium">Business Name</h6>
                                                 <p className="mb-0">{restaurant?.restaurantName}</p>
                                             </div>
                                             <div className="col-md-6">

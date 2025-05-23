@@ -279,71 +279,52 @@ const Home = () => {
                 </div>
 
                 {/* Additional content to enable scrolling */}
-                <div className="mt-32 w-full">
+                <div className="mt-8 w-full">
                     <div className="w-full max-w-4xl mx-auto">
-                        {/* Tabs */}
-                        <div className="grid grid-cols-4 mb-8">
-                            {["all", "popular", "nearby", "offers"].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`py-2 px-4 text-center transition-colors ${activeTab === tab
-                                        ? "border-b-2 border-blue-500 text-blue-500 font-medium"
-                                        : "text-gray-500 hover:text-gray-700"
-                                        }`}
-                                >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)} {tab === "all" ? "Services" : ""}
-                                </button>
-                            ))}
-                        </div>
+                        {/* Category shortcuts */}
+                        <CategoryShortcuts 
+                            categories={categories} 
+                            selectedCategory={selectedCategory}
+                            onCategorySelect={(category) => setSelectedCategory(category.value)}
+                        />
 
-                        {/* Tab content */}
-                        {activeTab === "all" && (
-                            <>
-                                {/* Category shortcuts */}
-                                <CategoryShortcuts 
-                                    categories={categories} 
-                                    selectedCategory={selectedCategory}
-                                    onCategorySelect={(category) => setSelectedCategory(category.value)}
-                                />
-
-                                {restaurants.length === 0 ? (
-                                    <div className="text-center py-8 col-span-full mt-5">
-                                        <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
-                                        <p className="text-gray-500">Please try searching in a different area</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
-                                        {restaurants.map((restaurant) => (
-                                            <div
-                                                key={restaurant._id}
-                                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                                                onClick={() => handleRestaurantClick(restaurant)}
-                                            >
-                                                <div className="h-48 w-full">
-                                                    <img
-                                                        src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
-                                                        alt={restaurant.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="p-4">
-                                                    <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
-                                                    <p className="text-gray-600 mb-2">{restaurant.description}</p>
-                                                    <div className="flex items-center justify-between">
-                                                        {/* <span className="text-yellow-500">★ {restaurant.rating}</span> */}
-                                                        <span className="text-gray-500">{restaurant.distance} km away</span>
-                                                    </div>
-                                                </div>
+                        {restaurants.length === 0 ? (
+                            <div className="text-center py-8 col-span-full mt-5">
+                                <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
+                                <p className="text-gray-500">Please try searching in a different area</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
+                                {restaurants.map((restaurant) => (
+                                    <div
+                                        key={restaurant._id}
+                                        className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
+                                        onClick={() => handleRestaurantClick(restaurant)}
+                                    >
+                                        <div className="relative h-48 w-full">
+                                            <img
+                                                src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
+                                                alt={restaurant.name}
+                                                className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
+                                            />
+                                            <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                                {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
+                                            </span>
+                                        </div>
+                                        <div className="p-4">
+                                            <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
+                                            <p className="text-gray-600 mb-2">{restaurant.description}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">{restaurant.distance} km away</span>
+                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                    {restaurant.online ? 'Open' : 'Closed'}
+                                                </span>
                                             </div>
-                                        ))}
+                                        </div>
                                     </div>
-                                )}
-                            </>
+                                ))}
+                            </div>
                         )}
-                        {activeTab === "popular" && <div className="text-center py-8">Popular services will appear here</div>}
-                        {activeTab === "nearby" && <div className="text-center py-8">Nearby services will appear here</div>}
-                        {activeTab === "offers" && <div className="text-center py-8">Special offers will appear here</div>}
                     </div>
                 </div>
             </main>

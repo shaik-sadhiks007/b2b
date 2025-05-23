@@ -27,7 +27,17 @@ const HotelDetails = () => {
             try {
                 const token = localStorage.getItem('token');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axios.get(`http://localhost:5000/api/restaurants/public/${id}`, { headers });
+                
+                // Get location from localStorage if available
+                const savedLocation = localStorage.getItem('userLocation');
+                let url = `http://localhost:5000/api/restaurants/public/${id}`;
+                
+                if (savedLocation) {
+                    const { coordinates } = JSON.parse(savedLocation);
+                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
+                }
+
+                const response = await axios.get(url, { headers });
                 setRestaurant(response.data);
             } catch (err) {
                 setError('Failed to fetch restaurant details');
@@ -190,7 +200,7 @@ const HotelDetails = () => {
                             <img
                                 src={restaurant.imageUrl || 'https://via.placeholder.com/800x400?text=Restaurant'}
                                 alt={restaurant.restaurantName}
-                                className="w-full h-64 object-cover"
+                                className={`w-full h-64 object-cover ${!restaurant.online ? 'grayscale' : ''}`}
                             />
                             <div className="p-6">
                                 <h1 className="text-3xl font-bold mb-2">{restaurant.restaurantName}</h1>
@@ -203,6 +213,9 @@ const HotelDetails = () => {
                                     <div className="text-gray-500">
                                         {restaurant.distance} km away
                                     </div>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                        {restaurant.online ? 'Open' : 'Closed'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -258,17 +271,21 @@ const HotelDetails = () => {
                                                                             <img
                                                                                 src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
                                                                                 alt={item.name}
-                                                                                className="w-full h-full object-cover"
+                                                                                className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
                                                                             />
                                                                         </div>
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
-                                                                            className={`self-center px-4 py-2 ${isItemInCart(item._id)
-                                                                                ? 'bg-green-600 text-white'
-                                                                                : 'border border-green-600 text-green-600'
-                                                                                } rounded hover:bg-green-700 hover:text-white transition-colors cursor-pointer`}
+                                                                            disabled={!restaurant.online}
+                                                                            className={`self-center px-4 py-2 ${
+                                                                                !restaurant.online 
+                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                                                    : isItemInCart(item._id)
+                                                                                        ? 'bg-green-600 text-white'
+                                                                                        : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
+                                                                            } rounded transition-colors`}
                                                                         >
-                                                                            {isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
+                                                                            {!restaurant.online ? 'CLOSED' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>
                                                                     </div>
                                                                 ))}

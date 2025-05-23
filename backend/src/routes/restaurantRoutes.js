@@ -284,23 +284,65 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
 });
 
 // Update restaurant profile
-router.patch('/profile', auth, restaurantMiddleware, async (req, res) => {
+router.patch('/profile', auth, restaurantMiddleware, upload.fields([
+    { name: 'profileImage', maxCount: 1 },
+    { name: 'panCardImage', maxCount: 1 },
+    { name: 'gstImage', maxCount: 1 },
+    { name: 'fssaiImage', maxCount: 1 }
+]), async (req, res) => {
     try {
         const updateData = { ...req.body };
 
-        // Handle image upload if new image is provided
-        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
-            try {
-                const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
-                if (imageUrl) {
-                    updateData.images = {
-                        ...updateData.images,
-                        profileImage: imageUrl
-                    };
+        // Handle file uploads
+        if (req.files) {
+            // Initialize images object if it doesn't exist
+            if (!updateData.images) {
+                updateData.images = {};
+            }
+
+            // Handle profile image
+            if (req.files.profileImage?.[0]) {
+                try {
+                    const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
+                    updateData.images.profileImage = result.secure_url;
+                } catch (error) {
+                    console.error('Error uploading profile image:', error);
+                    return res.status(500).json({ message: 'Error uploading profile image' });
                 }
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                return res.status(500).json({ message: 'Error uploading image' });
+            } else if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+                try {
+                    const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
+                    if (imageUrl) {
+                        updateData.images.profileImage = imageUrl;
+                    }
+                } catch (error) {
+                    console.error('Error uploading profile image:', error);
+                    return res.status(500).json({ message: 'Error uploading profile image' });
+                }
+            }
+
+            // Handle optional images
+            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            for (const imageType of optionalImages) {
+                if (req.files?.[imageType]?.[0]) {
+                    try {
+                        const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
+                        updateData.images[imageType] = result.secure_url;
+                    } catch (error) {
+                        console.error(`Error uploading ${imageType}:`, error);
+                        return res.status(500).json({ message: `Error uploading ${imageType}` });
+                    }
+                } else if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
+                    try {
+                        const imageUrl = await uploadBase64ToCloudinary(updateData.images[imageType]);
+                        if (imageUrl) {
+                            updateData.images[imageType] = imageUrl;
+                        }
+                    } catch (error) {
+                        console.error(`Error uploading ${imageType}:`, error);
+                        return res.status(500).json({ message: `Error uploading ${imageType}` });
+                    }
+                }
             }
         }
 
@@ -448,8 +490,14 @@ router.get('/public/all', async (req, res) => {
 
         // Get all published restaurants
         const restaurants = await Restaurant.find(query)
-            .select('restaurantName serviceType images.profileImage description rating location category')
+            .select('restaurantName serviceType images.profileImage description rating location category operatingHours')
             .lean();
+
+        // Get current day and time
+        const now = new Date();
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = days[now.getDay()];
+        const currentTime = now.toLocaleTimeString('en-US', { hour12: false }); // gets current time in 24h format
 
         // Format the response to include only necessary fields
         const formattedRestaurants = restaurants.map(restaurant => {
@@ -464,6 +512,23 @@ router.get('/public/all', async (req, res) => {
                 distance = distanceInMeters / 1000;
             }
 
+            // Check if restaurant is currently open
+            let isOnline = false;
+            if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
+                const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
+                if (todaySchedule && todaySchedule.isOpen) {
+                    const openTime = todaySchedule.openTime;
+                    const closeTime = todaySchedule.closeTime;
+                    
+                    // Convert times to comparable format
+                    const currentTimeNum = parseInt(currentTime.replace(':', ''));
+                    const openTimeNum = parseInt(openTime.replace(':', ''));
+                    const closeTimeNum = parseInt(closeTime.replace(':', ''));
+
+                    isOnline = currentTimeNum >= openTimeNum && currentTimeNum <= closeTimeNum;
+                }
+            }
+
             return {
                 _id: restaurant._id,
                 name: restaurant.restaurantName,
@@ -473,7 +538,8 @@ router.get('/public/all', async (req, res) => {
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
                 location: restaurant.location || null,
                 serviceType: restaurant.serviceType || '',
-                category: restaurant.category || ''
+                category: restaurant.category || '',
+                online: isOnline
             };
         });
 
@@ -503,10 +569,45 @@ router.get('/public/:id', async (req, res) => {
         const restaurant = await Restaurant.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('restaurantName images.profileImage description rating distance location menu');
+        }).select('restaurantName images.profileImage description rating location menu operatingHours');
 
         if (!restaurant) {
             return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        let distance = 0;
+        // Calculate distance if coordinates are provided
+        if (req.query.lat && req.query.lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
+            // Calculate distance using geolib
+            const distanceInMeters = geolib.getDistance(
+                { latitude: parseFloat(req.query.lat), longitude: parseFloat(req.query.lng) },
+                { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+            );
+            // Convert meters to kilometers
+            distance = distanceInMeters / 1000;
+        }
+
+        // Get current day and time
+        const now = new Date();
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = days[now.getDay()];
+        const currentTime = now.toLocaleTimeString('en-US', { hour12: false }); // gets current time in 24h format
+
+        // Check if restaurant is currently open
+        let isOnline = false;
+        if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
+            const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
+            if (todaySchedule && todaySchedule.isOpen) {
+                const openTime = todaySchedule.openTime;
+                const closeTime = todaySchedule.closeTime;
+                
+                // Convert times to comparable format
+                const currentTimeNum = parseInt(currentTime.replace(':', ''));
+                const openTimeNum = parseInt(openTime.replace(':', ''));
+                const closeTimeNum = parseInt(closeTime.replace(':', ''));
+
+                isOnline = currentTimeNum >= openTimeNum && currentTimeNum <= closeTimeNum;
+            }
         }
 
         // Format the response
@@ -516,9 +617,10 @@ router.get('/public/:id', async (req, res) => {
             imageUrl: restaurant.images?.profileImage || null,
             description: restaurant.description || '',
             rating: restaurant.rating || 0,
-            distance: restaurant.distance || 0,
+            distance: parseFloat(distance.toFixed(2)),
             location: restaurant.location || '',
-            menu: restaurant.menu || []
+            menu: restaurant.menu || [],
+            online: isOnline
         };
 
         res.json(formattedRestaurant);

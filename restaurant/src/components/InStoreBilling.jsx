@@ -3,6 +3,7 @@ import axios from 'axios';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
 
 const InStoreBilling = () => {
     const [menuItems, setMenuItems] = useState([]);
@@ -21,7 +22,7 @@ const InStoreBilling = () => {
     const fetchMenuItems = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/menu', {
+            const response = await axios.get(`${API_URL}/api/menu`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Always flatten menu items for the provided structure
@@ -94,7 +95,7 @@ const InStoreBilling = () => {
                 customerName,
                 customerPhone
             };
-            await axios.post('http://localhost:5000/api/orders/instore-order', payload, {
+            await axios.post(`${API_URL}/api/orders/instore-order`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('In-store order placed successfully');

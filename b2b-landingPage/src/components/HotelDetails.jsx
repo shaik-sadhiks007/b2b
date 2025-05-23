@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Header } from './Header';
 import { useCart } from '../context/CartContext';
+import { API_URL } from '../api/api';
 
 const HotelDetails = () => {
     const { id } = useParams();
@@ -30,7 +31,7 @@ const HotelDetails = () => {
                 
                 // Get location from localStorage if available
                 const savedLocation = localStorage.getItem('userLocation');
-                let url = `http://localhost:5000/api/restaurants/public/${id}`;
+                let url = `${API_URL}/api/restaurants/public/${id}`;
                 
                 if (savedLocation) {
                     const { coordinates } = JSON.parse(savedLocation);
@@ -49,7 +50,7 @@ const HotelDetails = () => {
             try {
                 const token = localStorage.getItem('token');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axios.get(`http://localhost:5000/api/menu/public/${id}`, { headers });
+                const response = await axios.get(`${API_URL}/api/menu/public/${id}`, { headers });
                 setMenu(response.data);
                 // Set first category as expanded by default
                 if (response.data && response.data.length > 0) {

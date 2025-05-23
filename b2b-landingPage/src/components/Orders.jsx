@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin } from 'lucide-react';
+import { API_URL } from '../api/api';
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
@@ -16,9 +17,9 @@ const Orders = () => {
     const fetchOrders = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/orders/order-history', {
+            const response = await axios.get(`${API_URL}/api/orders/order-history`, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
+            }); 
             setOrders(response.data);
             setLoading(false);
         } catch (error) {
@@ -30,7 +31,7 @@ const Orders = () => {
     const handleCancelOrder = async (orderId) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:5000/api/orders/${orderId}`, 
+            await axios.patch(`${API_URL}/api/orders/${orderId}`, 
                 { status: 'CANCELLED' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

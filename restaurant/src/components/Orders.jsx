@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
 
 const statusTabs = [
     { id: 'ORDER_PLACED', label: 'Accept' },
@@ -23,7 +24,7 @@ const Orders = () => {
     const fetchOrders = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/api/orders/status/${activeTab}`, {
+            const response = await axios.get(`${API_URL}/api/orders/status/${activeTab}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setOrders(response.data);
@@ -37,7 +38,7 @@ const Orders = () => {
     const handleStatusChange = async (orderId, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:5000/api/orders/status/${orderId}`, { status }, {
+            await axios.patch(`${API_URL}/api/orders/status/${orderId}`, { status }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Order status updated');

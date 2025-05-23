@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { API_URL } from '../api/api';
 
 export const AuthContext = createContext();
 
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(true);
             console.log('Fetching user data with token:', authToken);
             
-            const response = await axios.get('http://localhost:5000/api/auth/profile', {
+            const response = await axios.get(`${API_URL}/api/auth/profile`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
         
         try {
             console.log('Fetching restaurant data');
-            const response = await axios.get('http://localhost:5000/api/restaurants', {
+            const response = await axios.get(`${API_URL}/api/restaurants`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             

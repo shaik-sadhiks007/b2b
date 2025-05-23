@@ -3,6 +3,7 @@ import { HotelContext } from '../contextApi/HotelContextProvider';
 import axios from 'axios';
 import { auth } from '../firebase/FIrebase';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { API_URL } from '../api/api';
 
 const Profile = () => {
     const { token } = useContext(HotelContext);
@@ -37,7 +38,7 @@ const Profile = () => {
 
     const fetchUserData = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/auth/profile', {
+            const response = await axios.get(`${API_URL}/api/auth/profile`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setUser(response.data);
@@ -51,7 +52,7 @@ const Profile = () => {
 
     const fetchAddresses = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/customer-address', {
+            const response = await axios.get(`${API_URL}/api/customer-address`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setAddresses(response.data);
@@ -66,14 +67,14 @@ const Profile = () => {
         try {
             if (editingAddress) {
                 await axios.put(
-                    `http://localhost:5000/api/customer-address/${editingAddress._id}`,
+                    `${API_URL}/api/customer-address/${editingAddress._id}`,
                     addressForm,
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
                 setSuccess('Address updated successfully');
             } else {
                 await axios.post(
-                    'http://localhost:5000/api/customer-address',
+                    `${API_URL}/api/customer-address`,
                     addressForm,
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
@@ -116,7 +117,7 @@ const Profile = () => {
         if (window.confirm('Are you sure you want to delete this address?')) {
             try {
                 await axios.delete(
-                    `http://localhost:5000/api/customer-address/${addressId}`,
+                    `${API_URL}/api/customer-address/${addressId}`,
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
                 setSuccess('Address deleted successfully');
@@ -130,7 +131,7 @@ const Profile = () => {
     const handleSetDefault = async (addressId) => {
         try {
             await axios.put(
-                `http://localhost:5000/api/customer-address/${addressId}/set-default`,
+                `${API_URL}/api/customer-address/${addressId}/set-default`,
                 {},
                 { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
             );

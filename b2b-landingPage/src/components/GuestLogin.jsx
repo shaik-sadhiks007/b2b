@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 import { HotelContext } from "../contextApi/HotelContextProvider";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { API_URL } from "../api/api";
 
 const GuestLogin = () => {
     const navigate = useNavigate();
@@ -21,7 +22,7 @@ const GuestLogin = () => {
             const user = userCredential.user;
 
             // Create a guest user in your backend
-            const response = await axios.post("http://localhost:5000/api/auth/guest-login", {
+            const response = await axios.post(`${API_URL}/api/auth/guest-login`, {
                 firebaseUid: user.uid
             });
 

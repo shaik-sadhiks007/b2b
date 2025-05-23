@@ -3,6 +3,7 @@ import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from "../firebase/FIrebase";
+import { API_URL } from '../api/api';
 
 const Login = () => {
   const { login } = useContext(AuthContext);
@@ -24,7 +25,7 @@ const Login = () => {
       const user = userCredential.user;
 
       // Get user data from backend
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email: user.email,
         firebaseUid: user.uid
       });
@@ -46,7 +47,7 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const response = await axios.post("http://localhost:5000/api/auth/google-login", {
+      const response = await axios.post(`${API_URL}/api/auth/google-login`, {
         email: user.email,
         name: user.displayName,
         firebaseUid: user.uid

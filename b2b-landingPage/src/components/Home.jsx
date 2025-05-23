@@ -8,6 +8,7 @@ import Navbar from "./Navbar"
 import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
 import axios from 'axios'
+import { API_URL } from '../api/api'
 
 
 const categories = [
@@ -184,7 +185,7 @@ const Home = () => {
             try {
                 // Get location from localStorage if available
                 const savedLocation = localStorage.getItem('userLocation');
-                let url = 'http://localhost:5000/api/restaurants/public/all';
+                let url = `${API_URL}/api/restaurants/public/all`;
 
                 // Add category to query params if not "all"
                 if (selectedCategory !== "all") {

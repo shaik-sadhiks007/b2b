@@ -16,6 +16,7 @@ import axios from 'axios';
 import restaurantService from '../services/restaurantService';
 import { AuthContext } from '../context/AuthContext';
 import { CloudCog } from 'lucide-react';
+import { API_URL } from '../api/api';
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -749,7 +750,7 @@ const AddRestaurant = () => {
     useEffect(() => {
         const fetchRestaurant = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/restaurants`, {
+                const response = await axios.get(`${API_URL}/api/restaurants`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }

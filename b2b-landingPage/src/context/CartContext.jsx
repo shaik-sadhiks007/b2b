@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { API_URL } from '../api/api';
 
 const CartContext = createContext();
 
@@ -15,7 +16,7 @@ export const CartProvider = ({ children }) => {
                 setCartCount(0);
                 return;
             }
-            const response = await axios.get('http://localhost:5000/api/cart', {
+            const response = await axios.get(`${API_URL}/api/cart`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCarts(response.data);
@@ -36,7 +37,7 @@ export const CartProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             if (!token) return { success: false, error: 'Not logged in' };
 
-            await axios.post('http://localhost:5000/api/cart', {
+            await axios.post(`${API_URL}/api/cart`, {
                 restaurantId,
                 restaurantName,
                 items,
@@ -68,7 +69,7 @@ export const CartProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             if (!token) return { success: false, error: 'Not logged in' };
 
-            const response = await axios.patch(`http://localhost:5000/api/cart/${itemId}`, {
+            const response = await axios.patch(`${API_URL}/api/cart/${itemId}`, {
                 quantity
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -90,7 +91,7 @@ export const CartProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             if (!token) return { success: false, error: 'Not logged in' };
 
-            await axios.delete(`http://localhost:5000/api/cart/${itemId}`, {
+            await axios.delete(`${API_URL}/api/cart/${itemId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -107,7 +108,7 @@ export const CartProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            await axios.delete('http://localhost:5000/api/cart', {
+            await axios.delete(`${API_URL}/api/cart`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchCart();

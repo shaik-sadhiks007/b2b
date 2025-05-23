@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
 
 const OrderSuccess = () => {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ const OrderSuccess = () => {
         const fetchOrderDetails = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+                const response = await axios.get(`${API_URL}/api/orders/${orderId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setOrder(response.data.order);

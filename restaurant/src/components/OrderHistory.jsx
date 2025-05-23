@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin } from 'lucide-react';
+import { API_URL } from '../api/api';
 
 const OrderHistory = () => {
     const [orders, setOrders] = useState([]);
@@ -16,7 +17,7 @@ const OrderHistory = () => {
     const fetchOrders = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/orders/order-history/restaurant', {
+            const response = await axios.get(`${API_URL}/api/orders/order-history/restaurant`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setOrders(response.data);
@@ -30,7 +31,7 @@ const OrderHistory = () => {
     const handleCancelOrder = async (orderId) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:5000/api/orders/${orderId}`, 
+            await axios.patch(`${API_URL}/api/orders/${orderId}`, 
                 { status: 'CANCELLED' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

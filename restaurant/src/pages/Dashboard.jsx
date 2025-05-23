@@ -9,6 +9,7 @@ import '../styles/Dashboard.css';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
 
 const Dashboard = () => {
     const { user, token } = useContext(AuthContext);
@@ -60,7 +61,7 @@ const Dashboard = () => {
     // Fetch menu items
     const fetchMenu = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/menu', {
+            const response = await axios.get(`${API_URL}/api/menu`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -76,7 +77,7 @@ const Dashboard = () => {
     // Fetch restaurants
     const fetchRestaurants = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/restaurants', {
+            const response = await axios.get(`${API_URL}/api/restaurants`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -99,7 +100,7 @@ const Dashboard = () => {
     // Add new menu item
     const handleAddItem = async (newItem) => {
         try {
-            const response = await axios.post('http://localhost:5000/api/menu', newItem, {
+            const response = await axios.post(`${API_URL}/api/menu`, newItem, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -114,7 +115,7 @@ const Dashboard = () => {
     // Update menu item
     const handleUpdateItem = async (id, updatedItem) => {
         try {
-            await axios.put(`http://localhost:5000/api/menu/${id}`, updatedItem, {
+            await axios.put(`${API_URL}/api/menu/${id}`, updatedItem, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -132,7 +133,7 @@ const Dashboard = () => {
             return;
         }
         try {
-            await axios.delete(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
+            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -203,7 +204,7 @@ const Dashboard = () => {
                 isExpanded: true,
                 subcategories: []
             };
-            await axios.post('http://localhost:5000/api/menu', newCategory, {
+            await axios.post(`${API_URL}/api/menu`, newCategory, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -221,7 +222,7 @@ const Dashboard = () => {
             return;
         }
         try {
-            const response = await axios.put(`http://localhost:5000/api/menu/${categoryId}`, { name: newName }, {
+            const response = await axios.put(`${API_URL}/api/menu/${categoryId}`, { name: newName }, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -236,7 +237,7 @@ const Dashboard = () => {
     // Delete category
     const handleDeleteCategory = async (categoryId) => {
         try {
-            await axios.delete(`http://localhost:5000/api/menu/${categoryId}`, {
+            await axios.delete(`${API_URL}/api/menu/${categoryId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -258,7 +259,7 @@ const Dashboard = () => {
                 name: name,
                 items: []
             };
-            await axios.post(`http://localhost:5000/api/menu/${categoryId}/subcategories`, newSubcategory, {
+            await axios.post(`${API_URL}/api/menu/${categoryId}/subcategories`, newSubcategory, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -277,7 +278,7 @@ const Dashboard = () => {
             return;
         }
         try {
-            const response = await axios.put(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}`, { name: newName }, {
+            const response = await axios.put(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`, { name: newName }, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -296,7 +297,7 @@ const Dashboard = () => {
             return;
         }
         try {
-            await axios.delete(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}`, {
+            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -327,7 +328,7 @@ const Dashboard = () => {
     const handleEditItem = async (categoryId, subcategoryId, itemId, itemData) => {
         try {
             // First update the backend
-            const response = await fetch(`http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
+            const response = await fetch(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -398,7 +399,7 @@ const Dashboard = () => {
     const handleAddItemToSubcategory = async (categoryId, subcategoryId, itemData) => {
         try {
             const response = await axios.post(
-                `http://localhost:5000/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
+                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
                 itemData,
                 {
                     headers: {

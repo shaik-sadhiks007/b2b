@@ -11,6 +11,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Search, MapPin, Clock, Image as ImageIcon, CloudCog } from 'lucide-react';
+import { API_URL } from '../api/api';
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -304,7 +305,7 @@ const Profile = () => {
 
     const fetchRestaurantProfile = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/restaurants/profile', {
+            const response = await axios.get(`${API_URL}/api/restaurants/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -413,7 +414,7 @@ const Profile = () => {
                 return;
             }
             
-            const response = await axios.patch('http://localhost:5000/api/restaurants/profile', changedData, {
+            const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

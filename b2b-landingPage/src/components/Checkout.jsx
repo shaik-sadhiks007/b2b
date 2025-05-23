@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
+
 
 const Checkout = () => {
     const [cart, setCart] = useState(null);
@@ -36,7 +38,7 @@ const Checkout = () => {
     const fetchCart = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/cart', {
+            const response = await axios.get(`${API_URL}/api/cart`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const cartData = response.data[0];
@@ -58,7 +60,7 @@ const Checkout = () => {
     const fetchAddresses = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/customer-address', {
+            const response = await axios.get(`${API_URL}/api/customer-address`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAddresses(response.data);
@@ -114,12 +116,12 @@ const Checkout = () => {
                 orderData.customerAddressData = formData;
             }
 
-            const response = await axios.post('http://localhost:5000/api/orders/place-order', orderData, {
+            const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (response.data) {
-                await axios.delete('http://localhost:5000/api/cart', {
+                await axios.delete(`${API_URL}/api/cart`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 

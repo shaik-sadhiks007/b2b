@@ -6,6 +6,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 import debounce from 'lodash/debounce'
 import { useNavigate } from 'react-router-dom'
+import { API_URL } from '../api/api';
 
 const cuisines = [
   { name: 'Rice', img: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmljZXxlbnwwfHwwfHx8MA%3D%3D' },
@@ -52,7 +53,7 @@ function SearchPage() {
         setCart([])
         return
       }
-      const response = await axios.get('http://localhost:5000/api/cart', {
+      const response = await axios.get(`${API_URL}/api/cart`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setCart(response.data)
@@ -110,7 +111,7 @@ function SearchPage() {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/cart', {
+      await axios.post(`${API_URL}/api/cart`, {
         restaurantId: item.restaurant.id,
         restaurantName: item.restaurant.name,
         items,
@@ -119,7 +120,7 @@ function SearchPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
       // Refresh cart
-      const response = await axios.get('http://localhost:5000/api/cart', {
+      const response = await axios.get(`${API_URL}/api/cart`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setCart(response.data)
@@ -138,7 +139,7 @@ function SearchPage() {
     if (resetCart) {
       try {
         const token = localStorage.getItem('token')
-        await axios.delete('http://localhost:5000/api/cart', {
+        await axios.delete(`${API_URL}/api/cart`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         setCart([])
@@ -164,7 +165,7 @@ function SearchPage() {
 
     setIsLoading(true)
     try {
-      const response = await axios.get(`http://localhost:5000/api/search`, {
+      const response = await axios.get(`${API_URL}/api/search`, {
         params: {
           query: query,
           type: searchType

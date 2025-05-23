@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { auth, createUserWithEmailAndPassword, sendEmailVerification } from "../firebase/FIrebase";
 import { onAuthStateChanged, reload } from "firebase/auth";
+import { API_URL } from "../api/api";
 
 const Register = () => {
     const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -22,7 +23,7 @@ const Register = () => {
                 if (user.emailVerified) {
                     try {
                         // Store user data in backend after email verification
-                        const response = await axios.post("http://localhost:5000/api/auth/register", {
+                        const response = await axios.post(`${API_URL}/api/auth/register`, {
                             username: formData.username,
                             email: formData.email,
                             firebaseUid: user.uid
@@ -88,7 +89,7 @@ const Register = () => {
             if (user.emailVerified) {
                 try {
                     // Store user data in backend after email verification
-                    const response = await axios.post("http://localhost:5000/api/auth/register", {
+                    const response = await axios.post(`${API_URL}/api/auth/register`, {
                         username: formData.username,
                         email: formData.email,
                         firebaseUid: user.uid

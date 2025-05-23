@@ -30,7 +30,8 @@ const Navbar = () => {
                         <i className="bi bi-list fs-4"></i>
                     </button>
                     <div className="d-flex flex-column">
-                        <span className="fw-bold">B2B</span>
+                         <span className="fw-bold">B2B</span> 
+                       
                         {/* <small className="text-muted">restaurant partner</small> */}
                     </div>
                 </div>

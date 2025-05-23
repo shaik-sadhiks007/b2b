@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
+import {Link} from 'react-router-dom';
 
 const Footer = () => {
     const navigate = useNavigate();
@@ -52,9 +53,11 @@ const Footer = () => {
                     <div>
                         <h3 className="text-xl font-bold mb-4">Quick Links</h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="text-gray-400 hover:text-white">About Us</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white">FAQ</a></li>
+                            <li> <Link to="/about-us" className="text-gray-400 hover:text-white">
+                                About Us
+                             </Link></li>
+                            {/* <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li> */}
+                            {/* <li><a href="#" className="text-gray-400 hover:text-white">FAQ</a></li> */}
                         </ul>
                     </div>
 
@@ -72,13 +75,13 @@ const Footer = () => {
                                 </a>
                             </li>
                             <li>
-                                <a 
+                                {/* <a 
                                     href="#" 
                                     onClick={handleDeliveryPartnerClick}
                                     className="text-gray-400 hover:text-white"
                                 >
                                     Become a delivery partner
-                                </a>
+                                </a> */}
                             </li>
                         </ul>
                     </div>

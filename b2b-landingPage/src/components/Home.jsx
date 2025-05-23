@@ -9,6 +9,7 @@ import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
 import axios from 'axios'
 import { API_URL } from '../api/api'
+import logo from '../assets/b2bupdate.png'; 
 
 
 const categories = [
@@ -226,9 +227,7 @@ const Home = () => {
             <main className="container mx-auto pt-16 pb-20 flex flex-col items-center justify-center flex-grow">
                 <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8 mt-16">
                     {/* Logo */}
-                    <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
-                        B2B
-                    </h1>
+                    <img src={logo} alt="B2B Logo" className="w-100 h-110" />
 
                     {/* Search and Location Inputs Row */}
                     <div className="w-full flex gap-4">

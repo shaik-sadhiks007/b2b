@@ -22,7 +22,7 @@ import Orders from "./components/Orders"
 import ProtectedRoute from './components/ProtectedRoute'
 import GuestLogin from "./components/GuestLogin"
 import Profile from "./components/Profile"
-
+import AboutUs from "./components/About-us"
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -76,6 +76,7 @@ function AppContent() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
+        <Route path="/about-us" element={<AboutUs />} />
       </Routes>
     </div>
   )

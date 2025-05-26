@@ -37,6 +37,20 @@ function Navbar({ alwaysVisible }) {
     }
   }, [])
 
+  // Add localStorage change listener
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'userLocation') {
+        const { location: newLocation } = JSON.parse(e.newValue);
+        setLocation(newLocation);
+        setLocationShowSuggestions(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -64,12 +78,29 @@ function Navbar({ alwaysVisible }) {
       }
     }
     localStorage.setItem('userLocation', JSON.stringify(locationData))
+    // Dispatch a custom event to notify other components
+    window.dispatchEvent(new Event('locationUpdated'))
     setLocation(suggestion.address || suggestion.name)
     setLocationShowSuggestions(false)
     if (onLocationSelect) {
       onLocationSelect(suggestion)
     }
   }
+
+  // Add event listener for custom location update event
+  useEffect(() => {
+    const handleLocationUpdate = () => {
+      const savedLocation = localStorage.getItem('userLocation')
+      if (savedLocation) {
+        const { location: savedLoc } = JSON.parse(savedLocation)
+        setLocation(savedLoc)
+        setLocationShowSuggestions(false)
+      }
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate)
+    return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white z-50 shadow-md py-2">

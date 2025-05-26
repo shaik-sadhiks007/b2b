@@ -39,6 +39,29 @@ const Home = () => {
     const [error, setError] = useState(null)
     const navigate = useNavigate()
 
+    // Add localStorage change listener
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'userLocation') {
+                const { location: newLocation } = JSON.parse(e.newValue);
+                setLocation(newLocation);
+                setShowSuggestions(false);
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    // Load saved location on initial render
+    useEffect(() => {
+        const savedLocation = localStorage.getItem('userLocation');
+        if (savedLocation) {
+            const { location: savedLoc } = JSON.parse(savedLocation);
+            setLocation(savedLoc);
+        }
+    }, []);
+
     // Function to fetch location suggestions
     const fetchLocationSuggestions = async (query) => {
         if (!query.trim()) {
@@ -157,10 +180,27 @@ const Home = () => {
             }
         }
         localStorage.setItem('userLocation', JSON.stringify(locationData))
+        // Dispatch a custom event to notify other components
+        window.dispatchEvent(new Event('locationUpdated'))
         setLocation(suggestion.address)
         setSuggestions([])
         setShowSuggestions(false)
     }
+
+    // Add event listener for custom location update event
+    useEffect(() => {
+        const handleLocationUpdate = () => {
+            const savedLocation = localStorage.getItem('userLocation')
+            if (savedLocation) {
+                const { location: savedLoc } = JSON.parse(savedLocation)
+                setLocation(savedLoc)
+                setShowSuggestions(false)
+            }
+        }
+
+        window.addEventListener('locationUpdated', handleLocationUpdate)
+        return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
+    }, [])
 
     const handleServiceProviderClick = (provider) => {
         const token = localStorage.getItem('token');

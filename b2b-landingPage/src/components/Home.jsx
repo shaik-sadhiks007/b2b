@@ -9,6 +9,8 @@ import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
 import axios from 'axios'
 import { API_URL } from '../api/api'
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 
 
 const categories = [
@@ -24,7 +26,30 @@ const categories = [
     // { name: "Add", icon: "➕", color: "bg-gray-100" },
 ]
 
+const RestaurantCardSkeleton = () => (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-10">
+        <div className="relative h-48 w-full">
+            <Skeleton height={192} />
+        </div>
+        <div className="p-4">
+            <Skeleton height={24} width="70%" className="mb-2" />
+            <Skeleton height={16} count={2} className="mb-2" />
+            <div className="flex items-center justify-between">
+                <Skeleton height={16} width={80} />
+                <Skeleton height={16} width={60} />
+            </div>
+        </div>
+    </div>
+);
 
+const ErrorCard = ({ message }) => (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-10 p-4">
+        <div className="text-center py-8">
+            <p className="text-xl text-red-600 mb-2">Oops! Something went wrong</p>
+            <p className="text-gray-500">{message}</p>
+        </div>
+    </div>
+);
 
 const Home = () => {
     const [showLocationModal, setShowLocationModal] = useState(false)
@@ -217,7 +242,9 @@ const Home = () => {
     };
 
     const handleRestaurantClick = (restaurant) => {
-        navigate(`/hotel/${restaurant._id}`, { state: { restaurant } });
+        // Get the category from the restaurant or default to 'restaurant'
+        const category = restaurant.category?.toLowerCase() || 'restaurant';
+        navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
     };
 
     useEffect(() => {
@@ -249,8 +276,73 @@ const Home = () => {
         fetchRestaurants();
     }, [localStorage.getItem('userLocation'), selectedCategory]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    const renderRestaurants = () => {
+        if (loading) {
+            return Array(6).fill(0).map((_, index) => (
+                <RestaurantCardSkeleton key={index} />
+            ));
+        }
+
+        if (error) {
+            return <ErrorCard message={error} />;
+        }
+
+        if (restaurants.length === 0) {
+            return (
+                <div className="text-center py-8 col-span-full mt-5">
+                    <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
+                    <p className="text-gray-500">Please try searching in a different area</p>
+                </div>
+            );
+        }
+
+        return restaurants.map((restaurant) => (
+            <div
+                key={restaurant._id}
+                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
+                onClick={() => handleRestaurantClick(restaurant)}
+            >
+                <div className="relative h-48 w-full">
+                    <img
+                        src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
+                        alt={restaurant.name}
+                        className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
+                    />
+                    <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
+                    </span>
+                </div>
+                <div className="p-4">
+                    <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
+                    {/* <p className="text-gray-600 mb-3 line-clamp-2">{restaurant.description}</p> */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            {restaurant.distance !== null && (
+                                <div className="flex items-center gap-1.5 text-gray-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-sm">{restaurant.distance} km away</span>
+                                </div>
+                            )}
+                            <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${restaurant.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                {restaurant.online ? 'Open' : 'Closed'}
+                            </span>
+                        </div>
+                        {restaurant.operatingHours?.openTime && restaurant.operatingHours?.closeTime && (
+                            <div className="flex items-center gap-1.5 text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">{restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        ));
+    };
 
     return (
         <div>
@@ -292,7 +384,7 @@ const Home = () => {
                                 onBlur={() => {
                                     setTimeout(() => setShowSuggestions(false), 150)
                                 }}
-                                placeholder="Enter delivery location"
+                                placeholder="Enter your location"
                                 className="w-full pl-10 pr-4 py-3 rounded-full border-2 focus:border-blue-500 text-lg outline-none"
                             />
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -340,43 +432,9 @@ const Home = () => {
                             onCategorySelect={(category) => setSelectedCategory(category.value)}
                         />
 
-                        {restaurants.length === 0 ? (
-                            <div className="text-center py-8 col-span-full mt-5">
-                                <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
-                                <p className="text-gray-500">Please try searching in a different area</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
-                                {restaurants.map((restaurant) => (
-                                    <div
-                                        key={restaurant._id}
-                                        className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
-                                        onClick={() => handleRestaurantClick(restaurant)}
-                                    >
-                                        <div className="relative h-48 w-full">
-                                            <img
-                                                src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
-                                                alt={restaurant.name}
-                                                className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
-                                            />
-                                            <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                                {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
-                                            </span>
-                                        </div>
-                                        <div className="p-4">
-                                            <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
-                                            <p className="text-gray-600 mb-2">{restaurant.description}</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-500">{restaurant.distance} km away</span>
-                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {restaurant.online ? 'Open' : 'Closed'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
+                            {renderRestaurants()}
+                        </div>
                     </div>
                 </div>
             </main>

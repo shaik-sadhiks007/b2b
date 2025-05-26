@@ -4,6 +4,35 @@ import axios from 'axios';
 import { auth } from '../firebase/FIrebase';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { API_URL } from '../api/api';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h2 className="text-xl font-bold mb-4">{title}</h2>
+                <p className="text-gray-600 mb-6">{message}</p>
+                <div className="flex gap-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const Profile = () => {
     const { token } = useContext(HotelContext);
@@ -30,6 +59,9 @@ const Profile = () => {
         phone: '',
         isDefault: false
     });
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [addressToDelete, setAddressToDelete] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchUserData();
@@ -71,14 +103,14 @@ const Profile = () => {
                     addressForm,
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
-                setSuccess('Address updated successfully');
+                toast.success('Address updated successfully');
             } else {
                 await axios.post(
                     `${API_URL}/api/customer-address`,
                     addressForm,
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
-                setSuccess('Address added successfully');
+                toast.success('Address added successfully');
             }
             setShowAddressForm(false);
             setEditingAddress(null);
@@ -94,7 +126,7 @@ const Profile = () => {
             });
             fetchAddresses();
         } catch (error) {
-            setError(error.response?.data?.message || 'Failed to save address');
+            toast.error(error.response?.data?.message || 'Failed to save address');
         }
     };
 
@@ -113,19 +145,29 @@ const Profile = () => {
         setShowAddressForm(true);
     };
 
-    const handleDeleteAddress = async (addressId) => {
-        if (window.confirm('Are you sure you want to delete this address?')) {
-            try {
-                await axios.delete(
-                    `${API_URL}/api/customer-address/${addressId}`,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-                );
-                setSuccess('Address deleted successfully');
-                fetchAddresses();
-            } catch (error) {
-                setError('Failed to delete address');
-            }
+    const handleDeleteClick = (addressId) => {
+        setAddressToDelete(addressId);
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        try {
+            await axios.delete(
+                `${API_URL}/api/customer-address/${addressToDelete}`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+            );
+            toast.success('Address deleted successfully');
+            fetchAddresses();
+            setShowDeleteModal(false);
+            setAddressToDelete(null);
+        } catch (error) {
+            toast.error('Failed to delete address');
         }
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteModal(false);
+        setAddressToDelete(null);
     };
 
     const handleSetDefault = async (addressId) => {
@@ -135,20 +177,17 @@ const Profile = () => {
                 {},
                 { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
             );
-            setSuccess('Default address updated');
+            toast.success('Default address updated');
             fetchAddresses();
         } catch (error) {
-            setError('Failed to update default address');
+            toast.error('Failed to update default address');
         }
     };
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
-
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            setError('New passwords do not match');
+            toast.error('New passwords do not match');
             return;
         }
 
@@ -158,10 +197,9 @@ const Profile = () => {
                 throw new Error('No user found');
             }
 
-            // Update password directly without reauthentication
             await updatePassword(user, passwordData.newPassword);
 
-            setSuccess('Password updated successfully');
+            toast.success('Password updated successfully');
             setPasswordData({
                 currentPassword: '',
                 newPassword: '',
@@ -171,13 +209,13 @@ const Profile = () => {
         } catch (error) {
             console.error('Password update error:', error);
             if (error.code === 'auth/requires-recent-login') {
-                setError('Please login again to change your password');
+                toast.error('Please login again to change your password');
                 localStorage.removeItem('token');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
             } else {
-                setError(error.message || 'Failed to update password');
+                toast.error(error.message || 'Failed to update password');
             }
         }
     };
@@ -191,8 +229,8 @@ const Profile = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4">
+        <div className="min-h-screen bg-gray-50 py-8 mt-5">
+            <div className="max-w-4xl mx-auto px-4 mt-5">
                 {/* Profile Section */}
                 <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center space-x-6 mb-6">
@@ -421,7 +459,7 @@ const Profile = () => {
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDeleteAddress(address._id)}
+                                            onClick={() => handleDeleteClick(address._id)}
                                             className="text-red-600 hover:text-red-800"
                                         >
                                             Delete
@@ -440,19 +478,16 @@ const Profile = () => {
                         </div>
                     )}
                 </div>
-
-                {/* Error and Success Messages */}
-                {error && (
-                    <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                        {error}
-                    </div>
-                )}
-                {success && (
-                    <div className="mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                        {success}
-                    </div>
-                )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Address"
+                message="Are you sure you want to delete this address? This action cannot be undone."
+            />
         </div>
     );
 };

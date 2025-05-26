@@ -3,7 +3,85 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
+const CheckoutItemSkeleton = () => (
+    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center gap-4">
+            <div className="w-20 h-20">
+                <Skeleton height={80} />
+            </div>
+            <div>
+                <Skeleton width={150} height={20} className="mb-2" />
+                <Skeleton width={100} height={16} className="mb-1" />
+                <Skeleton width={80} height={16} />
+            </div>
+        </div>
+        <div className="text-right">
+            <Skeleton width={80} height={20} />
+        </div>
+    </div>
+);
+
+const AddressSkeleton = () => (
+    <div className="p-4 border rounded-lg">
+        <div className="space-y-2">
+            <Skeleton width={150} height={20} />
+            <Skeleton width={200} height={16} />
+            <Skeleton width={180} height={16} />
+            <Skeleton width={160} height={16} />
+            <Skeleton width={120} height={16} />
+        </div>
+    </div>
+);
+
+const CheckoutSkeleton = () => (
+    <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="max-w-6xl mx-auto">
+            <Skeleton height={40} width={200} className="mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left Side - Cart Items */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                    <Skeleton height={28} width={200} className="mb-4" />
+                    <div className="space-y-4">
+                        <CheckoutItemSkeleton />
+                        <CheckoutItemSkeleton />
+                        <CheckoutItemSkeleton />
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                        <div className="flex justify-between items-center">
+                            <Skeleton width={150} height={24} />
+                            <Skeleton width={100} height={24} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side - Address Management */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <Skeleton height={28} width={200} className="mb-4" />
+                        <div className="space-y-4">
+                            <AddressSkeleton />
+                            <AddressSkeleton />
+                        </div>
+                        <Skeleton height={40} className="mt-4" />
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <Skeleton height={28} width={200} className="mb-4" />
+                        <div className="flex gap-6">
+                            <Skeleton height={80} className="flex-1" />
+                            <Skeleton height={80} className="flex-1" />
+                        </div>
+                    </div>
+
+                    <Skeleton height={48} />
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 const Checkout = () => {
     const [cart, setCart] = useState(null);
@@ -26,55 +104,55 @@ const Checkout = () => {
     });
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-        fetchCart();
-        fetchAddresses();
+        const initializeCheckout = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+
+                // Fetch cart and addresses in parallel
+                const [cartResponse, addressesResponse] = await Promise.all([
+                    axios.get(`${API_URL}/api/cart`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`${API_URL}/api/customer-address`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    })
+                ]);
+
+                const cartData = cartResponse.data[0];
+                setCart(cartData);
+                
+                // Set default order type based on service type
+                if (cartData.serviceType === 'pickup') {
+                    setOrderType('PICKUP');
+                } else if (cartData.serviceType === 'delivery') {
+                    setOrderType('DELIVERY');
+                } else if (cartData.serviceType === 'both') {
+                    setOrderType('DELIVERY');
+                }
+
+                setAddresses(addressesResponse.data);
+                // Auto-select the default address if available
+                const defaultAddress = addressesResponse.data.find(addr => addr.isDefault);
+                if (defaultAddress) {
+                    setSelectedAddress(defaultAddress);
+                }
+            } catch (err) {
+                if (err.response?.status === 401) {
+                    navigate('/login');
+                } else {
+                    toast.error('Failed to load checkout data');
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeCheckout();
     }, [navigate]);
-
-    const fetchCart = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/cart`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const cartData = response.data[0];
-            setCart(cartData);
-            
-            // Set default order type based on service type
-            if (cartData.serviceType === 'pickup') {
-                setOrderType('PICKUP');
-            } else if (cartData.serviceType === 'delivery') {
-                setOrderType('DELIVERY');
-            } else if (cartData.serviceType === 'both') {
-                setOrderType('DELIVERY'); // Default to delivery if both options are available
-            }
-        } catch (err) {
-            toast.error('Failed to fetch cart');
-        }
-    };
-
-    const fetchAddresses = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/customer-address`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setAddresses(response.data);
-            // Auto-select the default address if available
-            const defaultAddress = response.data.find(addr => addr.isDefault);
-            if (defaultAddress) {
-                setSelectedAddress(defaultAddress);
-            }
-            setLoading(false);
-        } catch (err) {
-            toast.error('Failed to fetch addresses');
-            setLoading(false);
-        }
-    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -85,12 +163,54 @@ const Checkout = () => {
     };
 
     const handleCompletePurchase = async () => {
+        console.log('Starting purchase process...');
+        console.log('Form Data:', formData);
+        console.log('Selected Address:', selectedAddress);
+        console.log('Show Address Form:', showAddressForm);
+
         if (!selectedAddress && !showAddressForm) {
+            console.log('No address selected and no address form shown');
             toast.error('Please select or add an address');
             return;
         }
 
+        // Validate form data if showing address form
+        if (showAddressForm) {
+            console.log('Validating address form...');
+            const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
+            const missingFields = requiredFields.filter(field => !formData[field]);
+            
+            console.log('Missing Fields:', missingFields);
+            
+            if (missingFields.length > 0) {
+                const missingFieldNames = missingFields.map(field => {
+                    switch(field) {
+                        case 'fullName': return 'Full Name';
+                        case 'street': return 'Street Address';
+                        case 'city': return 'City';
+                        case 'state': return 'State';
+                        case 'zip': return 'ZIP Code';
+                        case 'country': return 'Country';
+                        case 'phone': return 'Phone Number';
+                        default: return field;
+                    }
+                });
+                console.log('Missing Field Names:', missingFieldNames);
+                toast.error(`Please fill in: ${missingFieldNames.join(', ')}`);
+                return;
+            }
+
+            // Validate phone number format
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                console.log('Invalid phone number format:', formData.phone);
+                toast.error('Please enter a valid 10-digit phone number');
+                return;
+            }
+        }
+
         try {
+            console.log('Preparing order data...');
             const token = localStorage.getItem('token');
             const orderData = {
                 items: cart.items.map(item => ({
@@ -116,20 +236,60 @@ const Checkout = () => {
                 orderData.customerAddressData = formData;
             }
 
+            console.log('Order Data:', orderData);
+
+            // Show loading toast
+            const loadingToast = toast.loading('Processing your order...');
+
+            console.log('Sending order request...');
             const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            console.log('Order Response:', response.data);
+
             if (response.data) {
+                // Clear cart
                 await axios.delete(`${API_URL}/api/cart`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                navigate(`/ordersuccess/${response.data.order._id}`);
+                // Dismiss loading toast
+                toast.dismiss(loadingToast);
+                
+                // Show success toast
+                toast.success('Order placed successfully! Redirecting to order details...', {
+                    autoClose: 2000,
+                    onClose: () => {
+                        navigate(`/ordersuccess/${response.data.order._id}`);
+                    }
+                });
             }
         } catch (err) {
             console.error('Order placement error:', err);
-            toast.error(err.response?.data?.error || 'Failed to place order');
+            console.error('Error details:', {
+                status: err.response?.status,
+                data: err.response?.data,
+                message: err.message
+            });
+            
+            // Show error toast with specific message if available
+            if (err.response?.data?.error) {
+                toast.error(err.response.data.error);
+            } else if (err.response?.status === 401) {
+                toast.error('Your session has expired. Please login again.');
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+            } else if (err.response?.status === 400) {
+                toast.error('Invalid order data. Please try again.');
+            } else if (err.response?.status === 404) {
+                toast.error('Restaurant not found. Please try again later.');
+            } else if (err.response?.status === 500) {
+                toast.error('Server error. Please try again later.');
+            } else {
+                toast.error('Failed to place order. Please try again.');
+            }
         }
     };
 
@@ -140,9 +300,21 @@ const Checkout = () => {
         }, 0);
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    const isDeliveryAvailable = cart?.serviceType === 'DELIVERY' || cart?.serviceType === 'BOTH';
+    const isPickupAvailable = cart?.serviceType === 'PICKUP' || cart?.serviceType === 'BOTH';
 
-    if (!cart || !cart.items || cart.items.length === 0) {
+    // If only one option is available, automatically select it
+    useEffect(() => {
+        if (isDeliveryAvailable && !isPickupAvailable) {
+            setOrderType('DELIVERY');
+        } else if (!isDeliveryAvailable && isPickupAvailable) {
+            setOrderType('PICKUP');
+        }
+    }, [isDeliveryAvailable, isPickupAvailable]);
+
+    if (loading) return <CheckoutSkeleton />;
+
+    if (!loading && (!cart || !cart.items || cart.items.length === 0)) {
         return (
             <div className="container mx-auto px-4 py-8 mt-16">
                 <div className="max-w-6xl mx-auto text-center">
@@ -249,83 +421,91 @@ const Checkout = () => {
                             ) : (
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Full Name <span className="text-red-500">*</span>
+                                        </label>
                                         <input
                                             type="text"
                                             name="fullName"
                                             value={formData.fullName}
                                             onChange={handleInputChange}
-                                            required
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Street Address <span className="text-red-500">*</span>
+                                        </label>
                                         <input
                                             type="text"
                                             name="street"
                                             value={formData.street}
                                             onChange={handleInputChange}
-                                            required
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                City <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="city"
                                                 value={formData.city}
                                                 onChange={handleInputChange}
-                                                required
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                State <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="state"
                                                 value={formData.state}
                                                 onChange={handleInputChange}
-                                                required
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                ZIP Code <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="zip"
                                                 value={formData.zip}
                                                 onChange={handleInputChange}
-                                                required
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Country <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="country"
                                                 value={formData.country}
                                                 onChange={handleInputChange}
-                                                required
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Phone Number <span className="text-red-500">*</span>
+                                        </label>
                                         <input
                                             type="tel"
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleInputChange}
-                                            required
+                                            placeholder="Enter 10-digit phone number"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
@@ -344,7 +524,7 @@ const Checkout = () => {
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h2 className="text-xl font-semibold mb-4 text-gray-700">Order Type</h2>
                             <div className="flex gap-6">
-                                {(cart.serviceType === 'DELIVERY' || cart.serviceType === 'BOTH') && (
+                                {isDeliveryAvailable && (
                                     <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
                                         <input
                                             type="radio"
@@ -360,7 +540,7 @@ const Checkout = () => {
                                         </div>
                                     </label>
                                 )}
-                                {(cart.serviceType === 'PICKUP' || cart.serviceType === 'BOTH') && (
+                                {isPickupAvailable && (
                                     <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
                                         <input
                                             type="radio"

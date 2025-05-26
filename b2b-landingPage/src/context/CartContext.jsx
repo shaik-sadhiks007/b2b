@@ -8,12 +8,16 @@ export const CartProvider = ({ children }) => {
     const [carts, setCarts] = useState([]);
     const [cartCount, setCartCount] = useState(0);
 
+    const clearCartState = useCallback(() => {
+        setCarts([]);
+        setCartCount(0);
+    }, []);
+
     const fetchCart = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                setCarts([]);
-                setCartCount(0);
+                clearCartState();
                 return;
             }
             const response = await axios.get(`${API_URL}/api/cart`, {
@@ -27,10 +31,9 @@ export const CartProvider = ({ children }) => {
             setCartCount(totalItems);
         } catch (err) {
             console.error('Failed to fetch cart:', err);
-            setCarts([]);
-            setCartCount(0);
+            clearCartState();
         }
-    }, []); // Empty dependency array since it doesn't depend on any props or state
+    }, [clearCartState]);
 
     const addToCart = useCallback(async (restaurantId, restaurantName, items, photos = []) => {
         try {
@@ -138,7 +141,8 @@ export const CartProvider = ({ children }) => {
             updateCartItem,
             removeCartItem,
             clearCart,
-            isItemInCart
+            isItemInCart,
+            clearCartState
         }}>
             {children}
         </CartContext.Provider>

@@ -3,6 +3,57 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Header } from './Header';
 import { useCart } from '../context/CartContext';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+
+const CartItemSkeleton = () => (
+    <div className="flex items-center gap-4 py-4 border-b">
+        <div className="w-16 h-16">
+            <Skeleton height={64} />
+        </div>
+        <div className="flex-1">
+            <Skeleton width={200} height={20} className="mb-2" />
+            <Skeleton width={150} height={16} />
+        </div>
+        <div className="flex items-center gap-3">
+            <Skeleton width={32} height={32} />
+            <Skeleton width={32} height={32} />
+            <Skeleton width={32} height={32} />
+        </div>
+        <div className="text-right min-w-[80px]">
+            <Skeleton width={60} height={20} />
+        </div>
+        <Skeleton width={20} height={20} />
+    </div>
+);
+
+const CartSkeleton = () => (
+    <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="max-w-4xl mx-auto">
+            <Skeleton height={32} width={200} className="mb-8" />
+            <div className="bg-white rounded-lg shadow-lg">
+                <div className="p-6">
+                    <Skeleton height={24} width={300} className="mb-4" />
+                    <div className="space-y-4">
+                        <CartItemSkeleton />
+                        <CartItemSkeleton />
+                        <CartItemSkeleton />
+                    </div>
+                    <div className="mt-6 pt-6 border-t">
+                        <div className="flex justify-between items-center mb-4">
+                            <Skeleton width={150} height={24} />
+                            <Skeleton width={100} height={24} />
+                        </div>
+                        <div className="flex gap-4">
+                            <Skeleton height={48} className="flex-1" />
+                            <Skeleton height={48} className="flex-1" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 const CartPage = () => {
     const [loading, setLoading] = useState(true);
@@ -12,13 +63,24 @@ const CartPage = () => {
     const cart = carts[0]; // Get the first cart document
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error('Please login to view your cart');
-            navigate('/login');
-            return;
-        }
-        fetchCart().finally(() => setLoading(false));
+        const checkAuthAndFetchCart = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setLoading(false);
+                toast.error('Please login to view your cart');
+                navigate('/login');
+                return;
+            }
+            try {
+                await fetchCart();
+            } catch (err) {
+                setError('Failed to fetch cart');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuthAndFetchCart();
     }, [navigate, fetchCart]);
 
     const handleQuantityChange = async (itemId, change) => {
@@ -75,7 +137,7 @@ const CartPage = () => {
         }, 0);
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    if (loading) return <CartSkeleton />;
     if (error) return <div className="flex justify-center items-center h-screen">{error}</div>;
     if (!cart) return (
         <div className="flex justify-center items-center h-screen">

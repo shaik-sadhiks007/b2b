@@ -135,7 +135,7 @@ function Navbar({ alwaysVisible }) {
                 onBlur={() => {
                   setTimeout(() => setLocationShowSuggestions(false), 150)
                 }}
-                placeholder="Enter delivery location"
+                placeholder="Enter your location"
                 className="w-full pl-10 pr-20 py-2 rounded-full border-2 focus:border-blue-500 outline-none"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />

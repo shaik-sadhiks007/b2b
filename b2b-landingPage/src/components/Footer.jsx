@@ -68,7 +68,7 @@ const Footer = () => {
                                     onClick={handleRestaurantClick}
                                     className="text-gray-400 hover:text-white"
                                 >
-                                    Add your restaurant
+                                    Add your Business
                                 </a>
                             </li>
                             <li>

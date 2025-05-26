@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import { AuthContext } from '../context/AuthContext';
+import { ORIGIN_URL } from '../api/api';
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ const LandingPage = () => {
 
         // Define the message handler function
         const messageHandler = (event) => {
-            if (event.origin !== "http://localhost:5173") return;  // Verify origin
+            if (event.origin !== ORIGIN_URL) return;  // Verify origin using config
             const { token } = event.data;
             if (token) {
                 updateToken(token);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
+import { ORIGIN_URL } from '../api/api';
 
 const Footer = () => {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ const Footer = () => {
             return;
         }
 
-        const targetWindow = openWindowWithToken("http://localhost:5174", "http://localhost:5174");
+        const targetWindow = openWindowWithToken(ORIGIN_URL);
         
         if (!targetWindow) {
             navigate('/login');
@@ -63,13 +64,12 @@ const Footer = () => {
                         <h3 className="text-xl font-bold mb-4">Partner With Us</h3>
                         <ul className="space-y-2">
                             <li>
-                                <a 
-                                    href="http://localhost:5175/" 
+                                <div
                                     onClick={handleRestaurantClick}
                                     className="text-gray-400 hover:text-white"
                                 >
                                     Add your Business
-                                </a>
+                                </div>
                             </li>
                             <li>
                                 <a 

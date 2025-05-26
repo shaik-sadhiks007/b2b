@@ -4,7 +4,7 @@
  * @param {string} targetOrigin - The target origin that's allowed to receive the token
  * @returns {Window} The opened window instance
  */
-export const openWindowWithToken = (url, targetOrigin = "http://localhost:5173") => {
+export const openWindowWithToken = (url,) => {
     // Get the token from localStorage
     const token = localStorage.getItem('token');
     

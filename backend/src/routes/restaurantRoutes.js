@@ -512,11 +512,13 @@ router.get('/public/all', async (req, res) => {
 
             // Check if restaurant is currently open using IST
             let isOnline = false;
+            let openTime = null;
+            let closeTime = null;
             if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
                 const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
                 if (todaySchedule && todaySchedule.isOpen) {
-                    const openTime = todaySchedule.openTime;
-                    const closeTime = todaySchedule.closeTime;
+                    openTime = todaySchedule.openTime;
+                    closeTime = todaySchedule.closeTime;
                     
                     // Convert times to comparable format using moment
                     const currentTimeMoment = moment(currentTime, 'HH:mm');
@@ -537,6 +539,10 @@ router.get('/public/all', async (req, res) => {
                 serviceType: restaurant.serviceType || '',
                 category: restaurant.category || '',
                 online: isOnline,
+                operatingHours: {
+                    openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
+                    closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+                },
                 currentTime: currentTime // Adding current time for reference
             };
         });
@@ -569,7 +575,7 @@ router.get('/public/:id', async (req, res) => {
             return res.status(404).json({ message: 'Restaurant not found' });
         }
 
-        let distance = 0;
+        let distance = null;
         if (req.query.lat && req.query.lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
             const distanceInMeters = geolib.getDistance(
                 { latitude: parseFloat(req.query.lat), longitude: parseFloat(req.query.lng) },
@@ -586,11 +592,13 @@ router.get('/public/:id', async (req, res) => {
 
         // Check if restaurant is currently open using IST
         let isOnline = false;
+        let openTime = null;
+        let closeTime = null;
         if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
             const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
             if (todaySchedule && todaySchedule.isOpen) {
-                const openTime = todaySchedule.openTime;
-                const closeTime = todaySchedule.closeTime;
+                openTime = todaySchedule.openTime;
+                closeTime = todaySchedule.closeTime;
                 
                 // Convert times to comparable format using moment
                 const currentTimeMoment = moment(currentTime, 'HH:mm');
@@ -608,10 +616,14 @@ router.get('/public/:id', async (req, res) => {
             imageUrl: restaurant.images?.profileImage || null,
             description: restaurant.description || '',
             rating: restaurant.rating || 0,
-            distance: parseFloat(distance.toFixed(2)),
+            distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
             location: restaurant.location || '',
             menu: restaurant.menu || [],
             online: isOnline,
+            operatingHours: {
+                openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
+                closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+            },
             currentTime: currentTime // Adding current time for reference
         };
 

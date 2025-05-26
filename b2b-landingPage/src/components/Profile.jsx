@@ -62,6 +62,7 @@ const Profile = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [addressToDelete, setAddressToDelete] = useState(null);
     const navigate = useNavigate();
+    const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
         fetchUserData();
@@ -94,8 +95,72 @@ const Profile = () => {
         }
     };
 
+    const validateAddressForm = () => {
+        const errors = {};
+        const phoneRegex = /^\+?[\d\s-]{10,}$/;
+        const zipRegex = /^\d{5}(-\d{4})?$/;
+
+        if (!addressForm.fullName.trim()) {
+            errors.fullName = 'Full name is required';
+        }
+
+        if (!addressForm.phone.trim()) {
+            errors.phone = 'Phone number is required';
+        } else if (!phoneRegex.test(addressForm.phone)) {
+            errors.phone = 'Please enter a valid phone number';
+        }
+
+        if (!addressForm.street.trim()) {
+            errors.street = 'Street address is required';
+        }
+
+        if (!addressForm.city.trim()) {
+            errors.city = 'City is required';
+        }
+
+        if (!addressForm.state.trim()) {
+            errors.state = 'State is required';
+        }
+
+        if (!addressForm.zip.trim()) {
+            errors.zip = 'ZIP code is required';
+        }
+
+        if (!addressForm.country.trim()) {
+            errors.country = 'Country is required';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const validatePasswordForm = () => {
+        const errors = {};
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
+
+        if (!passwordData.newPassword) {
+            errors.newPassword = 'New password is required';
+        } else if (!passwordRegex.test(passwordData.newPassword)) {
+            errors.newPassword = 'Password must be at least 8 characters long and contain both letters and numbers';
+        }
+
+        if (!passwordData.confirmPassword) {
+            errors.confirmPassword = 'Please confirm your password';
+        } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+            errors.confirmPassword = 'Passwords do not match';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const handleAddressSubmit = async (e) => {
         e.preventDefault();
+        if (!validateAddressForm()) {
+            toast.error('Please fix the form errors before submitting');
+            return;
+        }
+
         try {
             if (editingAddress) {
                 await axios.put(
@@ -186,8 +251,8 @@ const Profile = () => {
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('New passwords do not match');
+        if (!validatePasswordForm()) {
+            toast.error('Please fix the password form errors before submitting');
             return;
         }
 
@@ -259,7 +324,7 @@ const Profile = () => {
                             <form onSubmit={handlePasswordChange} className="mt-4 space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Current Password
+                                        Current Password <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="password"
@@ -270,7 +335,7 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        New Password
+                                        New Password <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="password"
@@ -279,13 +344,18 @@ const Profile = () => {
                                             ...passwordData,
                                             newPassword: e.target.value
                                         })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.newPassword && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.newPassword}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Confirm New Password
+                                        Confirm New Password <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="password"
@@ -294,9 +364,14 @@ const Profile = () => {
                                             ...passwordData,
                                             confirmPassword: e.target.value
                                         })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.confirmPassword && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.confirmPassword}</p>
+                                    )}
                                 </div>
                                 <button
                                     type="submit"
@@ -338,74 +413,123 @@ const Profile = () => {
                         <form onSubmit={handleAddressSubmit} className="mb-6 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Full Name <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.fullName}
                                         onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.fullName && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.fullName}</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Phone <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="tel"
                                         value={addressForm.phone}
                                         onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.phone ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.phone && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>
+                                    )}
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700">Street Address</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Street Address <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.street}
                                         onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.street ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.street && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.street}</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">City</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        City <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.city}
                                         onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.city ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.city && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.city}</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">State</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        State <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.state}
                                         onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.state ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.state && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.state}</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        ZIP Code <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.zip}
                                         onChange={(e) => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.zip ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.zip && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.zip}</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Country</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Country <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={addressForm.country}
                                         onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                            formErrors.country ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         required
                                     />
+                                    {formErrors.country && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.country}</p>
+                                    )}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="flex items-center">

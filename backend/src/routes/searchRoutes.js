@@ -3,14 +3,22 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware.js');
 const Restaurant = require('../models/Restaurant.js');
 const Menu = require('../models/Menu.js');
+const moment = require('moment-timezone');
+const geolib = require('geolib');
 
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const { query, type } = req.query;
+        const { query, type, lat, lng } = req.query;
         
         if (!query) {
             return res.status(400).json({ message: 'Search query is required' });
         }
+
+        // Get current day and time in IST
+        const now = moment().tz('Asia/Kolkata');
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = days[now.day()];
+        const currentTime = now.format('HH:mm');
 
         if (type === 'products') {
             // Search for menu items across all categories and subcategories
@@ -77,22 +85,61 @@ router.get('/', authMiddleware, async (req, res) => {
                 }
             ]);
 
-            const formattedResults = menuItems.map(item => ({
-                type: 'product',
-                id: item.subcategories.items._id,
-                name: item.subcategories.items.name,
-                description: item.subcategories.items.description,
-                price: item.subcategories.items.totalPrice,
-                image: item.subcategories.items.photos[0] || null,
-                foodType: item.subcategories.items.foodType,
-                isVeg: item.subcategories.items.isVeg,
-                category: item.name,
-                subcategory: item.subcategories.name,
-                restaurant: {
-                    id: item.restaurant._id,
-                    name: item.restaurant.restaurantName
+            const formattedResults = menuItems.map(item => {
+                // Calculate distance if coordinates are available
+                let distance = null;
+                if (lat && lng && item.restaurant.location && item.restaurant.location.lat && item.restaurant.location.lng) {
+                    const distanceInMeters = geolib.getDistance(
+                        { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+                        { latitude: item.restaurant.location.lat, longitude: item.restaurant.location.lng }
+                    );
+                    distance = distanceInMeters / 1000; // Convert to kilometers
                 }
-            }));
+
+                // Check if restaurant is currently open
+                let isOnline = false;
+                if (item.restaurant.operatingHours && item.restaurant.operatingHours.timeSlots) {
+                    const todaySchedule = item.restaurant.operatingHours.timeSlots[currentDay];
+                    if (todaySchedule && todaySchedule.isOpen) {
+                        const openTime = todaySchedule.openTime;
+                        const closeTime = todaySchedule.closeTime;
+                        
+                        const currentTimeMoment = moment(currentTime, 'HH:mm');
+                        const openTimeMoment = moment(openTime, 'HH:mm');
+                        const closeTimeMoment = moment(closeTime, 'HH:mm');
+
+                        isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
+                    }
+                }
+
+                return {
+                    type: 'product',
+                    id: item.subcategories.items._id,
+                    name: item.subcategories.items.name,
+                    description: item.subcategories.items.description,
+                    price: item.subcategories.items.totalPrice,
+                    image: item.subcategories.items.photos[0] || null,
+                    foodType: item.subcategories.items.foodType,
+                    isVeg: item.subcategories.items.isVeg,
+                    category: item.name,
+                    subcategory: item.subcategories.name,
+                    restaurant: {
+                        id: item.restaurant._id,
+                        name: item.restaurant.restaurantName,
+                        online: isOnline,
+                        distance: distance !== null ? parseFloat(distance.toFixed(2)) : null
+                    }
+                };
+            });
+
+            // Filter and sort by distance if coordinates are provided
+            if (lat && lng) {
+                const filteredResults = formattedResults.filter(result => 
+                    result.restaurant.distance !== null && result.restaurant.distance <= 50
+                );
+                filteredResults.sort((a, b) => a.restaurant.distance - b.restaurant.distance);
+                return res.json({ results: filteredResults });
+            }
 
             return res.json({ results: formattedResults });
         } else {
@@ -153,30 +200,69 @@ router.get('/', authMiddleware, async (req, res) => {
                 }
             ]);
 
-            const formattedResults = restaurants.map(restaurant => ({
-                type: 'business',
-                id: restaurant._id,
-                name: restaurant.restaurantName,
-                category: restaurant.category,
-                serviceType: restaurant.serviceType,
-                address: {
-                    fullAddress: restaurant.address.fullAddress,
-                    locality: restaurant.address.locality,
-                    city: restaurant.address.city,
-                    landmark: restaurant.address.landmark
-                },
-                contact: {
-                    phone: restaurant.contact.primaryPhone,
-                    whatsapp: restaurant.contact.whatsappNumber,
-                    email: restaurant.contact.email
-                },
-                operatingHours: {
-                    openTime: restaurant.operatingHours.defaultOpenTime,
-                    closeTime: restaurant.operatingHours.defaultCloseTime
-                },
-                image: restaurant.images.profileImage,
-                status: restaurant.status
-            }));
+            const formattedResults = restaurants.map(restaurant => {
+                // Calculate distance if coordinates are available
+                let distance = null;
+                if (lat && lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
+                    const distanceInMeters = geolib.getDistance(
+                        { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+                        { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+                    );
+                    distance = distanceInMeters / 1000; // Convert to kilometers
+                }
+
+                // Check if restaurant is currently open
+                let isOnline = false;
+                if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
+                    const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
+                    if (todaySchedule && todaySchedule.isOpen) {
+                        const openTime = todaySchedule.openTime;
+                        const closeTime = todaySchedule.closeTime;
+                        
+                        const currentTimeMoment = moment(currentTime, 'HH:mm');
+                        const openTimeMoment = moment(openTime, 'HH:mm');
+                        const closeTimeMoment = moment(closeTime, 'HH:mm');
+
+                        isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
+                    }
+                }
+
+                return {
+                    type: 'business',
+                    id: restaurant._id,
+                    name: restaurant.restaurantName,
+                    category: restaurant.category,
+                    serviceType: restaurant.serviceType,
+                    address: {
+                        fullAddress: restaurant.address.fullAddress,
+                        locality: restaurant.address.locality,
+                        city: restaurant.address.city,
+                        landmark: restaurant.address.landmark
+                    },
+                    contact: {
+                        phone: restaurant.contact.primaryPhone,
+                        whatsapp: restaurant.contact.whatsappNumber,
+                        email: restaurant.contact.email
+                    },
+                    operatingHours: {
+                        openTime: restaurant.operatingHours.defaultOpenTime,
+                        closeTime: restaurant.operatingHours.defaultCloseTime
+                    },
+                    image: restaurant.images.profileImage,
+                    status: restaurant.status,
+                    online: isOnline,
+                    distance: distance !== null ? parseFloat(distance.toFixed(2)) : null
+                };
+            });
+
+            // Filter and sort by distance if coordinates are provided
+            if (lat && lng) {
+                const filteredResults = formattedResults.filter(restaurant =>
+                    restaurant.distance !== null && restaurant.distance <= 50
+                );
+                filteredResults.sort((a, b) => a.distance - b.distance);
+                return res.json({ results: filteredResults });
+            }
 
             return res.json({ results: formattedResults });
         }
@@ -185,5 +271,23 @@ router.get('/', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Error performing search', message: error.message });
     }
 });
+
+// Helper function to calculate distance between two points
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // Distance in km
+    return parseFloat(distance.toFixed(1));
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
 
 module.exports = router;

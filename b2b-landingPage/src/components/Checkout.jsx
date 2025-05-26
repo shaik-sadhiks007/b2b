@@ -143,8 +143,6 @@ const Checkout = () => {
             } catch (err) {
                 if (err.response?.status === 401) {
                     navigate('/login');
-                } else {
-                    toast.error('Failed to load checkout data');
                 }
             } finally {
                 setLoading(false);
@@ -163,11 +161,6 @@ const Checkout = () => {
     };
 
     const handleCompletePurchase = async () => {
-        console.log('Starting purchase process...');
-        console.log('Form Data:', formData);
-        console.log('Selected Address:', selectedAddress);
-        console.log('Show Address Form:', showAddressForm);
-
         if (!selectedAddress && !showAddressForm) {
             console.log('No address selected and no address form shown');
             toast.error('Please select or add an address');
@@ -179,9 +172,7 @@ const Checkout = () => {
             console.log('Validating address form...');
             const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
             const missingFields = requiredFields.filter(field => !formData[field]);
-            
-            console.log('Missing Fields:', missingFields);
-            
+                        
             if (missingFields.length > 0) {
                 const missingFieldNames = missingFields.map(field => {
                     switch(field) {
@@ -195,7 +186,6 @@ const Checkout = () => {
                         default: return field;
                     }
                 });
-                console.log('Missing Field Names:', missingFieldNames);
                 toast.error(`Please fill in: ${missingFieldNames.join(', ')}`);
                 return;
             }
@@ -210,7 +200,6 @@ const Checkout = () => {
         }
 
         try {
-            console.log('Preparing order data...');
             const token = localStorage.getItem('token');
             const orderData = {
                 items: cart.items.map(item => ({
@@ -236,8 +225,6 @@ const Checkout = () => {
                 orderData.customerAddressData = formData;
             }
 
-            console.log('Order Data:', orderData);
-
             // Show loading toast
             const loadingToast = toast.loading('Processing your order...');
 
@@ -245,8 +232,6 @@ const Checkout = () => {
             const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            console.log('Order Response:', response.data);
 
             if (response.data) {
                 // Clear cart
@@ -259,7 +244,7 @@ const Checkout = () => {
                 
                 // Show success toast
                 toast.success('Order placed successfully! Redirecting to order details...', {
-                    autoClose: 2000,
+                    autoClose: 500,
                     onClose: () => {
                         navigate(`/ordersuccess/${response.data.order._id}`);
                     }
@@ -311,6 +296,54 @@ const Checkout = () => {
             setOrderType('PICKUP');
         }
     }, [isDeliveryAvailable, isPickupAvailable]);
+
+    const handleAddAddress = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                `${API_URL}/api/customer-address`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Add the new address to the addresses list
+            setAddresses(prev => [...prev, response.data]);
+            
+            // Select the newly added address
+            setSelectedAddress(response.data);
+            
+            // Clear form and hide form
+            setFormData({
+                fullName: '',
+                street: '',
+                city: '',
+                state: '',
+                zip: '',
+                country: '',
+                phone: ''
+            });
+            setShowAddressForm(false);
+            
+            toast.success('Address added successfully');
+        } catch (error) {
+            console.error('Error adding address:', error);
+            toast.error(error.response?.data?.message || 'Failed to add address');
+        }
+    };
+
+    const handleCancelAddress = () => {
+        // Clear form data
+        setFormData({
+            fullName: '',
+            street: '',
+            city: '',
+            state: '',
+            zip: '',
+            country: '',
+            phone: ''
+        });
+        setShowAddressForm(false);
+    };
 
     if (loading) return <CheckoutSkeleton />;
 
@@ -509,13 +542,22 @@ const Checkout = () => {
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddressForm(false)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                                    >
-                                        Cancel
-                                    </button>
+                                    <div className="flex gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={handleAddAddress}
+                                            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                                        >
+                                            Save Address
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelAddress}
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

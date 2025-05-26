@@ -25,7 +25,9 @@ const Header = () => {
             style={{ transition: 'all 0.3s ease-in-out' }}
         >
             <div className="container">
-                <Link className={`navbar-brand fw-bold ${isScrolled ? 'text-dark' : 'text-white'}`} to="/">B2B</Link>
+                <Link className={`navbar-brand fw-bold ${isScrolled ? 'text-dark' : 'text-white'}`} to="/">
+                    <img src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq" alt="logo" width='40px'/>
+                </Link>
                 <div className="ms-auto">
                     {loading ? (
                         <div className="spinner-border spinner-border-sm text-primary" role="status">
@@ -36,7 +38,7 @@ const Header = () => {
                             <span className={`${isScrolled ? 'text-dark' : 'text-white'}`}>
                                 Welcome, {user.username || user.email}
                             </span>
-                            <button 
+                            <button
                                 className={`btn ${isScrolled ? 'btn-outline-danger' : 'btn-outline-light'}`}
                                 onClick={handleLogout}
                             >

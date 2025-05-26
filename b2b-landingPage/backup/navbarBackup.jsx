@@ -10,7 +10,9 @@ import { toast } from 'react-toastify'
 
 
 function Navbar({ alwaysVisible }) {
+  const { isScrolled } = useScroll()
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
   const [showLoginOptions, setShowLoginOptions] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, logout } = useContext(HotelContext)
@@ -27,6 +29,15 @@ function Navbar({ alwaysVisible }) {
     onAllowLocation,
     onLoginClick
   } = useLocationContext();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 100)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   useEffect(() => {
     // Load saved location from localStorage
@@ -72,7 +83,10 @@ function Navbar({ alwaysVisible }) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white z-50 shadow-md py-2">
+    <header
+      className={`fixed top-0 left-0 right-0 bg-white z-50 transition-all duration-300 ${alwaysVisible ? 'shadow-md py-2' : (isScrolled ? 'shadow-md py-2' : 'py-4 -translate-y-full')
+        }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

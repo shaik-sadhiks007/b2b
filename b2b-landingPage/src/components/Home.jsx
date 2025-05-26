@@ -223,12 +223,23 @@ const Home = () => {
                 onLoginClick={() => navigate('/login')}
             />
 
-            <main className="container mx-auto pt-16 pb-20 flex flex-col items-center justify-center flex-grow">
+            <main className="container mx-auto pt-5 pb-20 flex flex-col items-center justify-center flex-grow">
                 <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8 mt-16">
                     {/* Logo */}
-                    <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
+                    {/* <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
                         B2B
-                    </h1>
+                    </h1> */}
+
+                    <img 
+                        src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq" 
+                        alt="logo" 
+                        style={{
+                            maxWidth: '100%',
+                            width: '300px',
+                            height: '300px',
+                            objectFit: 'contain'
+                        }}
+                    />
 
                     {/* Search and Location Inputs Row */}
                     <div className="w-full flex gap-4">

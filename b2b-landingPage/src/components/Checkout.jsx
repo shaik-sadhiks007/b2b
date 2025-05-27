@@ -161,41 +161,41 @@ const Checkout = () => {
     };
 
     const handleCompletePurchase = async () => {
-        if (!selectedAddress && !showAddressForm) {
-            console.log('No address selected and no address form shown');
-            toast.error('Please select or add an address');
-            return;
-        }
-
-        // Validate form data if showing address form
-        if (showAddressForm) {
-            console.log('Validating address form...');
-            const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
-            const missingFields = requiredFields.filter(field => !formData[field]);
-                        
-            if (missingFields.length > 0) {
-                const missingFieldNames = missingFields.map(field => {
-                    switch(field) {
-                        case 'fullName': return 'Full Name';
-                        case 'street': return 'Street Address';
-                        case 'city': return 'City';
-                        case 'state': return 'State';
-                        case 'zip': return 'ZIP Code';
-                        case 'country': return 'Country';
-                        case 'phone': return 'Phone Number';
-                        default: return field;
-                    }
-                });
-                toast.error(`Please fill in: ${missingFieldNames.join(', ')}`);
+        // Only validate address for delivery orders
+        if (orderType === 'DELIVERY') {
+            if (!selectedAddress && !showAddressForm) {
+                toast.error('Please select or add a delivery address to continue');
                 return;
             }
 
-            // Validate phone number format
-            const phoneRegex = /^[0-9]{10}$/;
-            if (!phoneRegex.test(formData.phone)) {
-                console.log('Invalid phone number format:', formData.phone);
-                toast.error('Please enter a valid 10-digit phone number');
-                return;
+            // Validate form data if showing address form
+            if (showAddressForm) {
+                const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
+                const missingFields = requiredFields.filter(field => !formData[field]);
+                            
+                if (missingFields.length > 0) {
+                    const missingFieldNames = missingFields.map(field => {
+                        switch(field) {
+                            case 'fullName': return 'Full Name';
+                            case 'street': return 'Street Address';
+                            case 'city': return 'City';
+                            case 'state': return 'State';
+                            case 'zip': return 'ZIP Code';
+                            case 'country': return 'Country';
+                            case 'phone': return 'Phone Number';
+                            default: return field;
+                        }
+                    });
+                    toast.error(`Please fill in all required fields: ${missingFieldNames.join(', ')}`);
+                    return;
+                }
+
+                // Validate phone number format
+                const phoneRegex = /^[0-9]{10}$/;
+                if (!phoneRegex.test(formData.phone)) {
+                    toast.error('Please enter a valid 10-digit phone number');
+                    return;
+                }
             }
         }
 
@@ -219,16 +219,18 @@ const Checkout = () => {
                 restaurantName: cart.restaurantName
             };
 
-            if (selectedAddress) {
-                orderData.addressId = selectedAddress._id;
-            } else if (showAddressForm) {
-                orderData.customerAddressData = formData;
+            // Only include address data for delivery orders
+            if (orderType === 'DELIVERY') {
+                if (selectedAddress) {
+                    orderData.addressId = selectedAddress._id;
+                } else if (showAddressForm) {
+                    orderData.customerAddressData = formData;
+                }
             }
 
             // Show loading toast
             const loadingToast = toast.loading('Processing your order...');
 
-            console.log('Sending order request...');
             const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -243,22 +245,14 @@ const Checkout = () => {
                 toast.dismiss(loadingToast);
                 
                 // Show success toast
-                toast.success('Order placed successfully! Redirecting to order details...', {
-                    autoClose: 500,
-                    onClose: () => {
-                        navigate(`/ordersuccess/${response.data.order._id}`);
-                    }
-                });
+                toast.success('Order placed successfully! Redirecting to order details...');
+                setTimeout(() => {
+                    navigate(`/ordersuccess/${response.data.order._id}`);
+                }, 500);
             }
         } catch (err) {
             console.error('Order placement error:', err);
-            console.error('Error details:', {
-                status: err.response?.status,
-                data: err.response?.data,
-                message: err.message
-            });
             
-            // Show error toast with specific message if available
             if (err.response?.data?.error) {
                 toast.error(err.response.data.error);
             } else if (err.response?.status === 401) {
@@ -266,12 +260,6 @@ const Checkout = () => {
                 setTimeout(() => {
                     navigate('/login');
                 }, 2000);
-            } else if (err.response?.status === 400) {
-                toast.error('Invalid order data. Please try again.');
-            } else if (err.response?.status === 404) {
-                toast.error('Restaurant not found. Please try again later.');
-            } else if (err.response?.status === 500) {
-                toast.error('Server error. Please try again later.');
             } else {
                 toast.error('Failed to place order. Please try again.');
             }
@@ -604,7 +592,6 @@ const Checkout = () => {
                         <button
                             onClick={handleCompletePurchase}
                             className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-lg font-semibold"
-                            disabled={!selectedAddress && !showAddressForm}
                         >
                             Complete Purchase
                         </button>

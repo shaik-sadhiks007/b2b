@@ -162,7 +162,6 @@ const HotelDetails = () => {
 
         // Check if item is already in cart first
         if (isItemInCart(item._id)) {
-            toast.info('Item already in cart');
             navigate('/cart');
             return;
         }
@@ -178,7 +177,8 @@ const HotelDetails = () => {
                 basePrice: Number(item.basePrice),
                 packagingCharges: Number(item.packagingCharges),
                 totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg
+                isVeg: item.isVeg,
+                photos: item.photos || []
             }];
         } else {
             items = [{
@@ -188,7 +188,8 @@ const HotelDetails = () => {
                 basePrice: Number(item.basePrice),
                 packagingCharges: Number(item.packagingCharges),
                 totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg
+                isVeg: item.isVeg,
+                photos: item.photos || []
             }];
         }
 

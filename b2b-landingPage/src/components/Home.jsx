@@ -11,6 +11,7 @@ import axios from 'axios'
 import { API_URL } from '../api/api'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
+import { useLocationContext } from '../context/LocationContext'
 
 
 const categories = [
@@ -53,8 +54,6 @@ const ErrorCard = ({ message }) => (
 
 const Home = () => {
     const [showLocationModal, setShowLocationModal] = useState(false)
-    const [location, setLocation] = useState("")
-    const [activeTab, setActiveTab] = useState("all")
     const [selectedCategory, setSelectedCategory] = useState("all")
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
@@ -63,14 +62,21 @@ const Home = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
+    const { location, setLocation, onAllowLocation: contextAllowLocation } = useLocationContext()
 
     // Add localStorage change listener
     useEffect(() => {
         const handleStorageChange = (e) => {
-            if (e.key === 'userLocation') {
-                const { location: newLocation } = JSON.parse(e.newValue);
-                setLocation(newLocation);
-                setShowSuggestions(false);
+            if (e.key === 'userLocation' && e.newValue) {
+                try {
+                    const parsedData = JSON.parse(e.newValue);
+                    if (parsedData && parsedData.location) {
+                        setLocation(parsedData.location);
+                        setShowSuggestions(false);
+                    }
+                } catch (error) {
+                    console.error("Error parsing location data:", error);
+                }
             }
         };
 
@@ -82,8 +88,28 @@ const Home = () => {
     useEffect(() => {
         const savedLocation = localStorage.getItem('userLocation');
         if (savedLocation) {
-            const { location: savedLoc } = JSON.parse(savedLocation);
-            setLocation(savedLoc);
+            try {
+                const { location: savedLoc } = JSON.parse(savedLocation);
+                if (savedLoc) {
+                    setLocation(savedLoc);
+                }
+            } catch (error) {
+                console.error("Error parsing saved location:", error);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        // Check if user location exists in localStorage
+        const savedLocation = localStorage.getItem('userLocation');
+        if (!savedLocation) {
+            // Show modal after 5 seconds
+            const timer = setTimeout(() => {
+                setShowLocationModal(true);
+            }, 5000);
+
+            // Cleanup timer if component unmounts
+            return () => clearTimeout(timer);
         }
     }, []);
 
@@ -126,75 +152,21 @@ const Home = () => {
         return () => clearTimeout(timer)
     }, [location])
 
-    useEffect(() => {
-        // Check if it's the first visit
-        const hasVisited = localStorage.getItem("hasVisited")
-        if (!hasVisited) {
-            // Show modal after 5 seconds
-            const timer = setTimeout(() => {
-                setShowLocationModal(true)
-                localStorage.setItem("hasVisited", "true")
-            }, 5000)
-
-            // Cleanup timer if component unmounts
-            return () => clearTimeout(timer)
+    const handleAllowLocation = async () => {
+        setIsLoading(true);
+        try {
+            await contextAllowLocation();
+            setShowLocationModal(false);
+        } catch (error) {
+            console.error("Error getting location:", error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [])
-
-    const handleAllowLocation = () => {
-        setIsLoading(true)
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        // Get location name using reverse geocoding
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&addressdetails=1`
-                        )
-                        const data = await response.json()
-
-                        // Format the address
-                        const address = data.address
-                        const locationString = [
-                            address.city || address.town || address.village,
-                            address.state,
-                            address.country
-                        ]
-                            .filter(Boolean)
-                            .join(", ")
-
-                        setLocation(locationString)
-                        setShowLocationModal(false)
-                    } catch (error) {
-                        console.error("Error getting location:", error)
-                        // Don't set error message in location field
-                        setShowLocationModal(false)
-                    } finally {
-                        setIsLoading(false)
-                    }
-                },
-                (error) => {
-                    console.error("Error getting location:", error)
-                    // Don't set error message in location field
-                    setIsLoading(false)
-                    setShowLocationModal(false)
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                }
-            )
-        } else {
-            // Don't set error message in location field
-            setIsLoading(false)
-            setShowLocationModal(false)
-        }
-    }
+    };
 
     const handleManualAddress = () => {
-        setShowLocationModal(false)
-    }
+        setShowLocationModal(false);
+    };
 
     const handleLocationSelect = (suggestion) => {
         const locationData = {

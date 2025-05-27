@@ -54,31 +54,47 @@ export default function LocationProvider({ children }) {
   };
 
   const onAllowLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-            .then(response => response.json())
-            .then(data => {
-              setLocation(data.display_name);
-              localStorage.setItem('userLocation', JSON.stringify({
-                location: data.display_name,
-                coordinates: { lat: latitude, lng: longitude }
-              }));
-              setShowSuggestions(false);
-            })
-            .catch(() => {
-              setLocation('Current Location');
-              setShowSuggestions(false);
-            });
-        },
-        () => {
-          setLocation('Current Location');
-          setShowSuggestions(false);
-        }
-      );
-    }
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+              .then(response => response.json())
+              .then(data => {
+                const locationData = {
+                  location: data.display_name,
+                  coordinates: { lat: latitude, lng: longitude }
+                };
+                setLocation(data.display_name);
+                localStorage.setItem('userLocation', JSON.stringify(locationData));
+                setShowSuggestions(false);
+                resolve(locationData);
+              })
+              .catch((error) => {
+                console.error("Error getting location name:", error);
+                setLocation('Current Location');
+                setShowSuggestions(false);
+                reject(error);
+              });
+          },
+          (error) => {
+            console.error("Error getting geolocation:", error);
+            setLocation('Current Location');
+            setShowSuggestions(false);
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        const error = new Error("Geolocation is not supported by your browser");
+        reject(error);
+      }
+    });
   };
 
   return (

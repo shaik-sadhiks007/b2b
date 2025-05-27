@@ -54,7 +54,8 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             location,
             sameAsOwnerPhone,
             whatsappUpdates,
-            operatingHours
+            operatingHours,
+            description
         } = formDataObj;
 
         // Upload profile image to Cloudinary if provided
@@ -81,12 +82,13 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             location,
             sameAsOwnerPhone,
             whatsappUpdates,
-            images: {
-                profileImage: profileImageUrl,
-                panCardImage: '',
-                gstImage: '',
-                fssaiImage: ''
-            },
+            description,
+            // images: {
+            //     profileImage: profileImageUrl,
+            //     panCardImage: '',
+            //     gstImage: '',
+            //     fssaiImage: ''
+            // },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
                 defaultCloseTime: operatingHours?.defaultCloseTime || '',

@@ -108,6 +108,11 @@ const RestaurantInfo = ({
         if (!formData.restaurantName) errors.push('Business Name is required');
         if (!formData.ownerName) errors.push('Owner Name is required');
         
+        // Description validation
+        if (formData.description && formData.description.length > 100) {
+            errors.push('Description should not exceed 100 characters');
+        }
+        
         // Phone number validation
         if (!formData.contact?.primaryPhone) {
             errors.push('Primary Phone Number is required');
@@ -136,6 +141,7 @@ const RestaurantInfo = ({
             restaurantName: formData.restaurantName,
             serviceType: formData.serviceType,
             ownerName: formData.ownerName,
+            description: formData.description,
             sameAsOwnerPhone: formData.sameAsOwnerPhone,
             whatsappUpdates: formData.whatsappUpdates,
             contact: {
@@ -197,6 +203,22 @@ const RestaurantInfo = ({
                     value={formData.restaurantName}
                     onChange={handleChange}
                 />
+            </div>
+
+            <div className="mb-3">
+                <label className="form-label">Description <span className="text-muted">(Optional, max 100 characters)</span></label>
+                <textarea
+                    className="form-control"
+                    name="description"
+                    value={formData.description || ''}
+                    onChange={handleChange}
+                    placeholder="Best business in Hyderabad or varieties or specials etc..."
+                    rows="3"
+                    maxLength={100}
+                />
+                <small className="text-muted">
+                    {formData.description ? `${formData.description.length}/100 characters` : '0/100 characters'}
+                </small>
             </div>
 
             <div className="mb-3">

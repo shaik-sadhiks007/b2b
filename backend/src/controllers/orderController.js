@@ -273,5 +273,29 @@ exports.getRestaurantOrderStatus = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
+};
+
+exports.getRestaurantOrderCounts = async (req, res) => {
+    try {
+        const statuses = ['ORDER_PLACED', 'ACCEPTED', 'ORDER_READY', 'ORDER_PICKED_UP'];
+        const counts = await Promise.all(
+            statuses.map(async (status) => {
+                const count = await Order.countDocuments({
+                    status,
+                    restaurantId: req.restaurant._id
+                });
+                return { status, count };
+            })
+        );
+        
+        const countsObject = counts.reduce((acc, { status, count }) => {
+            acc[status] = count;
+            return acc;
+        }, {});
+        
+        res.status(200).json(countsObject);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
+    }
 };  
 

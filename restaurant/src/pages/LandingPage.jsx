@@ -5,7 +5,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import { AuthContext } from '../context/AuthContext';
 import { ORIGIN_URL } from '../api/api';
-
+import logo from '../assets/b2bupdate.png';
 const LandingPage = () => {
     const navigate = useNavigate();
     const { user, restaurant, loading, updateToken } = useContext(AuthContext);

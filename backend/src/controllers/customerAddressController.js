@@ -14,18 +14,20 @@ const getAllAddresses = async (req, res) => {
 const createAddress = async (req, res) => {
   try {
     const { isDefault, ...addressData } = req.body;
+
+    console.log(req.user,"addre")
     
     // If this is set as default, unset all other default addresses for this user
     if (isDefault) {
       await CustomerAddress.updateMany(
-        { userId: req.user._id, isDefault: true },
+        { userId: req.user.id, isDefault: true },
         { isDefault: false }
       );
     }
 
     const address = new CustomerAddress({
       ...addressData,
-      userId: req.user._id,
+      userId: req.user.id,
       isDefault: isDefault || false
     });
 

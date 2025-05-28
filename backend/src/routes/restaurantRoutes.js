@@ -9,6 +9,7 @@ const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const Restaurant = require('../models/Restaurant');
 const geolib = require('geolib');
 const { uploadBase64ToCloudinary } = require('../config/cloudinary');
+const moment = require('moment-timezone');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -53,7 +54,8 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             location,
             sameAsOwnerPhone,
             whatsappUpdates,
-            operatingHours
+            operatingHours,
+            description
         } = formDataObj;
 
         // Upload profile image to Cloudinary if provided
@@ -80,12 +82,13 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
             location,
             sameAsOwnerPhone,
             whatsappUpdates,
-            images: {
-                profileImage: profileImageUrl,
-                panCardImage: '',
-                gstImage: '',
-                fssaiImage: ''
-            },
+            description,
+            // images: {
+            //     profileImage: profileImageUrl,
+            //     panCardImage: '',
+            //     gstImage: '',
+            //     fssaiImage: ''
+            // },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
                 defaultCloseTime: operatingHours?.defaultCloseTime || '',
@@ -481,7 +484,6 @@ router.get('/public/all', async (req, res) => {
 
         // Add category filter if provided and not "all"
         if (category && category !== "all") {
-            // Search in both serviceType and category fields
             query.$or = [
                 { serviceType: category },
                 { category: category }
@@ -493,39 +495,39 @@ router.get('/public/all', async (req, res) => {
             .select('restaurantName serviceType images.profileImage description rating location category operatingHours')
             .lean();
 
-        // Get current day and time
-        const now = new Date();
+        // Get current day and time in IST
+        const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const currentDay = days[now.getDay()];
-        const currentTime = now.toLocaleTimeString('en-US', { hour12: false }); // gets current time in 24h format
+        const currentDay = days[now.day()];
+        const currentTime = now.format('HH:mm');
 
         // Format the response to include only necessary fields
         const formattedRestaurants = restaurants.map(restaurant => {
             let distance = null;
             if (lat && lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
-                // Calculate distance using geolib
                 const distanceInMeters = geolib.getDistance(
                     { latitude: parseFloat(lat), longitude: parseFloat(lng) },
                     { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
                 );
-                // Convert meters to kilometers
                 distance = distanceInMeters / 1000;
             }
 
-            // Check if restaurant is currently open
+            // Check if restaurant is currently open using IST
             let isOnline = false;
+            let openTime = null;
+            let closeTime = null;
             if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
                 const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
                 if (todaySchedule && todaySchedule.isOpen) {
-                    const openTime = todaySchedule.openTime;
-                    const closeTime = todaySchedule.closeTime;
+                    openTime = todaySchedule.openTime;
+                    closeTime = todaySchedule.closeTime;
                     
-                    // Convert times to comparable format
-                    const currentTimeNum = parseInt(currentTime.replace(':', ''));
-                    const openTimeNum = parseInt(openTime.replace(':', ''));
-                    const closeTimeNum = parseInt(closeTime.replace(':', ''));
+                    // Convert times to comparable format using moment
+                    const currentTimeMoment = moment(currentTime, 'HH:mm');
+                    const openTimeMoment = moment(openTime, 'HH:mm');
+                    const closeTimeMoment = moment(closeTime, 'HH:mm');
 
-                    isOnline = currentTimeNum >= openTimeNum && currentTimeNum <= closeTimeNum;
+                    isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
                 }
             }
 
@@ -534,25 +536,25 @@ router.get('/public/all', async (req, res) => {
                 name: restaurant.restaurantName,
                 imageUrl: restaurant.images?.profileImage || null,
                 description: restaurant.description || '',
-                // rating: restaurant.rating || 5,
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
                 location: restaurant.location || null,
                 serviceType: restaurant.serviceType || '',
                 category: restaurant.category || '',
-                online: isOnline
+                online: isOnline,
+                operatingHours: {
+                    openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
+                    closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+                },
+                currentTime: currentTime // Adding current time for reference
             };
         });
 
         // If coordinates are provided, filter and sort by distance
         if (lat && lng) {
-            // Filter restaurants within 50km range
             const filteredRestaurants = formattedRestaurants.filter(restaurant =>
                 restaurant.distance !== null && restaurant.distance <= 50
             );
-
-            // Sort by distance
             filteredRestaurants.sort((a, b) => a.distance - b.distance);
-
             res.json(filteredRestaurants);
         } else {
             res.json(formattedRestaurants);
@@ -575,38 +577,37 @@ router.get('/public/:id', async (req, res) => {
             return res.status(404).json({ message: 'Restaurant not found' });
         }
 
-        let distance = 0;
-        // Calculate distance if coordinates are provided
+        let distance = null;
         if (req.query.lat && req.query.lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
-            // Calculate distance using geolib
             const distanceInMeters = geolib.getDistance(
                 { latitude: parseFloat(req.query.lat), longitude: parseFloat(req.query.lng) },
                 { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
             );
-            // Convert meters to kilometers
             distance = distanceInMeters / 1000;
         }
 
-        // Get current day and time
-        const now = new Date();
+        // Get current day and time in IST
+        const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const currentDay = days[now.getDay()];
-        const currentTime = now.toLocaleTimeString('en-US', { hour12: false }); // gets current time in 24h format
+        const currentDay = days[now.day()];
+        const currentTime = now.format('HH:mm');
 
-        // Check if restaurant is currently open
+        // Check if restaurant is currently open using IST
         let isOnline = false;
+        let openTime = null;
+        let closeTime = null;
         if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
             const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
             if (todaySchedule && todaySchedule.isOpen) {
-                const openTime = todaySchedule.openTime;
-                const closeTime = todaySchedule.closeTime;
+                openTime = todaySchedule.openTime;
+                closeTime = todaySchedule.closeTime;
                 
-                // Convert times to comparable format
-                const currentTimeNum = parseInt(currentTime.replace(':', ''));
-                const openTimeNum = parseInt(openTime.replace(':', ''));
-                const closeTimeNum = parseInt(closeTime.replace(':', ''));
+                // Convert times to comparable format using moment
+                const currentTimeMoment = moment(currentTime, 'HH:mm');
+                const openTimeMoment = moment(openTime, 'HH:mm');
+                const closeTimeMoment = moment(closeTime, 'HH:mm');
 
-                isOnline = currentTimeNum >= openTimeNum && currentTimeNum <= closeTimeNum;
+                isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
             }
         }
 
@@ -617,10 +618,15 @@ router.get('/public/:id', async (req, res) => {
             imageUrl: restaurant.images?.profileImage || null,
             description: restaurant.description || '',
             rating: restaurant.rating || 0,
-            distance: parseFloat(distance.toFixed(2)),
+            distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
             location: restaurant.location || '',
             menu: restaurant.menu || [],
-            online: isOnline
+            online: isOnline,
+            operatingHours: {
+                openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
+                closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+            },
+            currentTime: currentTime // Adding current time for reference
         };
 
         res.json(formattedRestaurant);

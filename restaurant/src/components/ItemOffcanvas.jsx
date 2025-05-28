@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName = '' }) => {
     const [itemData, setItemData] = useState({
@@ -50,13 +51,36 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
     }, [show, initialData]);
 
     const handleSave = () => {
-        // Validate required fields
+        // Validate all required fields
         if (!itemData.name.trim()) {
-            setError('Item name is required');
+            toast.error('Item name is required');
             return;
         }
+
+        if (!itemData.description.trim()) {
+            toast.error('Item description is required');
+            return;
+        }
+
         if (!itemData.basePrice) {
-            setError('Base price is required');
+            toast.error('Base price is required');
+            return;
+        }
+
+        if (itemData.photos.length === 0) {
+            toast.error('At least one photo is required');
+            return;
+        }
+
+        // Validate description length
+        if (itemData.description.length < 20) {
+            toast.error('Description must be at least 20 characters long');
+            return;
+        }
+
+        // Validate description length
+        if (itemData.description.length > 200) {
+            toast.error('Description cannot exceed 200 characters');
             return;
         }
 
@@ -80,6 +104,18 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB');
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                toast.error('Please upload an image file');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setItemData(prev => ({
@@ -141,13 +177,16 @@ const ItemOffcanvas = ({ show, onHide, onSave, initialData = {}, subcategoryName
                             />
                         </div>
                         <div className="mb-3">
-                            <label className="form-label">Item Description</label>
+                            <label className="form-label d-flex justify-content-between">
+                                Item Description
+                                <small className="text-muted">{itemData.description.length} / 200</small>
+                            </label>
                             <textarea
                                 className="form-control"
                                 rows="3"
                                 value={itemData.description}
                                 onChange={(e) => setItemData({ ...itemData, description: e.target.value })}
-                                placeholder="Indulge in the authentic flavors of Bihar with our litti chokha with ghee dip, offering a delightful blended of smoky and tangy tastes..."
+                                maxLength={200}                              
                             />
                         </div>
                         <div className="mb-3">

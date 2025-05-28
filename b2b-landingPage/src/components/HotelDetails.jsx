@@ -5,6 +5,76 @@ import { toast } from 'react-toastify';
 import { Header } from './Header';
 import { useCart } from '../context/CartContext';
 import { API_URL } from '../api/api';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+
+const MenuItemSkeleton = () => (
+    <div className="flex gap-4 p-4 border rounded-lg">
+        <div className="flex-1">
+            <div className="flex items-center gap-2">
+                <Skeleton width={12} height={12} circle />
+                <Skeleton width={150} height={20} />
+            </div>
+            <Skeleton count={2} className="mt-1" />
+            <div className="mt-2">
+                <Skeleton width={80} height={20} />
+                <Skeleton width={120} height={16} className="mt-1" />
+            </div>
+        </div>
+        <div className="w-24 h-24">
+            <Skeleton height={96} />
+        </div>
+        <div className="self-center">
+            <Skeleton width={60} height={36} />
+        </div>
+    </div>
+);
+
+const CategorySkeleton = () => (
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="w-full p-4 flex justify-between items-center">
+            <Skeleton width={200} height={24} />
+            <Skeleton width={24} height={24} circle />
+        </div>
+        <div className="p-4 border-t">
+            <Skeleton width={150} height={20} className="mb-3" />
+            <div className="space-y-4">
+                <MenuItemSkeleton />
+                <MenuItemSkeleton />
+                <MenuItemSkeleton />
+            </div>
+        </div>
+    </div>
+);
+
+const RestaurantDetailsSkeleton = () => (
+    <div className="mt-16">
+        <div className="flex flex-col md:flex-row gap-8">
+            <div className="w-full">
+                <div className="bg-white">
+                    <Skeleton height={256} />
+                    <div className="p-6">
+                        <Skeleton height={36} width="70%" className="mb-2" />
+                        <Skeleton count={2} className="mb-4" />
+                        <div className="flex items-center gap-4">
+                            <Skeleton width={100} height={20} />
+                            <Skeleton width={80} height={24} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8">
+                    <Skeleton height={32} width={100} className="mb-4" />
+                    <div className="space-y-4">
+                        <CategorySkeleton />
+                        <CategorySkeleton />
+                        <CategorySkeleton />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 const HotelDetails = () => {
     const { id } = useParams();
@@ -24,8 +94,12 @@ const HotelDetails = () => {
     }, [expandedCategories]);
 
     useEffect(() => {
-        const fetchRestaurantDetails = async () => {
+        const fetchData = async () => {
             try {
+                setLoading(true);
+                setError(null);
+                
+                // Fetch restaurant details
                 const token = localStorage.getItem('token');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 
@@ -38,34 +112,27 @@ const HotelDetails = () => {
                     url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
                 }
 
-                const response = await axios.get(url, { headers });
-                setRestaurant(response.data);
-            } catch (err) {
-                setError('Failed to fetch restaurant details');
-                console.error(err);
-            }
-        };
+                const [restaurantResponse, menuResponse] = await Promise.all([
+                    axios.get(url, { headers }),
+                    axios.get(`${API_URL}/api/menu/public/${id}`, { headers })
+                ]);
 
-        const fetchMenu = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axios.get(`${API_URL}/api/menu/public/${id}`, { headers });
-                setMenu(response.data);
+                setRestaurant(restaurantResponse.data);
+                setMenu(menuResponse.data);
+                
                 // Set first category as expanded by default
-                if (response.data && response.data.length > 0) {
-                    setExpandedCategories([response.data[0]._id]);
+                if (menuResponse.data && menuResponse.data.length > 0) {
+                    setExpandedCategories([menuResponse.data[0]._id]);
                 }
             } catch (err) {
-                setError('Failed to fetch menu');
-                console.error(err);
+                console.error('Error fetching data:', err);
+                setError('Failed to fetch restaurant details');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRestaurantDetails();
-        fetchMenu();
+        fetchData();
     }, [id]);
 
     // Separate useEffect for cart fetching
@@ -74,7 +141,7 @@ const HotelDetails = () => {
         if (token) {
             fetchCart();
         }
-    }, [fetchCart]); // Add fetchCart to dependencies
+    }, [fetchCart]);
 
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prevCategories => {
@@ -95,7 +162,6 @@ const HotelDetails = () => {
 
         // Check if item is already in cart first
         if (isItemInCart(item._id)) {
-            toast.info('Item already in cart');
             navigate('/cart');
             return;
         }
@@ -111,7 +177,8 @@ const HotelDetails = () => {
                 basePrice: Number(item.basePrice),
                 packagingCharges: Number(item.packagingCharges),
                 totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg
+                isVeg: item.isVeg,
+                photos: item.photos || []
             }];
         } else {
             items = [{
@@ -121,7 +188,8 @@ const HotelDetails = () => {
                 basePrice: Number(item.basePrice),
                 packagingCharges: Number(item.packagingCharges),
                 totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg
+                isVeg: item.isVeg,
+                photos: item.photos || []
             }];
         }
 
@@ -164,9 +232,9 @@ const HotelDetails = () => {
         }
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    if (loading) return <RestaurantDetailsSkeleton />;
     if (error) return <div className="flex justify-center items-center h-screen">{error}</div>;
-    if (!restaurant) return <div className="flex justify-center items-center h-screen">Restaurant not found</div>;
+    if (!restaurant && !loading) return <div className="flex justify-center items-center h-screen">Restaurant not found</div>;
 
     return (
         <>
@@ -199,24 +267,36 @@ const HotelDetails = () => {
                     <div className="w-full">
                         <div className="bg-white">
                             <img
-                                src={restaurant.imageUrl || 'https://via.placeholder.com/800x400?text=Restaurant'}
-                                alt={restaurant.restaurantName}
-                                className={`w-full h-64 object-cover ${!restaurant.online ? 'grayscale' : ''}`}
+                                src={restaurant?.imageUrl || 'https://via.placeholder.com/800x400?text=Restaurant'}
+                                alt={restaurant?.name || 'Restaurant'}
+                                className={`w-full h-64 object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
                             />
                             <div className="p-6">
-                                <h1 className="text-3xl font-bold mb-2">{restaurant.restaurantName}</h1>
-                                <p className="text-gray-600 mb-4">{restaurant.description}</p>
-                                <div className="flex items-center gap-4">
-                                    {/* <div className="flex items-center">
-                                        <span className="text-yellow-500">★</span>
-                                        <span className="ml-1">{restaurant.rating}</span>
-                                    </div> */}
-                                    <div className="text-gray-500">
-                                        {restaurant.distance} km away
+                                <h1 className="text-3xl font-bold mb-2">{restaurant?.name || 'Restaurant'}</h1>
+                                <p className="text-gray-600 mb-4">{restaurant?.description || 'No description available'}</p>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    {restaurant?.distance !== null && restaurant?.distance !== "" && (
+                                        <div className="flex items-center gap-2 text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                            </svg>
+                                            {restaurant.distance} km away
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-3 py-1.5 text-sm font-medium rounded-full flex items-center gap-1.5 ${restaurant?.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            <span className={`w-2 h-2 rounded-full ${restaurant?.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                            {restaurant?.online ? 'Open' : 'Closed'}
+                                        </span>
+                                        {restaurant?.operatingHours?.openTime && restaurant?.operatingHours?.closeTime && (
+                                            <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                </svg>
+                                                {restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}
+                                            </div>
+                                        )}
                                     </div>
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                        {restaurant.online ? 'Open' : 'Closed'}
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -272,21 +352,21 @@ const HotelDetails = () => {
                                                                             <img
                                                                                 src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
                                                                                 alt={item.name}
-                                                                                className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
+                                                                                className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
                                                                             />
                                                                         </div>
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
-                                                                            disabled={!restaurant.online}
+                                                                            disabled={!restaurant?.online}
                                                                             className={`self-center px-4 py-2 ${
-                                                                                !restaurant.online 
+                                                                                !restaurant?.online 
                                                                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                                                     : isItemInCart(item._id)
                                                                                         ? 'bg-green-600 text-white'
                                                                                         : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
                                                                             } rounded transition-colors`}
                                                                         >
-                                                                            {!restaurant.online ? 'CLOSED' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
+                                                                            {!restaurant?.online ? 'CLOSED' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>
                                                                     </div>
                                                                 ))}

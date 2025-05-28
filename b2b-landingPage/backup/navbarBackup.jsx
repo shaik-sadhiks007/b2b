@@ -7,11 +7,12 @@ import { useNavigate, Link } from "react-router-dom"
 import { useLocationContext } from "../context/LocationContext"
 import { useCart } from "../context/CartContext"
 import { toast } from 'react-toastify'
-import logo from '../assets/b2bupdate.png'; 
 
 
 function Navbar({ alwaysVisible }) {
+  const { isScrolled } = useScroll()
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
   const [showLoginOptions, setShowLoginOptions] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, logout } = useContext(HotelContext)
@@ -30,6 +31,15 @@ function Navbar({ alwaysVisible }) {
   } = useLocationContext();
 
   useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 100)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  useEffect(() => {
     // Load saved location from localStorage
     const savedLocation = localStorage.getItem('userLocation')
     if (savedLocation) {
@@ -37,20 +47,6 @@ function Navbar({ alwaysVisible }) {
       setLocation(savedLoc)
     }
   }, [])
-
-  // Add localStorage change listener
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'userLocation') {
-        const { location: newLocation } = JSON.parse(e.newValue);
-        setLocation(newLocation);
-        setLocationShowSuggestions(false);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -79,8 +75,6 @@ function Navbar({ alwaysVisible }) {
       }
     }
     localStorage.setItem('userLocation', JSON.stringify(locationData))
-    // Dispatch a custom event to notify other components
-    window.dispatchEvent(new Event('locationUpdated'))
     setLocation(suggestion.address || suggestion.name)
     setLocationShowSuggestions(false)
     if (onLocationSelect) {
@@ -88,23 +82,11 @@ function Navbar({ alwaysVisible }) {
     }
   }
 
-  // Add event listener for custom location update event
-  useEffect(() => {
-    const handleLocationUpdate = () => {
-      const savedLocation = localStorage.getItem('userLocation')
-      if (savedLocation) {
-        const { location: savedLoc } = JSON.parse(savedLocation)
-        setLocation(savedLoc)
-        setLocationShowSuggestions(false)
-      }
-    }
-
-    window.addEventListener('locationUpdated', handleLocationUpdate)
-    return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
-  }, [])
-
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white z-50 shadow-md py-2">
+    <header
+      className={`fixed top-0 left-0 right-0 bg-white z-50 transition-all duration-300 ${alwaysVisible ? 'shadow-md py-2' : (isScrolled ? 'shadow-md py-2' : 'py-4 -translate-y-full')
+        }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -136,7 +118,7 @@ function Navbar({ alwaysVisible }) {
                 onBlur={() => {
                   setTimeout(() => setLocationShowSuggestions(false), 150)
                 }}
-                placeholder="Enter your location"
+                placeholder="Enter delivery location"
                 className="w-full pl-10 pr-20 py-2 rounded-full border-2 focus:border-blue-500 outline-none"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />

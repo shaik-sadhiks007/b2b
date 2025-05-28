@@ -18,39 +18,73 @@ exports.placeOrder = async (req, res) => {
         let customerName;
         let customerPhone;
 
-        // Handle address logic
-        if (addressId) {
-            // If addressId is provided, use it
-            const address = await CustomerAddress.findById(addressId);
-            if (!address) {
-                return res.status(404).json({ error: "Address not found" });
+        // Handle address logic based on orderType
+        if (orderType === 'DELIVERY') {
+            // For delivery orders, address is required
+            if (!addressId && !customerAddressData) {
+                return res.status(400).json({ error: "Delivery address is required for delivery orders" });
             }
-            customerAddressId = addressId;
-            customerName = address.fullName;
-            customerPhone = address.phone;
-        } else if (customerAddressData) {
-            // Check if this is the first address for the user
-            const existingAddresses = await CustomerAddress.find({ userId });
-            const isFirstAddress = existingAddresses.length === 0;
 
-            // If no addressId but customerAddressData is provided, create new address
-            const newAddress = new CustomerAddress({
-                userId,
-                fullName: customerAddressData.fullName,
-                street: customerAddressData.street,
-                city: customerAddressData.city,
-                state: customerAddressData.state,
-                zip: customerAddressData.zip,
-                country: customerAddressData.country,
-                phone: customerAddressData.phone,
-                isDefault: isFirstAddress // Set as default if it's the first address
-            });
-            await newAddress.save();
-            customerAddressId = newAddress._id;
-            customerName = newAddress.fullName;
-            customerPhone = newAddress.phone;
+            if (addressId) {
+                // If addressId is provided, use it
+                const address = await CustomerAddress.findById(addressId);
+                if (!address) {
+                    return res.status(404).json({ error: "Address not found" });
+                }
+                customerAddressId = addressId;
+                customerName = address.fullName;
+                customerPhone = address.phone;
+            } else if (customerAddressData) {
+                // Check if this is the first address for the user
+                const existingAddresses = await CustomerAddress.find({ userId });
+                const isFirstAddress = existingAddresses.length === 0;
+
+                // If no addressId but customerAddressData is provided, create new address
+                const newAddress = new CustomerAddress({
+                    userId,
+                    fullName: customerAddressData.fullName,
+                    street: customerAddressData.street,
+                    city: customerAddressData.city,
+                    state: customerAddressData.state,
+                    zip: customerAddressData.zip,
+                    country: customerAddressData.country,
+                    phone: customerAddressData.phone,
+                    isDefault: isFirstAddress // Set as default if it's the first address
+                });
+                await newAddress.save();
+                customerAddressId = newAddress._id;
+                customerName = newAddress.fullName;
+                customerPhone = newAddress.phone;
+            }
+        } else if (orderType === 'PICKUP') {
+            // For pickup orders, address is optional
+            if (addressId) {
+                const address = await CustomerAddress.findById(addressId);
+                if (address) {
+                    customerAddressId = addressId;
+                    customerName = address.fullName;
+                    customerPhone = address.phone;
+                }
+            } else if (customerAddressData) {
+                // If customer provides address data for pickup, save it but don't require it
+                const newAddress = new CustomerAddress({
+                    userId,
+                    fullName: customerAddressData.fullName,
+                    street: customerAddressData.street,
+                    city: customerAddressData.city,
+                    state: customerAddressData.state,
+                    zip: customerAddressData.zip,
+                    country: customerAddressData.country,
+                    phone: customerAddressData.phone,
+                    isDefault: false
+                });
+                await newAddress.save();
+                customerAddressId = newAddress._id;
+                customerName = newAddress.fullName;
+                customerPhone = newAddress.phone;
+            }
         } else {
-            return res.status(400).json({ error: "Either addressId or customerAddressData is required" });
+            return res.status(400).json({ error: "Invalid order type. Must be either 'DELIVERY' or 'PICKUP'" });
         }
 
         // Validate restaurant exists
@@ -272,6 +306,30 @@ exports.getRestaurantOrderStatus = async (req, res) => {
         res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
+    }
+};
+
+exports.getRestaurantOrderCounts = async (req, res) => {
+    try {
+        const statuses = ['ORDER_PLACED', 'ACCEPTED', 'ORDER_READY', 'ORDER_PICKED_UP'];
+        const counts = await Promise.all(
+            statuses.map(async (status) => {
+                const count = await Order.countDocuments({
+                    status,
+                    restaurantId: req.restaurant._id
+                });
+                return { status, count };
+            })
+        );
+        
+        const countsObject = counts.reduce((acc, { status, count }) => {
+            acc[status] = count;
+            return acc;
+        }, {});
+        
+        res.status(200).json(countsObject);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
     }
 };  
 

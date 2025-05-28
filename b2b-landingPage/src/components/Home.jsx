@@ -9,7 +9,9 @@ import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
 import axios from 'axios'
 import { API_URL } from '../api/api'
-import logo from '../assets/b2bupdate.png'; 
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
+import { useLocationContext } from '../context/LocationContext'
 
 
 const categories = [
@@ -25,12 +27,33 @@ const categories = [
     // { name: "Add", icon: "➕", color: "bg-gray-100" },
 ]
 
+const RestaurantCardSkeleton = () => (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-10">
+        <div className="relative h-48 w-full">
+            <Skeleton height={192} />
+        </div>
+        <div className="p-4">
+            <Skeleton height={24} width="70%" className="mb-2" />
+            <Skeleton height={16} count={2} className="mb-2" />
+            <div className="flex items-center justify-between">
+                <Skeleton height={16} width={80} />
+                <Skeleton height={16} width={60} />
+            </div>
+        </div>
+    </div>
+);
 
+const ErrorCard = ({ message }) => (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-10 p-4">
+        <div className="text-center py-8">
+            <p className="text-xl text-red-600 mb-2">Oops! Something went wrong</p>
+            <p className="text-gray-500">{message}</p>
+        </div>
+    </div>
+);
 
 const Home = () => {
     const [showLocationModal, setShowLocationModal] = useState(false)
-    const [location, setLocation] = useState("")
-    const [activeTab, setActiveTab] = useState("all")
     const [selectedCategory, setSelectedCategory] = useState("all")
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
@@ -39,6 +62,56 @@ const Home = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
+    const { location, setLocation, onAllowLocation: contextAllowLocation } = useLocationContext()
+
+    // Add localStorage change listener
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'userLocation' && e.newValue) {
+                try {
+                    const parsedData = JSON.parse(e.newValue);
+                    if (parsedData && parsedData.location) {
+                        setLocation(parsedData.location);
+                        setShowSuggestions(false);
+                    }
+                } catch (error) {
+                    console.error("Error parsing location data:", error);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    // Load saved location on initial render
+    useEffect(() => {
+        const savedLocation = localStorage.getItem('userLocation');
+        if (savedLocation) {
+            try {
+                const { location: savedLoc } = JSON.parse(savedLocation);
+                if (savedLoc) {
+                    setLocation(savedLoc);
+                }
+            } catch (error) {
+                console.error("Error parsing saved location:", error);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        // Check if user location exists in localStorage
+        const savedLocation = localStorage.getItem('userLocation');
+        if (!savedLocation) {
+            // Show modal after 5 seconds
+            const timer = setTimeout(() => {
+                setShowLocationModal(true);
+            }, 5000);
+
+            // Cleanup timer if component unmounts
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     // Function to fetch location suggestions
     const fetchLocationSuggestions = async (query) => {
@@ -79,75 +152,21 @@ const Home = () => {
         return () => clearTimeout(timer)
     }, [location])
 
-    useEffect(() => {
-        // Check if it's the first visit
-        const hasVisited = localStorage.getItem("hasVisited")
-        if (!hasVisited) {
-            // Show modal after 5 seconds
-            const timer = setTimeout(() => {
-                setShowLocationModal(true)
-                localStorage.setItem("hasVisited", "true")
-            }, 5000)
-
-            // Cleanup timer if component unmounts
-            return () => clearTimeout(timer)
+    const handleAllowLocation = async () => {
+        setIsLoading(true);
+        try {
+            await contextAllowLocation();
+            setShowLocationModal(false);
+        } catch (error) {
+            console.error("Error getting location:", error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [])
-
-    const handleAllowLocation = () => {
-        setIsLoading(true)
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        // Get location name using reverse geocoding
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&addressdetails=1`
-                        )
-                        const data = await response.json()
-
-                        // Format the address
-                        const address = data.address
-                        const locationString = [
-                            address.city || address.town || address.village,
-                            address.state,
-                            address.country
-                        ]
-                            .filter(Boolean)
-                            .join(", ")
-
-                        setLocation(locationString)
-                        setShowLocationModal(false)
-                    } catch (error) {
-                        console.error("Error getting location:", error)
-                        // Don't set error message in location field
-                        setShowLocationModal(false)
-                    } finally {
-                        setIsLoading(false)
-                    }
-                },
-                (error) => {
-                    console.error("Error getting location:", error)
-                    // Don't set error message in location field
-                    setIsLoading(false)
-                    setShowLocationModal(false)
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                }
-            )
-        } else {
-            // Don't set error message in location field
-            setIsLoading(false)
-            setShowLocationModal(false)
-        }
-    }
+    };
 
     const handleManualAddress = () => {
-        setShowLocationModal(false)
-    }
+        setShowLocationModal(false);
+    };
 
     const handleLocationSelect = (suggestion) => {
         const locationData = {
@@ -158,10 +177,27 @@ const Home = () => {
             }
         }
         localStorage.setItem('userLocation', JSON.stringify(locationData))
+        // Dispatch a custom event to notify other components
+        window.dispatchEvent(new Event('locationUpdated'))
         setLocation(suggestion.address)
         setSuggestions([])
         setShowSuggestions(false)
     }
+
+    // Add event listener for custom location update event
+    useEffect(() => {
+        const handleLocationUpdate = () => {
+            const savedLocation = localStorage.getItem('userLocation')
+            if (savedLocation) {
+                const { location: savedLoc } = JSON.parse(savedLocation)
+                setLocation(savedLoc)
+                setShowSuggestions(false)
+            }
+        }
+
+        window.addEventListener('locationUpdated', handleLocationUpdate)
+        return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
+    }, [])
 
     const handleServiceProviderClick = (provider) => {
         const token = localStorage.getItem('token');
@@ -178,7 +214,9 @@ const Home = () => {
     };
 
     const handleRestaurantClick = (restaurant) => {
-        navigate(`/hotel/${restaurant._id}`, { state: { restaurant } });
+        // Get the category from the restaurant or default to 'restaurant'
+        const category = restaurant.category?.toLowerCase() || 'restaurant';
+        navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
     };
 
     useEffect(() => {
@@ -210,8 +248,73 @@ const Home = () => {
         fetchRestaurants();
     }, [localStorage.getItem('userLocation'), selectedCategory]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    const renderRestaurants = () => {
+        if (loading) {
+            return Array(6).fill(0).map((_, index) => (
+                <RestaurantCardSkeleton key={index} />
+            ));
+        }
+
+        if (error) {
+            return <ErrorCard message={error} />;
+        }
+
+        if (restaurants.length === 0) {
+            return (
+                <div className="text-center py-8 col-span-full mt-5">
+                    <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
+                    <p className="text-gray-500">Please try searching in a different area</p>
+                </div>
+            );
+        }
+
+        return restaurants.map((restaurant) => (
+            <div
+                key={restaurant._id}
+                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
+                onClick={() => handleRestaurantClick(restaurant)}
+            >
+                <div className="relative h-48 w-full">
+                    <img
+                        src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
+                        alt={restaurant.name}
+                        className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
+                    />
+                    <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
+                    </span>
+                </div>
+                <div className="p-4">
+                    <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
+                    {/* <p className="text-gray-600 mb-3 line-clamp-2">{restaurant.description}</p> */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            {restaurant.distance !== null && (
+                                <div className="flex items-center gap-1.5 text-gray-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-sm">{restaurant.distance} km away</span>
+                                </div>
+                            )}
+                            <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${restaurant.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                {restaurant.online ? 'Open' : 'Closed'}
+                            </span>
+                        </div>
+                        {restaurant.operatingHours?.openTime && restaurant.operatingHours?.closeTime && (
+                            <div className="flex items-center gap-1.5 text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">{restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        ));
+    };
 
     return (
         <div>
@@ -224,10 +327,23 @@ const Home = () => {
                 onLoginClick={() => navigate('/login')}
             />
 
-            <main className="container mx-auto pt-16 pb-20 flex flex-col items-center justify-center flex-grow">
+            <main className="container mx-auto pt-5 pb-20 flex flex-col items-center justify-center flex-grow">
                 <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8 mt-16">
                     {/* Logo */}
-                    <img src={logo} alt="B2B Logo" className="w-100 h-110" />
+                    {/* <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
+                        B2B
+                    </h1> */}
+
+                    <img 
+                        src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq" 
+                        alt="logo" 
+                        style={{
+                            maxWidth: '100%',
+                            width: '300px',
+                            height: '300px',
+                            objectFit: 'contain'
+                        }}
+                    />
 
                     {/* Search and Location Inputs Row */}
                     <div className="w-full flex gap-4">
@@ -240,7 +356,7 @@ const Home = () => {
                                 onBlur={() => {
                                     setTimeout(() => setShowSuggestions(false), 150)
                                 }}
-                                placeholder="Enter delivery location"
+                                placeholder="Enter your location"
                                 className="w-full pl-10 pr-4 py-3 rounded-full border-2 focus:border-blue-500 text-lg outline-none"
                             />
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -288,43 +404,9 @@ const Home = () => {
                             onCategorySelect={(category) => setSelectedCategory(category.value)}
                         />
 
-                        {restaurants.length === 0 ? (
-                            <div className="text-center py-8 col-span-full mt-5">
-                                <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
-                                <p className="text-gray-500">Please try searching in a different area</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
-                                {restaurants.map((restaurant) => (
-                                    <div
-                                        key={restaurant._id}
-                                        className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
-                                        onClick={() => handleRestaurantClick(restaurant)}
-                                    >
-                                        <div className="relative h-48 w-full">
-                                            <img
-                                                src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
-                                                alt={restaurant.name}
-                                                className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
-                                            />
-                                            <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                                {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
-                                            </span>
-                                        </div>
-                                        <div className="p-4">
-                                            <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
-                                            <p className="text-gray-600 mb-2">{restaurant.description}</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-500">{restaurant.distance} km away</span>
-                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {restaurant.online ? 'Open' : 'Closed'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
+                            {renderRestaurants()}
+                        </div>
                     </div>
                 </div>
             </main>

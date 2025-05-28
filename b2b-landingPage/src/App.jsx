@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { Search, Mic, Camera } from "lucide-react"
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom"
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import LocationModal from "./components/LocationModal"
 import CategoryShortcuts from "./components/CategoryShortcuts"
 import Navbar from "./components/Navbar"
@@ -56,7 +58,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/hotel/:id" element={<HotelDetails />} />
+        <Route path="/:category/:id" element={<HotelDetails />} />
         <Route path="/cart" element={
           <ProtectedRoute>
             <CartPage />
@@ -90,6 +92,18 @@ function App() {
           <ScrollProvider>
             <LocationProvider>
               <AppContent />
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
             </LocationProvider>
           </ScrollProvider>
         </HotelDataProvider>

@@ -43,6 +43,7 @@ const Profile = () => {
         restaurantName: '',
         ownerName: '',
         serviceType: '',
+        description: '',
         contact: {
             primaryPhone: '',
             whatsappNumber: '',
@@ -323,6 +324,7 @@ const Profile = () => {
                 restaurantName: response.data.restaurantName || '',
                 ownerName: response.data.ownerName || '',
                 serviceType: response.data.serviceType || '',
+                description: response.data.description || '',
                 contact: response.data.contact || {
                     primaryPhone: '',
                     whatsappNumber: '',
@@ -556,6 +558,21 @@ const Profile = () => {
                                                                 <option value="DELIVERY">Delivery</option>
                                                                 <option value="PICKUP">Pickup</option>
                                                             </select>
+                                                        </div>
+                                                        <div className="col-12">
+                                                            <label className="form-label fw-medium">Description <span className="text-muted">(max 100 characters)</span></label>
+                                                            <textarea
+                                                                className="form-control"
+                                                                name="description"
+                                                                value={formData.description || ''}
+                                                                onChange={handleInputChange}
+                                                                placeholder="Best business in Hyderabad or varieties or specials etc..."
+                                                                rows="3"
+                                                                maxLength={100}
+                                                            />
+                                                            <small className="text-muted">
+                                                                {formData.description ? `${formData.description.length}/100 characters` : '0/100 characters'}
+                                                            </small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -935,6 +952,10 @@ const Profile = () => {
                                             <div className="col-md-6">
                                                 <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
                                                 <p className="mb-0">{restaurant?.serviceType}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="text-muted mb-2 fw-medium">Description</h6>
+                                                <p className="mb-0">{restaurant?.description || 'Not provided'}</p>
                                             </div>
                                             <div className="col-md-6">
                                                 <h6 className="text-muted mb-2 fw-medium">Primary Phone</h6>

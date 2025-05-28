@@ -60,6 +60,7 @@ const AddRestaurant = () => {
         restaurantName: '',
         ownerName: '',
         serviceType: serviceType || '',
+        description : '',
         address: {
             shopNo: '',
             floor: '',
@@ -392,6 +393,7 @@ const AddRestaurant = () => {
                                 restaurantName: formData.restaurantName,
                                 serviceType: formData.serviceType,
                                 ownerName: formData.ownerName,
+                                description : formData.description,
                                 sameAsOwnerPhone: formData.sameAsOwnerPhone || false,
                                 whatsappUpdates: formData.whatsappUpdates || false,
                                 contact: formData.contact || {

@@ -165,11 +165,22 @@ function SearchPage() {
 
     setIsLoading(true)
     try {
+      // Get location from localStorage
+      const savedLocation = localStorage.getItem('userLocation')
+      let params = {
+        query: query,
+        type: searchType
+      }
+
+      // Add coordinates if available
+      if (savedLocation) {
+        const { coordinates } = JSON.parse(savedLocation)
+        params.lat = coordinates.lat
+        params.lng = coordinates.lng
+      }
+
       const response = await axios.get(`${API_URL}/api/search`, {
-        params: {
-          query: query,
-          type: searchType
-        },
+        params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -233,24 +244,34 @@ function SearchPage() {
           <div key={result.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             {result.type === 'business' ? (
               // Business Card
-              <div className="p-4">
+              <div 
+                className="p-4 cursor-pointer"
+                onClick={() => {
+                  const category = result.category?.toLowerCase() || 'restaurant';
+                  navigate(`/${category}/${result.id}`);
+                }}
+              >
                 <div className="aspect-w-16 aspect-h-9 mb-4">
                   <img
                     src={result.image || 'https://via.placeholder.com/400x225'}
                     alt={result.name}
-                    className="w-full h-48 object-cover rounded-lg"
+                    className={`w-full h-48 object-cover rounded-lg ${!result.online ? 'grayscale' : ''}`}
                   />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{result.name}</h3>
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
                   <MapPin size={16} />
                   <span>{result.address.locality}, {result.address.city}</span>
+                  {result.distance && <span className="text-sm text-gray-500">({result.distance} km)</span>}
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
                   <Clock size={16} />
                   <span>{result.operatingHours.openTime} - {result.operatingHours.closeTime}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${result.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {result.online ? 'Open' : 'Closed'}
+                  </span>
                   <span className="text-sm">{result.serviceType}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -262,11 +283,17 @@ function SearchPage() {
             ) : (
               // Product Card
               <div className="p-4">
-                <div className="aspect-w-16 aspect-h-9 mb-4">
+                <div 
+                  className="aspect-w-16 aspect-h-9 mb-4 cursor-pointer"
+                  onClick={() => {
+                    const category = result.restaurant.category?.toLowerCase() || 'restaurant';
+                    navigate(`/${category}/${result.restaurant.id}`);
+                  }}
+                >
                   <img
                     src={result.image || 'https://via.placeholder.com/400x225'}
                     alt={result.name}
-                    className="w-full h-48 object-cover rounded-lg"
+                    className={`w-full h-48 object-cover rounded-lg ${!result.restaurant.online ? 'grayscale' : ''}`}
                   />
                 </div>
                 <div className="flex items-center justify-between mb-2">
@@ -294,17 +321,35 @@ function SearchPage() {
                     <span className="text-lg font-semibold">₹{result.price}</span>
                     <span className="text-sm text-gray-500">({result.foodType})</span>
                   </div>
-                  <span className="text-sm text-gray-500">{result.restaurant.name}</span>
+                  <div 
+                    className="flex flex-col items-end cursor-pointer"
+                    onClick={() => {
+                      const category = result.restaurant.category?.toLowerCase() || 'restaurant';
+                      navigate(`/${category}/${result.restaurant.id}`);
+                    }}
+                  >
+                    <span className="text-sm text-gray-500">{result.restaurant.name}</span>
+                    {result.restaurant.distance && (
+                      <span className="text-xs text-gray-400">{result.restaurant.distance} km away</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => isItemInCart(result.id) ? navigate('/cart') : handleAddToCart(result)}
+                  disabled={!result.restaurant.online}
                   className={`w-full mt-4 px-4 py-2 ${
-                    isItemInCart(result.id)
+                    !result.restaurant.online
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : isItemInCart(result.id)
                       ? 'bg-green-600 text-white'
                       : 'border border-green-600 text-green-600'
                   } rounded hover:bg-green-700 hover:text-white transition-colors`}
                 >
-                  {isItemInCart(result.id) ? 'GO TO CART' : 'ADD TO CART'}
+                  {!result.restaurant.online 
+                    ? 'RESTAURANT CLOSED' 
+                    : isItemInCart(result.id) 
+                    ? 'GO TO CART' 
+                    : 'ADD TO CART'}
                 </button>
               </div>
             )}

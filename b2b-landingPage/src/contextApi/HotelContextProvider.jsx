@@ -1,11 +1,15 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
-export const HotelContext  = createContext(); 
+export const HotelContext = createContext();
 
 const HotelDataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+    const { clearCartState } = useCart();
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -13,7 +17,7 @@ const HotelDataProvider = ({ children }) => {
         if (token) {
             try {
                 const decodedToken = jwtDecode(token);
-                const currentTime = Math.floor(Date.now() / 1000); 
+                const currentTime = Math.floor(Date.now() / 1000);
 
                 if (decodedToken.exp && decodedToken.exp > currentTime) {
                     setUser(decodedToken);
@@ -23,27 +27,26 @@ const HotelDataProvider = ({ children }) => {
                 }
             } catch (error) {
                 console.error("Invalid token:", error);
-                logout(); 
+                logout();
             }
         }
     }, []);
 
-    sessionStorage.setItem("username", "Shaik Sadhik");
-
-
     const login = (token) => {
         localStorage.setItem("token", token);
         const decodedToken = jwtDecode(token);
-        setUser(decodedToken); 
+        setUser(decodedToken);
     };
 
     const logout = () => {
         localStorage.removeItem("token");
+        clearCartState(); // Clear cart state when logging out
         setUser(null);
+        navigate('/');
     };
 
     return (
-        <HotelContext.Provider value={{ user, setUser, logout,login }}>
+        <HotelContext.Provider value={{ user, setUser, logout, login }}>
             {children}
         </HotelContext.Provider>
     );

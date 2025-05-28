@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import { AuthContext } from '../context/AuthContext';
+import logo from '../assets/b2bupdate.png';
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -176,8 +177,8 @@ const LandingPage = () => {
                                 textAlign: 'center',
                                 padding: '0 20px'
                             }}>
-                            <h1 className="display-4 fw-bold mb-4 text-white">Welcome to Our Business</h1>
-                            <p className="lead mb-4 text-white">Experience the finest dining with our exquisite menu and exceptional service</p>
+                            <h1 className="display-4 fw-bold mb-4 text-white">Welcome to B2B</h1>
+                            <p className="lead mb-4 text-white">Grow your business by joining our B2B application—reach more customers, boost sales, and simplify operations!</p>
                             <div className="d-flex gap-3">
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"
@@ -213,7 +214,7 @@ const LandingPage = () => {
                                 <p className="text-muted mb-4">Please keep these documents and details ready for a smooth sign-up</p>
 
                                 <div className="mb-2">
-                                    {['PAN card', 'FSSAI license', 'GST number - if applicable', 'Menu & profile from B2B', 'Bank account details'].map((item, index) => (
+                                    {['PAN card', 'FSSAI certificate', 'GST number - if applicable', 'Profile filling', 'Menu details'].map((item, index) => (
                                         <div key={index} className="d-flex align-items-center mb-2">
                                             <span className="bg-success rounded-circle px-2 py-1 me-2 text-white">
                                                 <i className="bi bi-check"></i>
@@ -223,7 +224,7 @@ const LandingPage = () => {
                                     ))}
                                 </div>
                             </div>
-                            <div className="col-md-5">
+                            {/* <div className="col-md-5">
                                 <div className="border rounded p-2 bg-dark text-white">
                                     <div className="d-flex justify-content-between mb-2">
                                         <div>
@@ -245,7 +246,7 @@ const LandingPage = () => {
                                         <small className="text-primary">Refer here</small>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </section>
@@ -264,8 +265,8 @@ const LandingPage = () => {
                                 },
                                 {
                                     icon: 'bi-shop',
-                                    title: 'Doorstep delivery convenience',
-                                    description: 'Easily get your orders delivered through our trained delivery partners'
+                                    title: 'Real-Time Order & Inventory Management',
+                                    description: 'Track orders as they come in and manage stock levels across all products effortlessly with real-time updates and low-stock alerts.'
                                 },
                                 {
                                     icon: 'bi-envelope',
@@ -288,7 +289,7 @@ const LandingPage = () => {
                 </section>
 
                 {/* Success Stories Section */}
-                <section className="py-5">
+                {/* <section className="py-5">
                     <div className="container">
                         <h3 className="text-center fw-bold mb-5">Business success stories</h3>
 
@@ -365,7 +366,7 @@ const LandingPage = () => {
                             </button>
                         </div>
                     </div>
-                </section>
+                </section> */}
 
                 {/* FAQ Section */}
                 <section className="py-5 bg-light">
@@ -428,10 +429,10 @@ const LandingPage = () => {
             <footer className="bg-white py-5">
                 <div className="container">
                     <div className="row mb-4">
-                        <div className="col-md-4 mb-4">
-                            <img src="/placeholder.svg" alt="B2B" style={{ height: '30px', width: '100px' }} className="mb-3" />
-                            <h6 className="text-uppercase fw-bold mb-3">About B2B</h6>
-                            <ul className="list-unstyled">
+                        <div className="col-md-4 mb-5">
+                            <img src= { logo } alt="B2B" style={{ height: '30px', width: '30px' }} className="mb-3" />
+                            <h6 className="text-uppercase fw-bold mb-3">Your one-stop platform for business services.</h6>
+                            {/* <ul className="list-unstyled">
                                 {['Who We Are', 'Blog', 'Work With Us', 'Investor Relations', 'Report Fraud', 'Press Kit'].map((item, index) => (
                                     <li key={index} className="mb-2">
                                         <a href="#" className="text-decoration-none text-muted">
@@ -439,22 +440,16 @@ const LandingPage = () => {
                                         </a>
                                     </li>
                                 ))}
-                            </ul>
+                            </ul> */}
                         </div>
 
                         <div className="col-md-4 mb-4">
-                            <h6 className="text-uppercase fw-bold mb-3">For Businesses</h6>
+                            <h6 className="text-uppercase fw-bold mb-3">Quick Links</h6>
                             <ul className="list-unstyled">
-                                {['Partner With Us', 'Apps For You'].map((item, index) => (
-                                    <li key={index} className="mb-2">
-                                        <a href="#" className="text-decoration-none text-muted">
-                                            {item}
-                                        </a>
-                                    </li>
-                                ))}
+                                <li><a href="/aboutus" className="hover:text-blue-500">About Us</a></li>
                             </ul>
 
-                            <h6 className="text-uppercase fw-bold mb-3 mt-4">Learn More</h6>
+                            {/* <h6 className="text-uppercase fw-bold mb-3 mt-4">Learn More</h6>
                             <ul className="list-unstyled">
                                 {['Privacy', 'Security', 'Terms', 'Sitemap'].map((item, index) => (
                                     <li key={index} className="mb-2">
@@ -463,13 +458,19 @@ const LandingPage = () => {
                                         </a>
                                     </li>
                                 ))}
-                            </ul>
+                            </ul> */}
                         </div>
 
                         <div className="col-md-4 mb-4">
-                            <h6 className="text-uppercase fw-bold mb-3">Social Links</h6>
+                            <h6 className="text-uppercase fw-bold mb-3">Contact Us</h6>
                             <div className="d-flex mb-4">
-                                {['linkedin', 'instagram', 'twitter', 'youtube', 'facebook'].map((social, index) => (
+                                <ul className="list-unstyled">
+                                    <li>Email: <a href="mailto:example@email.com">support@b2b.com</a></li>
+                                    <li>Phone: <a href="tel:+1234567890">+1 (234) 567-890</a></li>
+                                    <li>Address: Vijayawada, India</li>
+                                </ul>
+                            
+                                {/* {['linkedin', 'instagram', 'twitter', 'youtube', 'facebook'].map((social, index) => (
                                     <a key={index} href="#" className="me-2 text-decoration-none">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -479,13 +480,13 @@ const LandingPage = () => {
                                             className={`bi bi-${social}`}
                                             viewBox="0 0 16 16"
                                         >
-                                            {/* Add SVG paths here */}
+                                            
                                         </svg>
                                     </a>
-                                ))}
+                                ))} */}
                             </div>
 
-                            <div className="app-buttons">
+                            {/* <div className="app-buttons">
                                 <a href="#" className="d-inline-block mb-2">
                                     <img
                                         src="/placeholder.svg"
@@ -502,7 +503,7 @@ const LandingPage = () => {
                                         className="img-fluid"
                                     />
                                 </a>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
@@ -518,12 +519,12 @@ const faqs = [
     {
         question: "What are the documents and details required to start deliveries through B2B?",
         answer:
-            "You'll need your PAN card, FSSAI license, GST number (if applicable), menu details, and bank account information to get started with B2B.",
+            "You'll need your PAN card, FSSAI , GST number (if applicable), menu details to get started with B2B.",
     },
     {
         question: "How long will it take for a Business to go live on B2B after submitting the documents?",
         answer:
-            "Once all required documents are submitted and verified, your Business can typically go live within 7-10 Business days.",
+            "Once all required documents are submitted and verified, your Business can typically go live.",
     },
     {
         question: "What is the one-time onboarding fee? Do I have to pay it all the time of registration?",
@@ -539,11 +540,6 @@ const faqs = [
         question: "How much commission will be charged by B2B?",
         answer:
             "Commission rates vary based on your Business type, location, and other factors. New partners enjoy 0% commission for the first month. After that, standard rates apply which will be discussed during onboarding.",
-    },
-    {
-        question: "How will I get my payouts?",
-        answer:
-            "Partner Businesses on B2B receive weekly payouts every Wednesday for transactions made from Monday to Sunday of the previous week. If you prefer daily payouts, you can request them through the main partner app once your Business is live for more orders.",
     },
 ];
 

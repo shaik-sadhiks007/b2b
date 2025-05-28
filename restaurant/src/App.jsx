@@ -16,7 +16,7 @@ import { ToastContainer } from 'react-toastify'
 import Profile from './components/Profile'
 import ForgotPassword from './pages/ForgotPassword'
 import Review from './components/Review'
-
+import Aboutus from './components/Aboutus'
 
 
 function App() {
@@ -40,6 +40,7 @@ function App() {
             <Route path='/profile' element={<Profile />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/review' element={<Review />} />
+            <Route path='/Aboutus' element={<Aboutus />} />
           </Routes>
         </Router>
       </AuthProvider>

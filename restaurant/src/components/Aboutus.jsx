@@ -1,6 +1,9 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { openWindowWithToken } from '../utils/windowUtils';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Navbar from './Navbar';
+import Sidebar from './Sidebar';
+import { toast } from 'react-toastify';
+import { API_URL } from '../api/api';
 import aboutUsImage from '../assets/bridge.avif'; 
 const AboutUs = () => {
   return (

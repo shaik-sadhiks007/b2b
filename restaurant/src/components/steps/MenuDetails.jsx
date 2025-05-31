@@ -36,7 +36,6 @@ const MenuDetails = ({
     };
 
     const handleCategorySelect = (category) => {
-        console.log(category, "menu details");
         setSelectedCategory(category);
     };
 
@@ -44,7 +43,6 @@ const MenuDetails = ({
         e.preventDefault();
         
         if (!isFormValid) {
-            console.log('Form is not valid, returning');
             return;
         }
 
@@ -53,7 +51,6 @@ const MenuDetails = ({
             operatingHours: formData.operatingHours
         };
 
-        console.log(stepData,'md steps')
         onNext(stepData);
     };
 

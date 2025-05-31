@@ -7,7 +7,7 @@ import { useNavigate, Link } from "react-router-dom"
 import { useLocationContext } from "../context/LocationContext"
 import { useCart } from "../context/CartContext"
 import { toast } from 'react-toastify'
-import logo from '../assets/b2bupdate.png'; 
+import logo from '../assets/b2bupdate.png';
 
 
 function Navbar({ alwaysVisible }) {
@@ -109,7 +109,7 @@ function Navbar({ alwaysVisible }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/">
-              <img src= {logo } alt="logo" width='40px' />
+              <img src= {logo } loading="lazy" alt="logo" width='40px' />
             </Link>
           </div>
 

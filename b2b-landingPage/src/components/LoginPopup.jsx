@@ -14,7 +14,6 @@ const LoginPopup = ({ isOpen, onClose, onGuestContinue }) => {
         onClose();
         navigate('/login');
 
-        console.log("login clicked");
     };
 
     const handleRegisterClick = () => {

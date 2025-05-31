@@ -318,7 +318,6 @@ const Profile = () => {
                 setImagePreview(response.data.images.profileImage);
             }
 
-            console.log(response.data.operatingHours,"response hours");
 
             setFormData({
                 restaurantName: response.data.restaurantName || '',
@@ -369,7 +368,6 @@ const Profile = () => {
     };
 
 
-    console.log(formData.operatingHours,"hours");
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name.includes('.')) {

@@ -25,7 +25,6 @@ const ItemOffcanvas = ({
 
   const [error, setError] = useState("");
 
-  console.log(itemData, "itemData");
   // Reset form when initialData changes or when show becomes true
   useEffect(() => {
     if (show) {
@@ -119,7 +118,6 @@ const ItemOffcanvas = ({
       isVeg: itemData.foodType === "Veg", // Ensure isVeg is set based on foodType
     };
 
-    console.log(itemDataWithTotal, "itemDataWithTotal");
     onSave(itemDataWithTotal);
     onHide();
   };

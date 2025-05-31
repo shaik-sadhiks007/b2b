@@ -442,8 +442,6 @@ const AddRestaurant = () => {
                         case 2:
                             // Step 2: Menu & Operations
 
-                            console.log(formData.operatingHours, "hours in cas2")
-
                             formDataToSend.append('formData', JSON.stringify({
                                 category: formData.category || '',
                                 operatingHours: {
@@ -614,8 +612,6 @@ const AddRestaurant = () => {
         }
     };
 
-    console.log(formData, "formData.panDetails");
-
     const [operatingHours, setOperatingHours] = useState({
         defaultOpenTime: '09:00',
         defaultCloseTime: '22:00',
@@ -760,7 +756,6 @@ const AddRestaurant = () => {
 
                 if (response.data && response.data.length > 0) {
                     const restaurantData = response.data[0];
-                    console.log("Restaurant data:", restaurantData);
 
                     // Check if restaurant is published
                     if (restaurantData.status === 'published') {

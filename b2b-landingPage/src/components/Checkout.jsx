@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { useCart } from '../context/CartContext';
 
 const CheckoutItemSkeleton = () => (
     <div className="flex items-center justify-between py-4 border-b border-gray-100">
@@ -84,13 +85,13 @@ const CheckoutSkeleton = () => (
 );
 
 const Checkout = () => {
-    const [cart, setCart] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [orderType, setOrderType] = useState('DELIVERY');
     const navigate = useNavigate();
+    const { carts, clearCart } = useCart();
 
     // Form state
     const [formData, setFormData] = useState({
@@ -112,25 +113,25 @@ const Checkout = () => {
                     return;
                 }
 
-                // Fetch cart and addresses in parallel
-                const [cartResponse, addressesResponse] = await Promise.all([
-                    axios.get(`${API_URL}/api/cart`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get(`${API_URL}/api/customer-address`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
-                ]);
+                // Check if cart data exists
+                if (!carts || carts.length === 0) {
+                    setLoading(false);
+                    return;
+                }
 
-                const cartData = cartResponse.data[0];
-                setCart(cartData);
-                
+                // Fetch addresses
+                const addressesResponse = await axios.get(`${API_URL}/api/customer-address`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                const cartData = carts[0];
+
                 // Set default order type based on service type
-                if (cartData.serviceType === 'pickup') {
+                if (cartData?.serviceType === 'pickup') {
                     setOrderType('PICKUP');
-                } else if (cartData.serviceType === 'delivery') {
+                } else if (cartData?.serviceType === 'delivery') {
                     setOrderType('DELIVERY');
-                } else if (cartData.serviceType === 'both') {
+                } else if (cartData?.serviceType === 'both') {
                     setOrderType('DELIVERY');
                 }
 
@@ -150,7 +151,7 @@ const Checkout = () => {
         };
 
         initializeCheckout();
-    }, [navigate]);
+    }, [navigate, carts]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -172,10 +173,10 @@ const Checkout = () => {
             if (showAddressForm) {
                 const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
                 const missingFields = requiredFields.filter(field => !formData[field]);
-                            
+
                 if (missingFields.length > 0) {
                     const missingFieldNames = missingFields.map(field => {
-                        switch(field) {
+                        switch (field) {
                             case 'fullName': return 'Full Name';
                             case 'street': return 'Street Address';
                             case 'city': return 'City';
@@ -201,8 +202,9 @@ const Checkout = () => {
 
         try {
             const token = localStorage.getItem('token');
+            const cartData = carts[0];
             const orderData = {
-                items: cart.items.map(item => ({
+                items: cartData.items.map(item => ({
                     itemId: item.itemId,
                     name: item.name,
                     quantity: item.quantity,
@@ -215,8 +217,8 @@ const Checkout = () => {
                 totalAmount: calculateTotal(),
                 paymentMethod: "COD",
                 orderType,
-                restaurantId: cart.restaurantId._id,
-                restaurantName: cart.restaurantName
+                restaurantId: cartData.restaurantId._id,
+                restaurantName: cartData.restaurantName
             };
 
             // Only include address data for delivery orders
@@ -236,23 +238,23 @@ const Checkout = () => {
             });
 
             if (response.data) {
-                // Clear cart
-                await axios.delete(`${API_URL}/api/cart`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+
 
                 // Dismiss loading toast
                 toast.dismiss(loadingToast);
-                
+
                 // Show success toast
                 toast.success('Order placed successfully! Redirecting to order details...');
                 setTimeout(() => {
                     navigate(`/ordersuccess/${response.data.order._id}`);
                 }, 500);
+
+                // Clear cart using context
+                await clearCart();
             }
         } catch (err) {
             console.error('Order placement error:', err);
-            
+
             if (err.response?.data?.error) {
                 toast.error(err.response.data.error);
             } else if (err.response?.status === 401) {
@@ -267,14 +269,16 @@ const Checkout = () => {
     };
 
     const calculateTotal = () => {
-        if (!cart || !cart.items) return 0;
-        return cart.items.reduce((total, item) => {
+        const cartData = carts[0];
+        if (!cartData || !cartData.items) return 0;
+        return cartData.items.reduce((total, item) => {
             return total + (item.totalPrice * item.quantity);
         }, 0);
     };
 
-    const isDeliveryAvailable = cart?.serviceType === 'DELIVERY' || cart?.serviceType === 'BOTH';
-    const isPickupAvailable = cart?.serviceType === 'PICKUP' || cart?.serviceType === 'BOTH';
+    const cartData = carts[0];
+    const isDeliveryAvailable = cartData?.serviceType === 'DELIVERY' || cartData?.serviceType === 'BOTH';
+    const isPickupAvailable = cartData?.serviceType === 'PICKUP' || cartData?.serviceType === 'BOTH';
 
     // If only one option is available, automatically select it
     useEffect(() => {
@@ -296,10 +300,10 @@ const Checkout = () => {
 
             // Add the new address to the addresses list
             setAddresses(prev => [...prev, response.data]);
-            
+
             // Select the newly added address
             setSelectedAddress(response.data);
-            
+
             // Clear form and hide form
             setFormData({
                 fullName: '',
@@ -311,7 +315,7 @@ const Checkout = () => {
                 phone: ''
             });
             setShowAddressForm(false);
-            
+
             toast.success('Address added successfully');
         } catch (error) {
             console.error('Error adding address:', error);
@@ -335,7 +339,7 @@ const Checkout = () => {
 
     if (loading) return <CheckoutSkeleton />;
 
-    if (!loading && (!cart || !cart.items || cart.items.length === 0)) {
+    if (!loading && (!carts || carts.length === 0 || !carts[0]?.items || carts[0].items.length === 0)) {
         return (
             <div className="container mx-auto px-4 py-8 mt-16">
                 <div className="max-w-6xl mx-auto text-center">
@@ -361,7 +365,7 @@ const Checkout = () => {
                     <div className="bg-white rounded-xl shadow-lg p-6">
                         <h2 className="text-xl font-semibold mb-4 text-gray-700">Order Summary</h2>
                         <div className="space-y-4">
-                            {cart?.items?.map((item) => (
+                            {cartData?.items?.map((item) => (
                                 <div key={item.itemId} className="flex items-center justify-between py-4 border-b border-gray-100">
                                     <div className="flex items-center gap-4">
                                         <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
@@ -395,7 +399,7 @@ const Checkout = () => {
                     <div className="space-y-6">
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h2 className="text-xl font-semibold mb-4 text-gray-700">Delivery Address</h2>
-                            
+
                             {!showAddressForm ? (
                                 <>
                                     {addresses.length > 0 ? (
@@ -403,11 +407,10 @@ const Checkout = () => {
                                             {addresses.map((address) => (
                                                 <div
                                                     key={address._id}
-                                                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                                                        selectedAddress?._id === address._id 
-                                                            ? 'border-blue-500 bg-blue-50 shadow-md' 
+                                                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedAddress?._id === address._id
+                                                            ? 'border-blue-500 bg-blue-50 shadow-md'
                                                             : 'border-gray-200 hover:border-blue-300'
-                                                    }`}
+                                                        }`}
                                                     onClick={() => setSelectedAddress(address)}
                                                 >
                                                     <div className="flex justify-between items-start">

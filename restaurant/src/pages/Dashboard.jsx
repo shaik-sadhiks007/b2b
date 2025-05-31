@@ -83,7 +83,6 @@ const Dashboard = () => {
                 }
             });
             setRestaurants(response.data);
-            console.log("Restaurants fetched:", response.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
             setError('Error fetching restaurants');
@@ -138,10 +137,41 @@ const Dashboard = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            fetchMenu(); // Refresh the menu data
+            
+            // Update local state after successful deletion
+            setCategories(prevCategories => 
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: subcategory.items.filter(item => item._id !== itemId)
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+
+            // Update selectedSubcategory if it contains the deleted item
+            if (selectedSubcategory?._id === subcategoryId) {
+                setSelectedSubcategory(prev => ({
+                    ...prev,
+                    items: prev.items.filter(item => item._id !== itemId)
+                }));
+            }
+
+            toast.success('Item deleted successfully');
         } catch (error) {
             setError('Error deleting item');
             console.error('Error deleting item:', error);
+            toast.error('Failed to delete item');
         }
     };
 
@@ -393,7 +423,6 @@ const Dashboard = () => {
         }));
     };
 
-    console.log(categories, "categories in dashboard");
 
     // Add new item to subcategory
     const handleAddItemToSubcategory = async (categoryId, subcategoryId, itemData) => {
@@ -407,10 +436,41 @@ const Dashboard = () => {
                     }
                 }
             );
-            fetchMenu(); // Refresh the menu data
+
+            // Update local state after successful addition
+            setCategories(prevCategories => 
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: [...subcategory.items, response.data]
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+
+            // Update selectedSubcategory if it's the one we're adding to
+            if (selectedSubcategory?._id === subcategoryId) {
+                setSelectedSubcategory(prev => ({
+                    ...prev,
+                    items: [...prev.items, response.data]
+                }));
+            }
+
+            toast.success('Item added successfully');
         } catch (error) {
             console.error('Error adding item:', error);
             setError('Error adding item');
+            toast.error('Failed to add item');
         }
     };
 
@@ -430,9 +490,6 @@ const Dashboard = () => {
         setSelectedCategory(categoryId);
         setSelectedSubcategory(subcategory);
     };
-
-    console.log(selectedCategory, "selectedCategory in handleOffcanvasSave");
-    console.log(selectedSubcategory, "selectedSubcategory in handleOffcanvasSave");
 
     const handleOffcanvasSave = (itemData) => {
         if (!selectedCategory || !selectedSubcategory) {
@@ -578,7 +635,6 @@ const Dashboard = () => {
                                     {/* Category List */}
                                     <div className="list-group">
                                         {categories.map((category) => {
-                                            console.log(category, "category in categories");
                                             return (
                                                 <div key={category._id} className="list-group-item">
                                                     <div className="d-flex justify-content-between align-items-center">

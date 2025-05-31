@@ -19,13 +19,13 @@ export const AuthProvider = ({ children }) => {
         
         try {
             setLoading(true);
-            console.log('Fetching user data with token:', authToken);
+            // console.log('Fetching user data with token:', authToken);
             
             const response = await axios.get(`${API_URL}/api/auth/profile`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             
-            console.log('User data received:', response.data);
+            // console.log('User data received:', response.data);
             setUser(response.data);
             
             // Fetch restaurant data for the user
@@ -52,17 +52,14 @@ export const AuthProvider = ({ children }) => {
         if (!authToken) return null;
         
         try {
-            console.log('Fetching restaurant data');
             const response = await axios.get(`${API_URL}/api/restaurants`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             
             if (response.data && response.data.length > 0) {
-                console.log('Restaurant data received:', response.data[0]);
                 setRestaurant(response.data[0]);
                 return response.data[0];
             } else {
-                console.log('No restaurant found for user');
                 setRestaurant(null);
                 return null;
             }
@@ -75,7 +72,6 @@ export const AuthProvider = ({ children }) => {
 
     // Function to update token and fetch user data
     const updateToken = useCallback(async (newToken) => {
-        console.log('Updating token:', newToken);
         localStorage.setItem('token', newToken);
         setToken(newToken);
         await fetchUserData(newToken);
@@ -83,7 +79,6 @@ export const AuthProvider = ({ children }) => {
 
     // Login function
     const login = useCallback(async (newToken) => {
-        console.log('Logging in with token:', newToken);
         await updateToken(newToken);
     }, [updateToken]);
 
@@ -126,7 +121,6 @@ export const AuthProvider = ({ children }) => {
             
             // If we have a transfer token, use it
             if (transferToken) {
-                console.log('Transfer token found, updating token');
                 localStorage.setItem('token', transferToken);
                 localStorage.removeItem('transferToken');
                 setToken(transferToken);
@@ -134,12 +128,10 @@ export const AuthProvider = ({ children }) => {
             } 
             // If we have a token but no user data, fetch it
             else if (currentToken && !user) {
-                console.log('Token found but no user data, fetching user data');
                 await fetchUserData(currentToken);
             }
             // If we have no token, ensure user is null
             else if (!currentToken && user) {
-                console.log('No token found, clearing user data');
                 setUser(null);
                 setRestaurant(null);
             }

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Header } from './Header';
 import { useCart } from '../context/CartContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -56,37 +55,22 @@ const CartSkeleton = () => (
 );
 
 const CartPage = () => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const { carts, fetchCart, clearCart, updateCartItem, removeCartItem } = useCart();
+    const { carts, loading, error, clearCart, updateCartItem, removeCartItem } = useCart();
     const cart = carts[0]; // Get the first cart document
 
     useEffect(() => {
-        const checkAuthAndFetchCart = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setLoading(false);
-                toast.error('Please login to view your cart');
-                navigate('/login');
-                return;
-            }
-            try {
-                await fetchCart();
-            } catch (err) {
-                setError('Failed to fetch cart');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        checkAuthAndFetchCart();
-    }, [navigate, fetchCart]);
+        const token = localStorage.getItem('token');
+        if (!token && !loading && (!carts || carts.length === 0 || !carts[0]?.items || carts[0]?.items.length === 0)) {
+            toast.error('Please login to view your cart');
+            navigate('/login');
+        }
+    }, [navigate, carts, loading]);
 
     const handleQuantityChange = async (itemId, change) => {
         try {
-            // Find the current item in the cart
-            const cartItem = cart.items.find(item => item.itemId === itemId || item.itemId === itemId.toString());
+            const currentCartData = carts[0];
+            const cartItem = currentCartData?.items?.find(item => item.itemId === itemId || item.itemId === itemId.toString());
             if (!cartItem) {
                 toast.error('Item not found in cart');
                 return;
@@ -98,12 +82,14 @@ const CartPage = () => {
             }
 
             const result = await updateCartItem(itemId, newQuantity);
+
             if (result.success) {
-                toast.success('Cart updated successfully');
+                // toast.success('Cart updated successfully');
             } else {
                 toast.error(result.error || 'Failed to update quantity');
             }
         } catch (err) {
+            console.error('Error updating quantity:', err);
             toast.error('Failed to update quantity');
         }
     };
@@ -111,12 +97,14 @@ const CartPage = () => {
     const handleRemoveItem = async (itemId) => {
         try {
             const result = await removeCartItem(itemId);
+
             if (result.success) {
                 toast.success('Item removed from cart');
             } else {
                 toast.error(result.error || 'Failed to remove item');
             }
         } catch (err) {
+            console.error('Error removing item:', err);
             toast.error('Failed to remove item');
         }
     };
@@ -126,7 +114,8 @@ const CartPage = () => {
             await clearCart();
             toast.success('Cart cleared successfully');
         } catch (err) {
-            toast.error('Failed to clear cart');
+            console.error('Error clearing cart:', err);
+            toast.error(err.message || 'Failed to clear cart');
         }
     };
 
@@ -138,8 +127,8 @@ const CartPage = () => {
     };
 
     if (loading) return <CartSkeleton />;
-    if (error) return <div className="flex justify-center items-center h-screen">{error}</div>;
-    if (!cart) return (
+    if (error) return <div className="flex justify-center items-center h-screen text-red-600">{error}</div>;
+    if (!cart || !cart.items || cart.items.length === 0) return (
         <div className="flex justify-center items-center h-screen">
             <div className="text-center">
                 <p className="text-gray-500 text-lg">Your cart is empty</p>

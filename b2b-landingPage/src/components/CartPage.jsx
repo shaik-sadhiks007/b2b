@@ -59,6 +59,7 @@ const CartPage = () => {
     const { carts, loading, error, clearCart, updateCartItem, removeCartItem } = useCart();
     const cart = carts[0]; // Get the first cart document
 
+    console.log(carts,'cart in the cart')
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token && !loading && (!carts || carts.length === 0 || !carts[0]?.items || carts[0]?.items.length === 0)) {

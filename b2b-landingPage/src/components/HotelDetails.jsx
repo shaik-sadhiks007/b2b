@@ -197,7 +197,7 @@ const HotelDetails = () => {
             restaurant._id,
             restaurant.name,
             items,
-            restaurant.photos || []
+            restaurant.serviceType
         );
 
 

@@ -43,8 +43,11 @@ export const CartProvider = ({ children }) => {
         }
     }, [clearCartState]);
 
-    const addToCart = useCallback(async (restaurantId, restaurantName, items, photos = []) => {
+    const addToCart = useCallback(async (restaurantId, restaurantName, items,serviceType) => {
+
+        console.log('old cart', carts)
         const token = localStorage.getItem('token');
+
         if (!token) return { success: false, error: 'Not logged in' };
 
         // --- Optimistic Update ---
@@ -61,28 +64,39 @@ export const CartProvider = ({ children }) => {
             let newCartCount;
 
             if (existingCartIndex !== -1) {
+                console.log("1 if")
                 // Update existing cart with new items list
                 newCarts = [...carts];
                 const oldItemCount = newCarts[existingCartIndex].items.reduce((sum, item) => sum + item.quantity, 0);
                 newCarts[existingCartIndex] = { ...newCarts[existingCartIndex], items: items, photos: photos };
-                 newCartCount = cartCount - oldItemCount + items.reduce((sum, item) => sum + item.quantity, 0);
+                newCartCount = cartCount - oldItemCount + items.reduce((sum, item) => sum + item.quantity, 0);
 
             } else {
-                // Add new cart for this restaurant
-                newCarts = [...carts, {
-                    restaurantId,
-                    restaurantName,
-                    items,
-                    photos,
-                    userId: 'temp_user_id' // This might need to be handled differently, perhaps userId is already in context or token
-                }];
-                 newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
+                // Handle both empty cart and existing cart cases
+                if (carts.length === 0) {
+                    newCarts = [{
+                        restaurantId: {
+                            _id: restaurantId,
+                            serviceType
+                        },
+                        restaurantName,
+                        items: [...items]
+                    }];
+                } else {
+                    newCarts = [...carts];
+                    newCarts[0] = {
+                        ...newCarts[0],
+                        items: [...newCarts[0].items, ...items]
+                    };
+                }
+                newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
             }
 
             // Update state immediately (optimistically)
             setCarts(newCarts);
             setCartCount(newCartCount);
-            
+
+            console.log(newCarts, "newcart in context")
             // --- End Optimistic Update ---
 
             // Make the API call
@@ -90,21 +104,20 @@ export const CartProvider = ({ children }) => {
                 restaurantId,
                 restaurantName,
                 items,
-                photos
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (response.status === 200 || response.status === 201) {
-                 success = true;
+                success = true;
                 // API success, state is already updated optimistically
             } else if (response.status === 409) {
-                 // Handle different restaurant error specifically
-                 console.error('API add to cart failed: Different restaurant', response.data);
-                 throw { status: 409, data: response.data }; // Throw object to catch below
+                // Handle different restaurant error specifically
+                console.error('API add to cart failed: Different restaurant', response.data);
+                throw { status: 409, data: response.data }; // Throw object to catch below
             } else {
-                 console.error('API add to cart failed', response.status, response.data);
-                 throw new Error(response.data?.message || 'API add to cart failed');
+                console.error('API add to cart failed', response.status, response.data);
+                throw new Error(response.data?.message || 'API add to cart failed');
             }
 
         } catch (err) {
@@ -115,9 +128,9 @@ export const CartProvider = ({ children }) => {
             // --- End Rollback ---
 
             if (err.status === 409) {
-                 // Return the specific error object for different restaurant
-                 return { 
-                    success: false, 
+                // Return the specific error object for different restaurant
+                return {
+                    success: false,
                     error: 'Different restaurant',
                     currentRestaurant: err.data
                 };
@@ -157,7 +170,7 @@ export const CartProvider = ({ children }) => {
 
             const newItemTotalPrice = (itemToUpdate.basePrice + (itemToUpdate.packagingCharges || 0)) * newQuantity;
 
-            const updatedItems = carts[cartIndex].items.map((item, index) => 
+            const updatedItems = carts[cartIndex].items.map((item, index) =>
                 index === itemIndex ? { ...item, quantity: newQuantity, totalPrice: newItemTotalPrice } : item
             );
             const updatedCart = { ...carts[cartIndex], items: updatedItems };

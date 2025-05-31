@@ -113,6 +113,12 @@ const Checkout = () => {
                     return;
                 }
 
+                // Check if cart data exists
+                if (!carts || carts.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+
                 // Fetch addresses
                 const addressesResponse = await axios.get(`${API_URL}/api/customer-address`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -333,7 +339,7 @@ const Checkout = () => {
 
     if (loading) return <CheckoutSkeleton />;
 
-    if (!loading && (!cartData || !cartData.items || cartData.items.length === 0)) {
+    if (!loading && (!carts || carts.length === 0 || !carts[0]?.items || carts[0].items.length === 0)) {
         return (
             <div className="container mx-auto px-4 py-8 mt-16">
                 <div className="max-w-6xl mx-auto text-center">

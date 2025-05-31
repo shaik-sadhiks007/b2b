@@ -83,7 +83,6 @@ const Dashboard = () => {
                 }
             });
             setRestaurants(response.data);
-            console.log("Restaurants fetched:", response.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
             setError('Error fetching restaurants');
@@ -393,7 +392,6 @@ const Dashboard = () => {
         }));
     };
 
-    console.log(categories, "categories in dashboard");
 
     // Add new item to subcategory
     const handleAddItemToSubcategory = async (categoryId, subcategoryId, itemData) => {
@@ -430,9 +428,6 @@ const Dashboard = () => {
         setSelectedCategory(categoryId);
         setSelectedSubcategory(subcategory);
     };
-
-    console.log(selectedCategory, "selectedCategory in handleOffcanvasSave");
-    console.log(selectedSubcategory, "selectedSubcategory in handleOffcanvasSave");
 
     const handleOffcanvasSave = (itemData) => {
         if (!selectedCategory || !selectedSubcategory) {
@@ -577,7 +572,6 @@ const Dashboard = () => {
                                     {/* Category List */}
                                     <div className="list-group">
                                         {categories.map((category) => {
-                                            console.log(category, "category in categories");
                                             return (
                                                 <div key={category._id} className="list-group-item">
                                                     <div className="d-flex justify-content-between align-items-center">

@@ -43,9 +43,9 @@ export const CartProvider = ({ children }) => {
         }
     }, [clearCartState]);
 
-    const addToCart = useCallback(async (restaurantId, restaurantName, items,serviceType) => {
+    const addToCart = useCallback(async (restaurantId, restaurantName, items, serviceType) => {
 
-        console.log('old cart', carts)
+        // console.log('old cart', carts)
         const token = localStorage.getItem('token');
 
         if (!token) return { success: false, error: 'Not logged in' };
@@ -64,7 +64,6 @@ export const CartProvider = ({ children }) => {
             let newCartCount;
 
             if (existingCartIndex !== -1) {
-                console.log("1 if")
                 // Update existing cart with new items list
                 newCarts = [...carts];
                 const oldItemCount = newCarts[existingCartIndex].items.reduce((sum, item) => sum + item.quantity, 0);
@@ -82,21 +81,33 @@ export const CartProvider = ({ children }) => {
                         restaurantName,
                         items: [...items]
                     }];
+                    newCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+                } else if (carts[0].restaurantId._id !== restaurantId) {
+                    // If restaurant IDs don't match, clear existing cart and add new items
+                    newCarts = [{
+                        restaurantId: {
+                            _id: restaurantId,
+                            serviceType
+                        },
+                        restaurantName,
+                        items: [...items]
+                    }];
+                    newCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
                 } else {
                     newCarts = [...carts];
                     newCarts[0] = {
                         ...newCarts[0],
                         items: [...newCarts[0].items, ...items]
                     };
+                    newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
                 }
-                newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
             }
 
             // Update state immediately (optimistically)
             setCarts(newCarts);
             setCartCount(newCartCount);
 
-            console.log(newCarts, "newcart in context")
+            // console.log(newCarts, "newcart in context")
             // --- End Optimistic Update ---
 
             // Make the API call
@@ -305,7 +316,6 @@ export const CartProvider = ({ children }) => {
     }, [carts]);
 
     useEffect(() => {
-        console.log('CartContext useEffect running');
         const token = localStorage.getItem('token');
         if (token) {
             fetchCart();
@@ -314,7 +324,7 @@ export const CartProvider = ({ children }) => {
             clearCartState();
         }
         return () => {
-            console.log('CartContext useEffect cleaning up');
+            // console.log('CartContext useEffect cleaning up');
         };
     }, [fetchCart, clearCartState, setLoading]);
 

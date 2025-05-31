@@ -5,8 +5,6 @@ const InventoryManager = ({ categories, onStockChange }) => {
     const [expandedCategories, setExpandedCategories] = useState({});
     const [expandedSubcategories, setExpandedSubcategories] = useState({});
 
-    console.log(categories,"categories");
-
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prev => ({
             ...prev,

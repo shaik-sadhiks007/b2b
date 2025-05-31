@@ -20,7 +20,6 @@ const LandingPage = () => {
             localStorage.setItem('token', transferToken);
             localStorage.removeItem('transferToken');
             updateToken(transferToken);
-            console.log('Token received from transfer');
         }
 
         // Define the message handler function
@@ -29,7 +28,6 @@ const LandingPage = () => {
             const { token } = event.data;
             if (token) {
                 updateToken(token);
-                console.log("Token received and stored:", token);
             }
         };
 

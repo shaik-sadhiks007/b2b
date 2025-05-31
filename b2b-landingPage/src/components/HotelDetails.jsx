@@ -166,6 +166,13 @@ const HotelDetails = () => {
             return;
         }
 
+        // Check if there are items from a different restaurant
+        if (carts.length > 0 && carts[0].restaurantId !== restaurant._id) {
+            setPendingAddItem(item);
+            setShowRestaurantModal(true);
+            return;
+        }
+
         // Find if cart for this restaurant exists
         const cartForRestaurant = carts.find(c => c.restaurantId === restaurant._id);
         let items = [];
@@ -200,14 +207,14 @@ const HotelDetails = () => {
             restaurant.serviceType
         );
 
-
         if (!result.success) {
-            if (result.error === 'Different restaurant') {
-                setPendingAddItem(item);
-                setShowRestaurantModal(true);
-            } else {
-                toast.error(result.error || 'Failed to add to cart');
-            }
+            // if (result.error === 'Different restaurant') {
+            //     setPendingAddItem(item);
+            //     setShowRestaurantModal(true);
+            // } else {
+            //     toast.error(result.error || 'Failed to add to cart');
+            // }
+            toast.error(result.error || 'Failed to add to cart');
         }
     };
 
@@ -217,9 +224,35 @@ const HotelDetails = () => {
                 await clearCart();
                 toast.success('Cart cleared successfully');
                 setShowRestaurantModal(false);
-                // Retry add to cart
+                setPendingAddItem(null);
+                
+                // Wait for a moment to ensure cart state is updated
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Now add the item
                 if (pendingAddItem) {
-                    setTimeout(() => handleAddToCart(pendingAddItem), 100);
+                    const item = pendingAddItem;
+                    const items = [{
+                        itemId: item._id,
+                        name: item.name,
+                        quantity: 1,
+                        basePrice: Number(item.basePrice),
+                        packagingCharges: Number(item.packagingCharges),
+                        totalPrice: Number(item.totalPrice),
+                        isVeg: item.isVeg,
+                        photos: item.photos || []
+                    }];
+
+                    const result = await addToCart(
+                        restaurant._id,
+                        restaurant.name,
+                        items,
+                        restaurant.serviceType
+                    );
+
+                    if (!result.success) {
+                        toast.error(result.error || 'Failed to add to cart');
+                    }
                 }
             } catch (err) {
                 toast.error('Failed to reset cart');

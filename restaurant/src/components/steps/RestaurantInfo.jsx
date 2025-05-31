@@ -130,7 +130,6 @@ const RestaurantInfo = ({
         if (!selectedLocation) errors.push('Please select a location on the map');
 
 
-        console.log(errors,"errors")
         if (errors.length > 0) {
             errors.forEach(error => toast.error(error));
             return;

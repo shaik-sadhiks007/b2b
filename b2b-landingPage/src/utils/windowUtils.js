@@ -9,7 +9,6 @@ export const openWindowWithToken = (url,) => {
     const token = localStorage.getItem('token');
     
     if (!token) {
-        console.log('No token found');
         return null;
     }
 
@@ -24,7 +23,6 @@ export const openWindowWithToken = (url,) => {
         // Give the new window some time to load
         setTimeout(() => {
             targetWindow.postMessage({ token }, url);
-            console.log('Token sent to target window');
         }, 1000);
     }
 

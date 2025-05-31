@@ -151,7 +151,6 @@ function SearchPage() {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       })
-      console.log('Search Results:', response.data.results)
       setSearchResults(response.data.results)
     } catch (error) {
       console.error('Search error:', error)

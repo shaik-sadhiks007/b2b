@@ -537,6 +537,7 @@ const Dashboard = () => {
                 onSave={handleOffcanvasSave}
                 initialData={isAddingNewItem ? {} : (editingItem || {})}
                 subcategoryName={selectedSubcategory?.name || ''}
+                subcategoryItems={selectedSubcategory?.items || []}
             />
 
             {/* Add Modal for Categories and Subcategories */}

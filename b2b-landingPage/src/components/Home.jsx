@@ -12,6 +12,7 @@ import { API_URL } from '../api/api'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { useLocationContext } from '../context/LocationContext'
+import logo from '../assets/b2bupdate.png'
 
 
 const categories = [
@@ -346,10 +347,10 @@ const Home = () => {
                         B2B
                     </h1> */}
 
-                    <img
-                        src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
-                        alt="logo"
+                    <img 
+                        src= { logo } 
                         loading="lazy"
+                        alt="logo" 
                         style={{
                             maxWidth: '100%',
                             width: '300px',

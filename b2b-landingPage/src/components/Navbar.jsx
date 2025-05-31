@@ -109,11 +109,7 @@ function Navbar({ alwaysVisible }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/">
-              <img src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
-                loading="lazy"
-                alt="logo"
-                width='40px'
-              />
+              <img src= {logo } loading="lazy" alt="logo" width='40px' />
             </Link>
           </div>
 

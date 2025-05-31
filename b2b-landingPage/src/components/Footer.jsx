@@ -9,6 +9,7 @@ const Footer = () => {
     const handleRestaurantClick = (e) => {
         e.preventDefault();
         const token = localStorage.getItem('token');
+        console.log('1st testing api')
         
         if (!token) {
             navigate('/login');
@@ -38,6 +39,7 @@ const Footer = () => {
             navigate('/login');
         }
     };
+    console.log('2nd testing api')
 
     return (
         <footer className="bg-gray-900 text-white py-12">

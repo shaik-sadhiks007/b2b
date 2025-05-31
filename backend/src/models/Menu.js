@@ -20,7 +20,7 @@ const menuItemSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true
+        
     },
     isVeg: {
         type: Boolean,

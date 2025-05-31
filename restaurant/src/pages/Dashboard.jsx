@@ -137,10 +137,41 @@ const Dashboard = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            fetchMenu(); // Refresh the menu data
+            
+            // Update local state after successful deletion
+            setCategories(prevCategories => 
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: subcategory.items.filter(item => item._id !== itemId)
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+
+            // Update selectedSubcategory if it contains the deleted item
+            if (selectedSubcategory?._id === subcategoryId) {
+                setSelectedSubcategory(prev => ({
+                    ...prev,
+                    items: prev.items.filter(item => item._id !== itemId)
+                }));
+            }
+
+            toast.success('Item deleted successfully');
         } catch (error) {
             setError('Error deleting item');
             console.error('Error deleting item:', error);
+            toast.error('Failed to delete item');
         }
     };
 
@@ -405,10 +436,41 @@ const Dashboard = () => {
                     }
                 }
             );
-            fetchMenu(); // Refresh the menu data
+
+            // Update local state after successful addition
+            setCategories(prevCategories => 
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: [...subcategory.items, response.data]
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+
+            // Update selectedSubcategory if it's the one we're adding to
+            if (selectedSubcategory?._id === subcategoryId) {
+                setSelectedSubcategory(prev => ({
+                    ...prev,
+                    items: [...prev.items, response.data]
+                }));
+            }
+
+            toast.success('Item added successfully');
         } catch (error) {
             console.error('Error adding item:', error);
             setError('Error adding item');
+            toast.error('Failed to add item');
         }
     };
 

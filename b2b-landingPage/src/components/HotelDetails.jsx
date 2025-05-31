@@ -98,15 +98,15 @@ const HotelDetails = () => {
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 // Fetch restaurant details
                 const token = localStorage.getItem('token');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                
+
                 // Get location from localStorage if available
                 const savedLocation = localStorage.getItem('userLocation');
                 let url = `${API_URL}/api/restaurants/public/${id}`;
-                
+
                 if (savedLocation) {
                     const { coordinates } = JSON.parse(savedLocation);
                     url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
@@ -119,7 +119,7 @@ const HotelDetails = () => {
 
                 setRestaurant(restaurantResponse.data);
                 setMenu(menuResponse.data);
-                
+
                 // Set first category as expanded by default
                 if (menuResponse.data && menuResponse.data.length > 0) {
                     setExpandedCategories([menuResponse.data[0]._id]);
@@ -200,6 +200,7 @@ const HotelDetails = () => {
             restaurant.photos || []
         );
 
+
         if (!result.success) {
             if (result.error === 'Different restaurant') {
                 setPendingAddItem(item);
@@ -207,8 +208,6 @@ const HotelDetails = () => {
             } else {
                 toast.error(result.error || 'Failed to add to cart');
             }
-        } else {
-            toast.success('Item added to cart successfully');
         }
     };
 
@@ -273,7 +272,9 @@ const HotelDetails = () => {
                             />
                             <div className="p-6">
                                 <h1 className="text-3xl font-bold mb-2">{restaurant?.name || 'Restaurant'}</h1>
-                                <p className="text-gray-600 mb-4">{restaurant?.description || 'No description available'}</p>
+                                {restaurant?.description && (
+                                    <p className="text-gray-600 mb-4">{restaurant.description}</p>
+                                )}
                                 <div className="flex flex-wrap items-center gap-4">
                                     {restaurant?.distance !== null && restaurant?.distance !== "" && (
                                         <div className="flex items-center gap-2 text-gray-500">
@@ -333,9 +334,9 @@ const HotelDetails = () => {
                                                                                 </span>
                                                                                 <h5 className="font-medium">{item.name}</h5>
                                                                             </div>
-                                                                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                                            {item?.description && (<p className="text-sm text-gray-600 mt-1 line-clamp-2">
                                                                                 {item.description}
-                                                                            </p>
+                                                                            </p>)}
                                                                             <div className="mt-2">
                                                                                 <span className="font-medium">₹{item.totalPrice}</span>
                                                                                 <span className="text-xs text-gray-500 ml-2">
@@ -348,23 +349,24 @@ const HotelDetails = () => {
                                                                                 </span>
                                                                             )}
                                                                         </div>
-                                                                        <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
-                                                                            <img
-                                                                                src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
-                                                                                alt={item.name}
-                                                                                className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
-                                                                            />
-                                                                        </div>
+                                                                        {item?.photos.length !== 0 && (
+                                                                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                                                                                <img
+                                                                                    src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
+                                                                                    alt={item.name}
+                                                                                    className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
+                                                                                />
+
+                                                                            </div>)}
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
                                                                             disabled={!restaurant?.online}
-                                                                            className={`self-center px-4 py-2 ${
-                                                                                !restaurant?.online 
-                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                                                    : isItemInCart(item._id)
-                                                                                        ? 'bg-green-600 text-white'
-                                                                                        : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
-                                                                            } rounded transition-colors`}
+                                                                            className={`self-center px-4 py-2 ${!restaurant?.online
+                                                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                                                : isItemInCart(item._id)
+                                                                                    ? 'bg-green-600 text-white'
+                                                                                    : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
+                                                                                } rounded transition-colors`}
                                                                         >
                                                                             {!restaurant?.online ? 'CLOSED' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>

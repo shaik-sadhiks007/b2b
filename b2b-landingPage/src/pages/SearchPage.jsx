@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Search, Star, MapPin, Clock, X } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import { useLocationContext } from '../context/LocationContext'
+import { useCart } from '../context/CartContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import debounce from 'lodash/debounce'
@@ -28,9 +29,14 @@ function SearchPage() {
   const [searchType, setSearchType] = useState('products')
   const [searchResults, setSearchResults] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [cart, setCart] = useState([])
   const [showRestaurantModal, setShowRestaurantModal] = useState(false)
   const [pendingAddItem, setPendingAddItem] = useState(null)
+  const {
+    carts,
+    isItemInCart,
+    addToCart,
+    clearCart
+  } = useCart();
   const {
     location,
     setLocation,
@@ -42,32 +48,6 @@ function SearchPage() {
     onAllowLocation
   } = useLocationContext();
 
-  useEffect(() => {
-    fetchCart()
-  }, [])
-
-  const fetchCart = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setCart([])
-        return
-      }
-      const response = await axios.get(`${API_URL}/api/cart`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      setCart(response.data)
-    } catch (err) {
-      setCart([])
-    }
-  }
-
-  const isItemInCart = (itemId) => {
-    return cart.some(cartDoc => 
-      cartDoc.items?.some(item => item.itemId === itemId)
-    )
-  }
-
   const handleAddToCart = async (item) => {
     const token = localStorage.getItem('token')
     if (!token) {
@@ -75,10 +55,8 @@ function SearchPage() {
       return
     }
 
-    console.log('Adding item to cart:', item)
-
     // Find if cart for this restaurant exists
-    const cartForRestaurant = cart.find(c => c.restaurantId === item.restaurant.id)
+    const cartForRestaurant = carts.find(c => c.restaurantId === item.restaurant.id)
     let items = []
     if (cartForRestaurant) {
       // If item exists, update quantity, else add
@@ -110,39 +88,27 @@ function SearchPage() {
       }]
     }
 
-    try {
-      await axios.post(`${API_URL}/api/cart`, {
-        restaurantId: item.restaurant.id,
-        restaurantName: item.restaurant.name,
-        items,
-        photos: item.restaurant.photos || []
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      // Refresh cart
-      const response = await axios.get(`${API_URL}/api/cart`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      setCart(response.data)
+    const result = await addToCart(
+      item.restaurant.id,
+      item.restaurant.name,
+      items,
+      item.restaurant.photos || []
+    )
+
+    if (result.success) {
       toast.success('Item added to cart')
-    } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setPendingAddItem(item)
-        setShowRestaurantModal(true)
-      } else {
-        toast.error('Failed to add to cart')
-      }
+    } else if (result.error === 'Different restaurant') {
+      setPendingAddItem(item)
+      setShowRestaurantModal(true)
+    } else {
+      toast.error('Failed to add to cart')
     }
   }
 
   const handleRestaurantModalResponse = async (resetCart) => {
     if (resetCart) {
       try {
-        const token = localStorage.getItem('token')
-        await axios.delete(`${API_URL}/api/cart`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setCart([])
+        await clearCart()
         setShowRestaurantModal(false)
         // Retry add to cart
         if (pendingAddItem) {

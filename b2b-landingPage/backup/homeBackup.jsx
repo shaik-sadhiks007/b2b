@@ -58,8 +58,7 @@ const Home = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
-    const [allBusinesses, setAllBusinesses] = useState([])
-    const [filteredBusinesses, setFilteredBusinesses] = useState([])
+    const [restaurants, setRestaurants] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
@@ -220,44 +219,35 @@ const Home = () => {
         navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
     };
 
-    // Fetch all businesses when location changes
     useEffect(() => {
-        const fetchBusinesses = async () => {
+        const fetchRestaurants = async () => {
             try {
-                setLoading(true);
+                setLoading(true); 
                 const savedLocation = localStorage.getItem('userLocation');
                 let url = `${API_URL}/api/restaurants/public/all`;
 
+                // Add category to query params if not "all"
+                if (selectedCategory !== "all") {
+                    url += `?category=${encodeURIComponent(selectedCategory)}`;
+                }
+
                 if (savedLocation) {
                     const { coordinates } = JSON.parse(savedLocation);
-                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
+                    url += `${selectedCategory !== "all" ? '&' : '?'}lat=${coordinates.lat}&lng=${coordinates.lng}`;
                 }
 
                 const response = await axios.get(url);
-                setAllBusinesses(response.data);
-                setFilteredBusinesses(response.data);
+                setRestaurants(response.data);
             } catch (err) {
                 setError('Failed to fetch restaurants');
                 console.error('Error fetching restaurants:', err);
             } finally {
-                setLoading(false);
+                setLoading(false); 
             }
         };
 
-        fetchBusinesses();
-    }, [localStorage.getItem('userLocation')]);
-
-    // Filter businesses when category changes
-    useEffect(() => {
-        if (selectedCategory === 'all') {
-            setFilteredBusinesses(allBusinesses);
-        } else {
-            const filtered = allBusinesses.filter(business => 
-                business.category?.toLowerCase() === selectedCategory.toLowerCase()
-            );
-            setFilteredBusinesses(filtered);
-        }
-    }, [selectedCategory, allBusinesses]);
+        fetchRestaurants();
+    }, [selectedCategory, localStorage.getItem('userLocation')]);
 
     const renderRestaurants = () => {
         if (loading) {
@@ -270,7 +260,7 @@ const Home = () => {
             return <ErrorCard message={error} />;
         }
 
-        if (filteredBusinesses.length === 0) {
+        if (restaurants.length === 0) {
             return (
                 <div className="text-center py-8 col-span-full mt-5">
                     <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
@@ -279,7 +269,7 @@ const Home = () => {
             );
         }
 
-        return filteredBusinesses.map((restaurant) => (
+        return restaurants.map((restaurant) => (
             <div
                 key={restaurant._id}
                 className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"

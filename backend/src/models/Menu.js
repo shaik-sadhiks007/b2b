@@ -20,7 +20,6 @@ const menuItemSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true
     },
     isVeg: {
         type: Boolean,
@@ -32,7 +31,6 @@ const menuItemSchema = new mongoose.Schema({
     serviceType: {
         type: String,
         enum: ['Delivery', 'Dine-in', 'Both'],
-        required: true
     },
     totalPrice: {
         type: String,
@@ -40,7 +38,6 @@ const menuItemSchema = new mongoose.Schema({
     },
     packagingCharges: {
         type: String,
-        required: true
     },
     inStock: {
         type: Boolean,

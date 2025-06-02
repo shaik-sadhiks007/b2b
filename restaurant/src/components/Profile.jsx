@@ -183,7 +183,7 @@ const Profile = () => {
         setSelectedLocation(result);
         const newCenter = [parseFloat(result.lat), parseFloat(result.lon)];
         setMapCenter(newCenter);
-        
+
         // Auto-fill address fields based on location data
         const address = result.address || {};
         setFormData(prev => ({
@@ -312,7 +312,7 @@ const Profile = () => {
                 }
             });
             setRestaurant(response.data);
-            
+
             // Set image preview if profile image exists
             if (response.data.images?.profileImage) {
                 setImagePreview(response.data.images.profileImage);
@@ -413,7 +413,7 @@ const Profile = () => {
                 setIsEditing(false);
                 return;
             }
-            
+
             const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -425,7 +425,7 @@ const Profile = () => {
                 ...prev,
                 ...response.data
             }));
-            
+
             setIsEditing(false);
             toast.success('Profile updated successfully');
         } catch (error) {
@@ -434,182 +434,207 @@ const Profile = () => {
         }
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading profile...</p>
-            </div>
-        </div>
-    );
-    
-    if (error) return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="alert alert-danger" role="alert">
-                {error}
-            </div>
-        </div>
-    );
 
     return (
-        <div className="container-fluid">
-            <Navbar />
-            <div className="row" style={{ marginTop: '48px' }}>
-                <div className="d-none d-lg-block col-lg-2 px-0">
-                    <Sidebar />
-                </div>
-                <div className="col-12 col-lg-10 px-0 ms-auto">
-                    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-                        <div className="max-w-7xl mx-auto">
-                            <div className="card border-0 shadow-sm rounded-3">
-                                <div className="card-header bg-white py-3 border-bottom">
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <h5 className="mb-0 fw-bold">Business Profile</h5>
-                                        <button 
-                                            className="btn btn-primary px-4"
-                                            onClick={() => setIsEditing(!isEditing)}
-                                        >
-                                            {isEditing ? 'Cancel' : 'Edit Profile'}
-                                        </button>
-                                    </div>
+        <div className="container-fluid px-0">
+            <div style={{ marginTop: '60px' }}>
+                <Navbar />
+                <Sidebar />
+            </div>
+
+            <div className="col-12 col-lg-10 ms-auto" >
+                <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="card border-0 shadow-sm rounded-3">
+                            <div className="card-header bg-white py-3 border-bottom">
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <h5 className="mb-0 fw-bold">Business Profile</h5>
+                                    <button
+                                        className="btn btn-primary px-4"
+                                        onClick={() => setIsEditing(!isEditing)}
+                                    >
+                                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                                    </button>
                                 </div>
-                                <div className="card-body p-4">
-                                    {isEditing ? (
-                                        <form onSubmit={handleSubmit}>
-                                            <div className="row g-3">
-                                                {/* Restaurant Image Section */}
-                                                <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Business Image</h6>
-                                                    <div className="row g-3">
-                                                        <div className="col-md-6">
-                                                            <div className="card">
-                                                                <div className="card-body">
-                                                                    <div className="d-flex align-items-center justify-content-center" 
-                                                                         style={{ height: '200px', border: '2px dashed #dee2e6', borderRadius: '4px', overflow: 'hidden' }}>
-                                                                        {imagePreview ? (
-                                                                            <img 
-                                                                                src={imagePreview} 
-                                                                                alt="Restaurant" 
-                                                                                className="img-fluid" 
-                                                                                style={{ 
-                                                                                    maxHeight: '100%', 
-                                                                                    width: '100%', 
-                                                                                    objectFit: 'cover' 
-                                                                                }} 
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="text-center">
-                                                                                <ImageIcon size={48} className="text-muted mb-2" />
-                                                                                <p className="mb-0">Upload Business Image</p>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <input
-                                                                        type="file"
-                                                                        className="form-control mt-3"
-                                                                        accept="image/*"
-                                                                        onChange={handleImageUpload}
-                                                                    />
+                            </div>
+                            <div className="card-body p-4">
+                                {loading ? (
+                                    <div className="text-center py-5">
+                                        <div className="spinner-border text-primary mb-3" role="status">
+                                            <span className="visually-hidden">Loading...</span>
+                                        </div>
+                                        <h6 className="text-muted">Loading profile information...</h6>
+                                    </div>
+                                ) : error ? (
+                                    <div className="text-center py-5">
+                                        <div className="mb-3">
+                                            <i className="bi bi-exclamation-circle text-danger" style={{ fontSize: '2rem' }}></i>
+                                        </div>
+                                        <h6 className="text-danger mb-2">{error}</h6>
+                                        <p className="text-muted small">Please try refreshing the page</p>
+                                    </div>
+                                ) : isEditing ? (
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="row g-3">
+                                            {/* Restaurant Image Section */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Business Image</h6>
+                                                <div className="row g-3">
+                                                    <div className="col-md-6">
+                                                        <div className="card">
+                                                            <div className="card-body">
+                                                                <div className="d-flex align-items-center justify-content-center"
+                                                                    style={{ height: '200px', border: '2px dashed #dee2e6', borderRadius: '4px', overflow: 'hidden' }}>
+                                                                    {imagePreview ? (
+                                                                        <img
+                                                                            src={imagePreview}
+                                                                            alt="Restaurant"
+                                                                            className="img-fluid"
+                                                                            style={{
+                                                                                maxHeight: '100%',
+                                                                                width: '100%',
+                                                                                objectFit: 'cover'
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="text-center">
+                                                                            <ImageIcon size={48} className="text-muted mb-2" />
+                                                                            <p className="mb-0">Upload Business Image</p>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
+                                                                <input
+                                                                    type="file"
+                                                                    className="form-control mt-3"
+                                                                    accept="image/*"
+                                                                    onChange={handleImageUpload}
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Basic Info Section */}
-                                                <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Basic Information</h6>
-                                                    <div className="row g-3">
-                                                        <div className="col-md-6">
-                                                            <label className="form-label fw-medium">Business Name</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="restaurantName"
-                                                                value={formData.restaurantName}
-                                                                onChange={handleInputChange}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="col-md-6">
-                                                            <label className="form-label fw-medium">Owner Name</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="ownerName"
-                                                                value={formData.ownerName}
-                                                                onChange={handleInputChange}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="col-md-6">
-                                                            <label className="form-label fw-medium">Service Type</label>
-                                                            <select
-                                                                className="form-select"
-                                                                name="serviceType"
-                                                                value={formData.serviceType}
-                                                                onChange={handleInputChange}
-                                                                required
-                                                            >
-                                                                <option value="">Select Service Type</option>
-                                                                <option value="BOTH">BOTH</option>
-                                                                <option value="DELIVERY">Delivery</option>
-                                                                <option value="PICKUP">Pickup</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className="col-12">
-                                                            <label className="form-label fw-medium">Description <span className="text-muted">(max 100 characters)</span></label>
-                                                            <textarea
-                                                                className="form-control"
-                                                                name="description"
-                                                                value={formData.description || ''}
-                                                                onChange={handleInputChange}
-                                                                placeholder="Best business in Hyderabad or varieties or specials etc..."
-                                                                rows="3"
-                                                                maxLength={100}
-                                                            />
-                                                            <small className="text-muted">
-                                                                {formData.description ? `${formData.description.length}/100 characters` : '0/100 characters'}
-                                                            </small>
-                                                        </div>
+                                            {/* Basic Info Section */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Basic Information</h6>
+                                                <div className="row g-3">
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium">Business Name</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="restaurantName"
+                                                            value={formData.restaurantName}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium">Owner Name</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="ownerName"
+                                                            value={formData.ownerName}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium">Service Type</label>
+                                                        <select
+                                                            className="form-select"
+                                                            name="serviceType"
+                                                            value={formData.serviceType}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        >
+                                                            <option value="">Select Service Type</option>
+                                                            <option value="BOTH">BOTH</option>
+                                                            <option value="DELIVERY">Delivery</option>
+                                                            <option value="PICKUP">Pickup</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-12">
+                                                        <label className="form-label fw-medium">Description <span className="text-muted">(max 100 characters)</span></label>
+                                                        <textarea
+                                                            className="form-control"
+                                                            name="description"
+                                                            value={formData.description || ''}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Best business in Hyderabad or varieties or specials etc..."
+                                                            rows="3"
+                                                            maxLength={100}
+                                                        />
+                                                        <small className="text-muted">
+                                                            {formData.description ? `${formData.description.length}/100 characters` : '0/100 characters'}
+                                                        </small>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Operating Hours Section */}
-                                                <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Operating Hours</h6>
-                                                    <div className="card">
-                                                        <div className="card-body">
-                                                            <div className="row g-3">
-                                                                <div className="col-md-6">
-                                                                    <label className="form-label">Default Opening Time</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        className="form-control"
-                                                                        name="operatingHours.defaultOpenTime"
-                                                                        value={formData.operatingHours?.defaultOpenTime || '09:00'}
-                                                                        onChange={handleInputChange}
-                                                                    />
-                                                                </div>
-                                                                <div className="col-md-6">
-                                                                    <label className="form-label">Default Closing Time</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        className="form-control"
-                                                                        name="operatingHours.defaultCloseTime"
-                                                                        value={formData.operatingHours?.defaultCloseTime}
-                                                                        onChange={handleInputChange}
-                                                                    />
-                                                                </div>
-                                                                {Object.entries(formData.operatingHours.timeSlots).map(([day, slot]) => (
-                                                                    <div key={day} className="col-md-6">
-                                                                        <div className="card">
-                                                                            <div className="card-body">
-                                                                                <div className="form-check mb-2">
+                                            {/* Operating Hours Section */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Operating Hours</h6>
+                                                <div className="card">
+                                                    <div className="card-body">
+                                                        <div className="row g-3">
+                                                            <div className="col-md-6">
+                                                                <label className="form-label">Default Opening Time</label>
+                                                                <input
+                                                                    type="time"
+                                                                    className="form-control"
+                                                                    name="operatingHours.defaultOpenTime"
+                                                                    value={formData.operatingHours?.defaultOpenTime || '09:00'}
+                                                                    onChange={handleInputChange}
+                                                                />
+                                                            </div>
+                                                            <div className="col-md-6">
+                                                                <label className="form-label">Default Closing Time</label>
+                                                                <input
+                                                                    type="time"
+                                                                    className="form-control"
+                                                                    name="operatingHours.defaultCloseTime"
+                                                                    value={formData.operatingHours?.defaultCloseTime}
+                                                                    onChange={handleInputChange}
+                                                                />
+                                                            </div>
+                                                            {Object.entries(formData.operatingHours.timeSlots).map(([day, slot]) => (
+                                                                <div key={day} className="col-md-6">
+                                                                    <div className="card">
+                                                                        <div className="card-body">
+                                                                            <div className="form-check mb-2">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="form-check-input"
+                                                                                    checked={slot.isOpen}
+                                                                                    onChange={(e) => {
+                                                                                        setFormData(prev => ({
+                                                                                            ...prev,
+                                                                                            operatingHours: {
+                                                                                                ...prev.operatingHours,
+                                                                                                timeSlots: {
+                                                                                                    ...prev.operatingHours.timeSlots,
+                                                                                                    [day]: {
+                                                                                                        ...slot,
+                                                                                                        isOpen: e.target.checked,
+                                                                                                        openTime: e.target.checked ? prev.operatingHours.defaultOpenTime : slot.openTime,
+                                                                                                        closeTime: e.target.checked ? prev.operatingHours.defaultCloseTime : slot.closeTime
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }));
+                                                                                    }}
+                                                                                />
+                                                                                <label className="form-check-label text-capitalize">{day}</label>
+                                                                            </div>
+                                                                            <div className="row g-2">
+                                                                                <div className="col-6">
                                                                                     <input
-                                                                                        type="checkbox"
-                                                                                        className="form-check-input"
-                                                                                        checked={slot.isOpen}
+                                                                                        type="time"
+                                                                                        className="form-control"
+                                                                                        value={slot.openTime}
                                                                                         onChange={(e) => {
                                                                                             setFormData(prev => ({
                                                                                                 ...prev,
@@ -619,397 +644,370 @@ const Profile = () => {
                                                                                                         ...prev.operatingHours.timeSlots,
                                                                                                         [day]: {
                                                                                                             ...slot,
-                                                                                                            isOpen: e.target.checked,
-                                                                                                            openTime: e.target.checked ? prev.operatingHours.defaultOpenTime : slot.openTime,
-                                                                                                            closeTime: e.target.checked ? prev.operatingHours.defaultCloseTime : slot.closeTime
+                                                                                                            openTime: e.target.value
                                                                                                         }
                                                                                                     }
                                                                                                 }
                                                                                             }));
                                                                                         }}
+                                                                                        disabled={!slot.isOpen}
                                                                                     />
-                                                                                    <label className="form-check-label text-capitalize">{day}</label>
                                                                                 </div>
-                                                                                <div className="row g-2">
-                                                                                    <div className="col-6">
-                                                                                        <input
-                                                                                            type="time"
-                                                                                            className="form-control"
-                                                                                            value={slot.openTime}
-                                                                                            onChange={(e) => {
-                                                                                                setFormData(prev => ({
-                                                                                                    ...prev,
-                                                                                                    operatingHours: {
-                                                                                                        ...prev.operatingHours,
-                                                                                                        timeSlots: {
-                                                                                                            ...prev.operatingHours.timeSlots,
-                                                                                                            [day]: {
-                                                                                                                ...slot,
-                                                                                                                openTime: e.target.value
-                                                                                                            }
+                                                                                <div className="col-6">
+                                                                                    <input
+                                                                                        type="time"
+                                                                                        className="form-control"
+                                                                                        value={slot.closeTime}
+                                                                                        onChange={(e) => {
+                                                                                            setFormData(prev => ({
+                                                                                                ...prev,
+                                                                                                operatingHours: {
+                                                                                                    ...prev.operatingHours,
+                                                                                                    timeSlots: {
+                                                                                                        ...prev.operatingHours.timeSlots,
+                                                                                                        [day]: {
+                                                                                                            ...slot,
+                                                                                                            closeTime: e.target.value
                                                                                                         }
                                                                                                     }
-                                                                                                }));
-                                                                                            }}
-                                                                                            disabled={!slot.isOpen}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="col-6">
-                                                                                        <input
-                                                                                            type="time"
-                                                                                            className="form-control"
-                                                                                            value={slot.closeTime}
-                                                                                            onChange={(e) => {
-                                                                                                setFormData(prev => ({
-                                                                                                    ...prev,
-                                                                                                    operatingHours: {
-                                                                                                        ...prev.operatingHours,
-                                                                                                        timeSlots: {
-                                                                                                            ...prev.operatingHours.timeSlots,
-                                                                                                            [day]: {
-                                                                                                                ...slot,
-                                                                                                                closeTime: e.target.value
-                                                                                                            }
-                                                                                                        }
-                                                                                                    }
-                                                                                                }));
-                                                                                            }}
-                                                                                            disabled={!slot.isOpen}
-                                                                                        />
-                                                                                    </div>
+                                                                                                }
+                                                                                            }));
+                                                                                        }}
+                                                                                        disabled={!slot.isOpen}
+                                                                                    />
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                ))}
-                                                            </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Location Search and Map Section */}
-                                                <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Location</h6>
-                                                    <div className="row g-3">
-                                                        <div className="col-12">
-                                                            <div className="input-group">
-                                                                <span className="input-group-text bg-white">
-                                                                    <Search size={18} className="text-muted" />
-                                                                </span>
-                                                                <input
-                                                                    type="text"
-                                                                    className="form-control"
-                                                                    value={searchQuery}
-                                                                    onChange={handleSearchChange}
-                                                                    placeholder="Search for a location or click on the map to set your location..."
-                                                                />
-                                                                <button 
-                                                                    className="btn btn-outline-secondary" 
-                                                                    type="button"
-                                                                    onClick={() => setIsCoordinateMode(!isCoordinateMode)}
-                                                                >
-                                                                    {isCoordinateMode ? 'Hide Coordinates' : 'Show Coordinates'}
-                                                                </button>
-                                                            </div>
-                                                            {isSearching && (
-                                                                <div className="mt-2">
-                                                                    <div className="spinner-border spinner-border-sm text-primary" role="status">
-                                                                        <span className="visually-hidden">Loading...</span>
-                                                                    </div>
-                                                                    <span className="ms-2">Searching...</span>
-                                                                </div>
-                                                            )}
-                                                            {searchResults.length > 0 && (
-                                                                <div className="list-group mt-2">
-                                                                    {searchResults.map((result, index) => (
-                                                                        <button
-                                                                            key={index}
-                                                                            type="button"
-                                                                            className="list-group-item list-group-item-action d-flex align-items-center"
-                                                                            onClick={() => handleLocationSelect(result)}
-                                                                        >
-                                                                            <MapPin size={16} className="me-2 text-primary" />
-                                                                            {result.display_name}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                            {/* Location Search and Map Section */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Location</h6>
+                                                <div className="row g-3">
+                                                    <div className="col-12">
+                                                        <div className="input-group">
+                                                            <span className="input-group-text bg-white">
+                                                                <Search size={18} className="text-muted" />
+                                                            </span>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control"
+                                                                value={searchQuery}
+                                                                onChange={handleSearchChange}
+                                                                placeholder="Search for a location or click on the map to set your location..."
+                                                            />
+                                                            <button
+                                                                className="btn btn-outline-secondary"
+                                                                type="button"
+                                                                onClick={() => setIsCoordinateMode(!isCoordinateMode)}
+                                                            >
+                                                                {isCoordinateMode ? 'Hide Coordinates' : 'Show Coordinates'}
+                                                            </button>
                                                         </div>
+                                                        {isSearching && (
+                                                            <div className="mt-2">
+                                                                <div className="spinner-border spinner-border-sm text-primary" role="status">
+                                                                    <span className="visually-hidden">Loading...</span>
+                                                                </div>
+                                                                <span className="ms-2">Searching...</span>
+                                                            </div>
+                                                        )}
+                                                        {searchResults.length > 0 && (
+                                                            <div className="list-group mt-2">
+                                                                {searchResults.map((result, index) => (
+                                                                    <button
+                                                                        key={index}
+                                                                        type="button"
+                                                                        className="list-group-item list-group-item-action d-flex align-items-center"
+                                                                        onClick={() => handleLocationSelect(result)}
+                                                                    >
+                                                                        <MapPin size={16} className="me-2 text-primary" />
+                                                                        {result.display_name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                        {isCoordinateMode && (
-                                                            <div className="col-12">
-                                                                <div className="card">
-                                                                    <div className="card-body">
-                                                                        <div className="row g-2">
-                                                                            <div className="col-md-6">
-                                                                                <label className="form-label">Latitude</label>
-                                                                                <input
-                                                                                    type="text"
-                                                                                    className="form-control"
-                                                                                    name="lat"
-                                                                                    value={coordinates.lat}
-                                                                                    onChange={handleCoordinateChange}
-                                                                                    placeholder="Enter latitude"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="col-md-6">
-                                                                                <label className="form-label">Longitude</label>
-                                                                                <input
-                                                                                    type="text"
-                                                                                    className="form-control"
-                                                                                    name="lng"
-                                                                                    value={coordinates.lng}
-                                                                                    onChange={handleCoordinateChange}
-                                                                                    placeholder="Enter longitude"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="col-12">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="btn btn-secondary"
-                                                                                    onClick={handleCoordinateSearch}
-                                                                                    disabled={!coordinates.lat || !coordinates.lng}
-                                                                                >
-                                                                                    Search Coordinates
-                                                                                </button>
-                                                                            </div>
+                                                    {isCoordinateMode && (
+                                                        <div className="col-12">
+                                                            <div className="card">
+                                                                <div className="card-body">
+                                                                    <div className="row g-2">
+                                                                        <div className="col-md-6">
+                                                                            <label className="form-label">Latitude</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control"
+                                                                                name="lat"
+                                                                                value={coordinates.lat}
+                                                                                onChange={handleCoordinateChange}
+                                                                                placeholder="Enter latitude"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-md-6">
+                                                                            <label className="form-label">Longitude</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control"
+                                                                                name="lng"
+                                                                                value={coordinates.lng}
+                                                                                onChange={handleCoordinateChange}
+                                                                                placeholder="Enter longitude"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-12">
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-secondary"
+                                                                                onClick={handleCoordinateSearch}
+                                                                                disabled={!coordinates.lat || !coordinates.lng}
+                                                                            >
+                                                                                Search Coordinates
+                                                                            </button>
                                                                         </div>
                                                                     </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="col-12">
+                                                        <div className="card">
+                                                            <div className="card-body p-0">
+                                                                <div className="map-container" style={{ height: '400px', width: '100%' }}>
+                                                                    <MapContainer
+                                                                        center={mapCenter}
+                                                                        zoom={13}
+                                                                        style={{ height: '100%', width: '100%' }}
+                                                                        onClick={(e) => {
+                                                                            const { lat, lng } = e.latlng;
+                                                                            // Reverse geocode the clicked location
+                                                                            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                                                                                .then(response => response.json())
+                                                                                .then(data => {
+                                                                                    setSelectedLocation({
+                                                                                        lat: lat.toString(),
+                                                                                        lon: lng.toString(),
+                                                                                        display_name: data.display_name,
+                                                                                        address: data.address
+                                                                                    });
+                                                                                    setMapCenter([lat, lng]);
+                                                                                    setFormData(prev => ({
+                                                                                        ...prev,
+                                                                                        address: {
+                                                                                            ...prev.address,
+                                                                                            fullAddress: data.display_name,
+                                                                                            locality: data.address?.suburb || data.address?.neighbourhood || '',
+                                                                                            city: data.address?.city || data.address?.state || ''
+                                                                                        },
+                                                                                        location: {
+                                                                                            lat: parseFloat(lat),
+                                                                                            lng: parseFloat(lng)
+                                                                                        }
+                                                                                    }));
+                                                                                    setSearchQuery(data.display_name);
+                                                                                })
+                                                                                .catch(error => console.error('Error reverse geocoding:', error));
+                                                                        }}
+                                                                    >
+                                                                        <TileLayer
+                                                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                                                        />
+                                                                        <MapComponent />
+                                                                    </MapContainer>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {selectedLocation && (
+                                                            <div className="mt-2">
+                                                                <small className="text-muted">
+                                                                    Selected Location: {selectedLocation.display_name}
+                                                                </small>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Address Fields - Now auto-filled based on location */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Address Details</h6>
+                                                <div className="row g-3">
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Shop No</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.shopNo"
+                                                            value={formData.address.shopNo}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Floor</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.floor"
+                                                            value={formData.address.floor}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Locality</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.locality"
+                                                            value={formData.address.locality}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Landmark</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.landmark"
+                                                            value={formData.address.landmark}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">City</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.city"
+                                                            value={formData.address.city}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="d-flex justify-content-end mt-4">
+                                            <button type="submit" className="btn btn-primary px-4">
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <div className="row g-3">
+                                        {/* Restaurant Image Display */}
+                                        <div className="col-12 mb-4">
+                                            <div className="row">
+                                                <div className="col-md-3">
+                                                    <div className="position-relative" style={{ width: '200px', height: '200px' }}>
+                                                        {restaurant?.images?.profileImage ? (
+                                                            <img
+                                                                src={restaurant.images.profileImage}
+                                                                alt="Restaurant"
+                                                                className="rounded-circle"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit: 'cover',
+                                                                    border: '4px solid #fff',
+                                                                    boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    border: '4px solid #fff',
+                                                                    boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+                                                                }}>
+                                                                <div className="text-center">
+                                                                    <ImageIcon size={64} className="text-muted mb-2" />
+                                                                    <p className="mb-0 text-muted small">No image</p>
                                                                 </div>
                                                             </div>
                                                         )}
-
-                                                        <div className="col-12">
-                                                            <div className="card">
-                                                                <div className="card-body p-0">
-                                                                    <div className="map-container" style={{ height: '400px', width: '100%' }}>
-                                                                        <MapContainer
-                                                                            center={mapCenter}
-                                                                            zoom={13}
-                                                                            style={{ height: '100%', width: '100%' }}
-                                                                            onClick={(e) => {
-                                                                                const { lat, lng } = e.latlng;
-                                                                                // Reverse geocode the clicked location
-                                                                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                                                                                    .then(response => response.json())
-                                                                                    .then(data => {
-                                                                                        setSelectedLocation({
-                                                                                            lat: lat.toString(),
-                                                                                            lon: lng.toString(),
-                                                                                            display_name: data.display_name,
-                                                                                            address: data.address
-                                                                                        });
-                                                                                        setMapCenter([lat, lng]);
-                                                                                        setFormData(prev => ({
-                                                                                            ...prev,
-                                                                                            address: {
-                                                                                                ...prev.address,
-                                                                                                fullAddress: data.display_name,
-                                                                                                locality: data.address?.suburb || data.address?.neighbourhood || '',
-                                                                                                city: data.address?.city || data.address?.state || ''
-                                                                                            },
-                                                                                            location: {
-                                                                                                lat: parseFloat(lat),
-                                                                                                lng: parseFloat(lng)
-                                                                                            }
-                                                                                        }));
-                                                                                        setSearchQuery(data.display_name);
-                                                                                    })
-                                                                                    .catch(error => console.error('Error reverse geocoding:', error));
-                                                                            }}
-                                                                        >
-                                                                            <TileLayer
-                                                                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                                                            />
-                                                                            <MapComponent />
-                                                                        </MapContainer>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            {selectedLocation && (
-                                                                <div className="mt-2">
-                                                                    <small className="text-muted">
-                                                                        Selected Location: {selectedLocation.display_name}
-                                                                    </small>
-                                                                </div>
-                                                            )}
-                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                {/* Address Fields - Now auto-filled based on location */}
-                                                <div className="col-12">
-                                                    <h6 className="fw-medium mb-3">Address Details</h6>
+                                                <div className="col-md-9">
                                                     <div className="row g-3">
                                                         <div className="col-md-6">
-                                                            <label className="form-label">Shop No</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="address.shopNo"
-                                                                value={formData.address.shopNo}
-                                                                onChange={handleInputChange}
-                                                            />
+                                                            <h6 className="text-muted mb-2 fw-medium">Business Name</h6>
+                                                            <p className="mb-0">{restaurant?.restaurantName}</p>
                                                         </div>
                                                         <div className="col-md-6">
-                                                            <label className="form-label">Floor</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="address.floor"
-                                                                value={formData.address.floor}
-                                                                onChange={handleInputChange}
-                                                            />
+                                                            <h6 className="text-muted mb-2 fw-medium">Owner Name</h6>
+                                                            <p className="mb-0">{restaurant?.ownerName}</p>
                                                         </div>
                                                         <div className="col-md-6">
-                                                            <label className="form-label">Locality</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="address.locality"
-                                                                value={formData.address.locality}
-                                                                onChange={handleInputChange}
-                                                            />
+                                                            <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
+                                                            <p className="mb-0">{restaurant?.serviceType}</p>
                                                         </div>
                                                         <div className="col-md-6">
-                                                            <label className="form-label">Landmark</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="address.landmark"
-                                                                value={formData.address.landmark}
-                                                                onChange={handleInputChange}
-                                                            />
+                                                            <h6 className="text-muted mb-2 fw-medium">Description</h6>
+                                                            <p className="mb-0">{restaurant?.description || 'Not provided'}</p>
                                                         </div>
                                                         <div className="col-md-6">
-                                                            <label className="form-label">City</label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                name="address.city"
-                                                                value={formData.address.city}
-                                                                onChange={handleInputChange}
-                                                            />
+                                                            <h6 className="text-muted mb-2 fw-medium">Primary Phone</h6>
+                                                            <p className="mb-0">{restaurant?.contact?.primaryPhone}</p>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            <h6 className="text-muted mb-2 fw-medium">WhatsApp Number</h6>
+                                                            <p className="mb-0">{restaurant?.contact?.whatsappNumber}</p>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            <h6 className="text-muted mb-2 fw-medium">Email</h6>
+                                                            <p className="mb-0">{restaurant?.contact?.email}</p>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            <h6 className="text-muted mb-2 fw-medium">Website</h6>
+                                                            <p className="mb-0">{restaurant?.contact?.website || 'Not provided'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="d-flex justify-content-end mt-4">
-                                                <button type="submit" className="btn btn-primary px-4">
-                                                    Save Changes
-                                                </button>
-                                            </div>
-                                        </form>
-                                    ) : (
-                                        <div className="row g-3">
-                                            {/* Restaurant Image Display */}
-                                            <div className="col-12 mb-4">
-                                                <div className="row">
-                                                    <div className="col-md-3">
-                                                        <div className="position-relative" style={{ width: '200px', height: '200px' }}>
-                                                            {restaurant?.images?.profileImage ? (
-                                                                <img 
-                                                                    src={restaurant.images.profileImage} 
-                                                                    alt="Restaurant" 
-                                                                    className="rounded-circle" 
-                                                                    style={{ 
-                                                                        width: '100%', 
-                                                                        height: '100%', 
-                                                                        objectFit: 'cover',
-                                                                        border: '4px solid #fff',
-                                                                        boxShadow: '0 0 10px rgba(0,0,0,0.1)'
-                                                                    }} 
-                                                                />
-                                                            ) : (
-                                                                <div className="rounded-circle bg-light d-flex align-items-center justify-content-center" 
-                                                                     style={{ 
-                                                                        width: '100%', 
-                                                                        height: '100%',
-                                                                        border: '4px solid #fff',
-                                                                        boxShadow: '0 0 10px rgba(0,0,0,0.1)'
-                                                                    }}>
-                                                                    <div className="text-center">
-                                                                        <ImageIcon size={64} className="text-muted mb-2" />
-                                                                        <p className="mb-0 text-muted small">No image</p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-md-9">
-                                        <div className="row g-3">
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Business Name</h6>
-                                                <p className="mb-0">{restaurant?.restaurantName}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Owner Name</h6>
-                                                <p className="mb-0">{restaurant?.ownerName}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
-                                                <p className="mb-0">{restaurant?.serviceType}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Description</h6>
-                                                <p className="mb-0">{restaurant?.description || 'Not provided'}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Primary Phone</h6>
-                                                <p className="mb-0">{restaurant?.contact?.primaryPhone}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">WhatsApp Number</h6>
-                                                <p className="mb-0">{restaurant?.contact?.whatsappNumber}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Email</h6>
-                                                <p className="mb-0">{restaurant?.contact?.email}</p>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h6 className="text-muted mb-2 fw-medium">Website</h6>
-                                                <p className="mb-0">{restaurant?.contact?.website || 'Not provided'}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="col-12">
-                                                <h6 className="text-muted mb-2 fw-medium">Address</h6>
-                                                <p className="mb-0">
-                                                    {restaurant?.address?.shopNo && `${restaurant.address.shopNo}, `}
-                                                    {restaurant?.address?.floor && `${restaurant.address.floor}, `}
-                                                    {restaurant?.address?.locality && `${restaurant.address.locality}, `}
-                                                    {restaurant?.address?.landmark && `${restaurant.address.landmark}, `}
-                                                    {restaurant?.address?.city && `${restaurant.address.city}, `}
-                                                    {restaurant?.address?.fullAddress}
-                                                </p>
-                                            </div>
-                                            {restaurant?.location && (
-                                                <div className="col-12">
-                                                    <h6 className="text-muted mb-2 fw-medium">Location</h6>
-                                                    <div className="map-container" style={{ height: '400px', width: '100%' }}>
-                                                        <MapContainer
-                                                            center={[restaurant.location.lat, restaurant.location.lng]}
-                                                            zoom={13}
-                                                            style={{ height: '100%', width: '100%' }}
-                                                        >
-                                                            <TileLayer
-                                                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                                            />
-                                                            <Marker
-                                                                position={[restaurant.location.lat, restaurant.location.lng]}
-                                                                icon={customIcon}
-                                                            />
-                                                        </MapContainer>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="col-12">
+                                            <h6 className="text-muted mb-2 fw-medium">Address</h6>
+                                            <p className="mb-0">
+                                                {restaurant?.address?.shopNo && `${restaurant.address.shopNo}, `}
+                                                {restaurant?.address?.floor && `${restaurant.address.floor}, `}
+                                                {restaurant?.address?.locality && `${restaurant.address.locality}, `}
+                                                {restaurant?.address?.landmark && `${restaurant.address.landmark}, `}
+                                                {restaurant?.address?.city && `${restaurant.address.city}, `}
+                                                {restaurant?.address?.fullAddress}
+                                            </p>
+                                        </div>
+                                        {restaurant?.location && (
+                                            <div className="col-12">
+                                                <h6 className="text-muted mb-2 fw-medium">Location</h6>
+                                                <div className="map-container" style={{ height: '400px', width: '100%' }}>
+                                                    <MapContainer
+                                                        center={[restaurant.location.lat, restaurant.location.lng]}
+                                                        zoom={13}
+                                                        style={{ height: '100%', width: '100%' }}
+                                                    >
+                                                        <TileLayer
+                                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                                        />
+                                                        <Marker
+                                                            position={[restaurant.location.lat, restaurant.location.lng]}
+                                                            icon={customIcon}
+                                                        />
+                                                    </MapContainer>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1020,4 +1018,3 @@ const Profile = () => {
 };
 
 export default Profile;
-    

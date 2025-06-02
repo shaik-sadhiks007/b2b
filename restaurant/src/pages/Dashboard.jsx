@@ -58,10 +58,10 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     const tabs = [
-        { label: "Menu editor", path: "/menu" },
-        // { label: "Manage inventory", path: "/inventory" },
-        // { label: "Taxes", path: "/taxes" },
-        // { label: "Charges", path: "/charges" }
+        { label: "Menu editor", path: "/menu", icon: "bi-menu-button-wide" },
+        // { label: "Manage inventory", path: "/inventory", icon: "bi-box-seam" },
+        // { label: "Taxes", path: "/taxes", icon: "bi-calculator" },
+        // { label: "Charges", path: "/charges", icon: "bi-credit-card" }
     ];
 
     const handleStatusChange = (status) => {
@@ -156,13 +156,11 @@ const Dashboard = () => {
         return <div>Please login to access the dashboard</div>;
     }
 
-    console.log(selectedSubcategory,"ssc")
+    console.log(selectedSubcategory, "ssc")
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
 
     return (
-        <div className="container-fluid">
+        <div className="container-fluid px-0">
             {/* Replace Modal with ItemOffcanvas */}
             <ItemOffcanvas
                 show={showOffcanvas}
@@ -220,198 +218,86 @@ const Dashboard = () => {
             </div>
             {showModal && <div className="modal-backdrop fade show"></div>}
 
-            <div className="row" style={{ marginTop: "48px" }}>
+            <div style={{ marginTop: "60px" }}>
                 <Navbar />
                 <Sidebar />
 
                 {/* Main Content */}
-                <div className="col-lg-10 ms-auto">
+                <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+
                     {/* Top Navigation */}
-                    <div className="bg-white shadow-sm p-3 mb-4">
-                        <div className="d-flex justify-content-between align-items-center">
-                            <div className="d-flex gap-4">
-                                {tabs.map((tab, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setActiveTab(tab.label.toLowerCase().replace(' ', '-'))}
-                                        className={`btn btn-link text-decoration-none ${activeTab === tab.label.toLowerCase().replace(' ', '-')
+                    <div className="d-flex justify-content-between align-items-center p-4 bg-white shadow-sm">
+                        <div className="d-flex gap-4">
+                            {tabs.map((tab, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setActiveTab(tab.label.toLowerCase().replace(' ', '-'))}
+                                    className={`btn btn-link text-decoration-none d-flex align-items-center gap-2 ${
+                                        activeTab === tab.label.toLowerCase().replace(' ', '-')
                                             ? 'text-primary border-bottom border-2 border-primary'
-                                            : 'text-dark'
-                                            }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
+                                            : 'text-gray-600'
+                                    }`}
+                                >
+                                    <i className={`bi ${tab.icon} fs-5`}></i>
+                                    <span className="fw-medium">{tab.label}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Conditional Rendering based on active tab */}
                     {activeTab === 'menu-editor' ? (
                         // Menu Editor Content
-                        <div className="container-fluid px-4">
-                            <div className="row">
-                                {/* Categories Section */}
-                                <div className="col-md-4">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <h5 className="mb-0">Categories ({categories.length})</h5>
-                                        <button className="btn btn-link text-dark">
-                                            <i className="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                    </div>
-                                    <button
-                                        className="btn btn-link text-primary text-decoration-none p-0 mb-3"
-                                        onClick={() => openModal('category', 'add')}
-                                    >
-                                        <i className="bi bi-plus-lg me-2"></i>
-                                        Add Category
-                                    </button>
-
-                                    {/* Category List */}
-                                    <div className="list-group">
-                                        {categories.map((category) => {
-                                            return (
-                                                <div key={category._id} className="list-group-item">
-                                                    <div className="d-flex justify-content-between align-items-center">
-                                                        <span
-                                                            className={`cursor-pointer ${selectedCategory === category._id ? 'text-primary' : ''}`}
-                                                            onClick={() => handleCategorySelect(category)}
-                                                        >
-                                                            {category.name} ({category.subcategories.reduce((acc, sub) => acc + sub.items.length, 0)})
-                                                        </span>
-                                                        <div>
-                                                            <div className="dropdown d-inline-block me-2">
-                                                                <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
-                                                                    <i className="bi bi-three-dots-vertical"></i>
-                                                                </button>
-                                                                <ul className="dropdown-menu">
-                                                                    <li>
-                                                                        <button
-                                                                            className="dropdown-item"
-                                                                            onClick={() => openModal('category', 'edit', category)}
-                                                                        >
-                                                                            Edit
-                                                                        </button>
-                                                                    </li>
-                                                                    <li>
-                                                                        <button
-                                                                            className="dropdown-item text-danger"
-                                                                            onClick={() => deleteCategory(category._id)}
-                                                                        >
-                                                                            Delete
-                                                                        </button>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                            <button
-                                                                className="btn btn-link text-dark p-0"
-                                                                onClick={() => toggleCategoryExpansion(category._id)}
-                                                            >
-                                                                <i className={`bi bi-chevron-${category.isExpanded ? 'up' : 'down'}`}></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    {category.isExpanded && (
-                                                        <>
-                                                            {category.subcategories.map(subcategory => (
-                                                                <div key={subcategory._id} className="ms-3 mt-2">
-                                                                    <div className="d-flex justify-content-between align-items-center">
-                                                                        <span
-                                                                            className={`cursor-pointer ${selectedSubcategory?._id === subcategory._id ? 'text-primary' : ''}`}
-                                                                            onClick={() => handleSubcategorySelect(subcategory, category._id)}
-                                                                        >
-                                                                            {subcategory.name} ({subcategory.items.length})
-                                                                        </span>
-                                                                        <div className="dropdown">
-                                                                            <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
-                                                                                <i className="bi bi-three-dots-vertical"></i>
-                                                                            </button>
-                                                                            <ul className="dropdown-menu">
-                                                                                <li>
-                                                                                    <button
-                                                                                        className="dropdown-item"
-                                                                                        onClick={() => openModal('subcategory', 'edit', subcategory, category._id)}
-                                                                                    >
-                                                                                        Edit
-                                                                                    </button>
-                                                                                </li>
-                                                                                <li>
-                                                                                    <button
-                                                                                        className="dropdown-item text-danger"
-                                                                                        onClick={() => deleteSubcategory(category._id, subcategory._id)}
-                                                                                    >
-                                                                                        Delete
-                                                                                    </button>
-                                                                                </li>
-                                                                            </ul>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                            <div className="mt-2">
-                                                                <button
-                                                                    className="btn btn-link text-primary text-decoration-none p-0"
-                                                                    onClick={() => openModal('subcategory', 'add', null, category._id)}
-                                                                >
-                                                                    <i className="bi bi-plus-lg me-2"></i>
-                                                                    Add Subcategory
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                        <div className="container-fluid px-4 my-4">
+                            {loading ? (
+                                <div className="text-center py-12">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                                    <p className="mt-4 text-gray-600">Loading menu...</p>
                                 </div>
+                            ) : error ? (
+                                <div className="text-center py-12">
+                                    <p className="text-red-500">{error}</p>
+                                </div>
+                            ) : (
+                                <div className="row">
+                                    {/* Categories Section */}
+                                    <div className="col-md-4">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 className="mb-0">Categories ({categories.length})</h5>
+                                            <button className="btn btn-link text-dark">
+                                                <i className="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                        </div>
+                                        <button
+                                            className="btn btn-link text-primary text-decoration-none p-0 mb-3"
+                                            onClick={() => openModal('category', 'add')}
+                                        >
+                                            <i className="bi bi-plus-lg me-2"></i>
+                                            Add Category
+                                        </button>
 
-                                {/* Products Section */}
-                                <div className="col-md-8">
-                                    {selectedSubcategory ? (
-                                        <>
-                                            <div className="d-flex justify-content-between align-items-center mb-3">
-                                                <h5 className="mb-0">{selectedSubcategory.name} ({selectedSubcategory.items.length})</h5>
-                                                <button
-                                                    className="btn btn-link text-primary text-decoration-none"
-                                                    onClick={() => {
-                                                        setEditingItem(null);
-                                                        setIsAddingNewItem(true);
-                                                        setShowOffcanvas(true);
-                                                    }}
-                                                >
-                                                    <i className="bi bi-plus-lg me-2"></i>
-                                                    Add New Item
-                                                </button>
-                                            </div>
-
-                                            <div className="list-group">
-                                                {selectedSubcategory.items.length > 0 ? (
-                                                    selectedSubcategory.items.map((item) => (
-                                                        <div key={item._id} className="list-group-item">
-                                                            <div className="d-flex justify-content-between align-items-start">
-                                                                <div>
-                                                                    <div className="d-flex align-items-center mb-1">
-                                                                        <i className="bi bi-circle-fill text-success me-2" style={{ fontSize: '8px' }}></i>
-                                                                        <h6 className="mb-0">{item.name}</h6>
-                                                                    </div>
-                                                                    <small className="text-muted">
-                                                                        ₹{item.totalPrice}
-                                                                        {item.customisable && ` | customisable`}
-                                                                    </small>
-
-                                                                </div>
-                                                                <div className="dropdown">
+                                        {/* Category List */}
+                                        <div className="list-group">
+                                            {categories.map((category) => {
+                                                return (
+                                                    <div key={category._id} className="list-group-item">
+                                                        <div className="d-flex justify-content-between align-items-center">
+                                                            <span
+                                                                className={`cursor-pointer ${selectedCategory === category._id ? 'text-primary' : ''}`}
+                                                                onClick={() => handleCategorySelect(category)}
+                                                            >
+                                                                {category.name} ({category.subcategories.reduce((acc, sub) => acc + sub.items.length, 0)})
+                                                            </span>
+                                                            <div>
+                                                                <div className="dropdown d-inline-block me-2">
                                                                     <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
                                                                         <i className="bi bi-three-dots-vertical"></i>
                                                                     </button>
-                                                                    <ul className="dropdown-menu dropdown-menu-end">
+                                                                    <ul className="dropdown-menu">
                                                                         <li>
                                                                             <button
                                                                                 className="dropdown-item"
-                                                                                onClick={() => {
-                                                                                    setEditingItem(item);
-                                                                                    setShowOffcanvas(true);
-                                                                                }}
+                                                                                onClick={() => openModal('category', 'edit', category)}
                                                                             >
                                                                                 Edit
                                                                             </button>
@@ -419,30 +305,154 @@ const Dashboard = () => {
                                                                         <li>
                                                                             <button
                                                                                 className="dropdown-item text-danger"
-                                                                                onClick={() => deleteItem(selectedCategory, selectedSubcategory._id, item._id)}
+                                                                                onClick={() => deleteCategory(category._id)}
                                                                             >
                                                                                 Delete
                                                                             </button>
                                                                         </li>
                                                                     </ul>
                                                                 </div>
+                                                                <button
+                                                                    className="btn btn-link text-dark p-0"
+                                                                    onClick={() => toggleCategoryExpansion(category._id)}
+                                                                >
+                                                                    <i className={`bi bi-chevron-${category.isExpanded ? 'up' : 'down'}`}></i>
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center p-4">
-                                                        <p className="text-muted">No items in this subcategory yet</p>
+                                                        {category.isExpanded && (
+                                                            <>
+                                                                {category.subcategories.map(subcategory => (
+                                                                    <div key={subcategory._id} className="ms-3 mt-2">
+                                                                        <div className="d-flex justify-content-between align-items-center">
+                                                                            <span
+                                                                                className={`cursor-pointer ${selectedSubcategory?._id === subcategory._id ? 'text-primary' : ''}`}
+                                                                                onClick={() => handleSubcategorySelect(subcategory, category._id)}
+                                                                            >
+                                                                                {subcategory.name} ({subcategory.items.length})
+                                                                            </span>
+                                                                            <div className="dropdown">
+                                                                                <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
+                                                                                    <i className="bi bi-three-dots-vertical"></i>
+                                                                                </button>
+                                                                                <ul className="dropdown-menu">
+                                                                                    <li>
+                                                                                        <button
+                                                                                            className="dropdown-item"
+                                                                                            onClick={() => openModal('subcategory', 'edit', subcategory, category._id)}
+                                                                                        >
+                                                                                            Edit
+                                                                                        </button>
+                                                                                    </li>
+                                                                                    <li>
+                                                                                        <button
+                                                                                            className="dropdown-item text-danger"
+                                                                                            onClick={() => deleteSubcategory(category._id, subcategory._id)}
+                                                                                        >
+                                                                                            Delete
+                                                                                        </button>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="mt-2">
+                                                                    <button
+                                                                        className="btn btn-link text-primary text-decoration-none p-0"
+                                                                        onClick={() => openModal('subcategory', 'add', null, category._id)}
+                                                                    >
+                                                                        <i className="bi bi-plus-lg me-2"></i>
+                                                                        Add Subcategory
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center p-5">
-                                            <p className="text-muted">Select a subcategory to view or add items</p>
+                                                );
+                                            })}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Products Section */}
+                                    <div className="col-md-8">
+                                        {selectedSubcategory ? (
+                                            <>
+                                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                                    <h5 className="mb-0">{selectedSubcategory.name} ({selectedSubcategory.items.length})</h5>
+                                                    <button
+                                                        className="btn btn-link text-primary text-decoration-none"
+                                                        onClick={() => {
+                                                            setEditingItem(null);
+                                                            setIsAddingNewItem(true);
+                                                            setShowOffcanvas(true);
+                                                        }}
+                                                    >
+                                                        <i className="bi bi-plus-lg me-2"></i>
+                                                        Add New Item
+                                                    </button>
+                                                </div>
+
+                                                <div className="list-group">
+                                                    {selectedSubcategory.items.length > 0 ? (
+                                                        selectedSubcategory.items.map((item) => (
+                                                            <div key={item._id} className="list-group-item">
+                                                                <div className="d-flex justify-content-between align-items-start">
+                                                                    <div>
+                                                                        <div className="d-flex align-items-center mb-1">
+                                                                            <i className="bi bi-circle-fill text-success me-2" style={{ fontSize: '8px' }}></i>
+                                                                            <h6 className="mb-0">{item.name}</h6>
+                                                                        </div>
+                                                                        <small className="text-muted">
+                                                                            ₹{item.totalPrice}
+                                                                            {item.customisable && ` | customisable`}
+                                                                        </small>
+
+                                                                    </div>
+                                                                    <div className="dropdown">
+                                                                        <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
+                                                                            <i className="bi bi-three-dots-vertical"></i>
+                                                                        </button>
+                                                                        <ul className="dropdown-menu dropdown-menu-end">
+                                                                            <li>
+                                                                                <button
+                                                                                    className="dropdown-item"
+                                                                                    onClick={() => {
+                                                                                        setEditingItem(item);
+                                                                                        setShowOffcanvas(true);
+                                                                                    }}
+                                                                                >
+                                                                                    Edit
+                                                                                </button>
+                                                                            </li>
+                                                                            <li>
+                                                                                <button
+                                                                                    className="dropdown-item text-danger"
+                                                                                    onClick={() => deleteItem(selectedCategory, selectedSubcategory._id, item._id)}
+                                                                                >
+                                                                                    Delete
+                                                                                </button>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center p-4">
+                                                            <p className="text-muted">No items in this subcategory yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-center p-5">
+                                                <p className="text-muted">Select a subcategory to view or add items</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     ) : activeTab === 'manage-inventory' ? (
                         // Inventory Manager Content
@@ -462,6 +472,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     )}
+
                 </div>
             </div>
         </div>

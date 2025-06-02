@@ -1,26 +1,39 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { MenuContext } from '../context/MenuContext';
 import Sidebar from '../components/Sidebar';
 import ItemOffcanvas from '../components/ItemOffcanvas';
 import InventoryManager from '../components/InventoryManager';
 import Orders from '../components/Orders';
 import '../styles/Dashboard.css';
-import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
-import { API_URL } from '../api/api';
 
 const Dashboard = () => {
-    const { user, token } = useContext(AuthContext);
+    const { token } = useContext(AuthContext);
+    const {
+        categories,
+        loading,
+        error,
+        selectedCategory,
+        setSelectedCategory,
+        selectedSubcategory,
+        setSelectedSubcategory,
+        addCategory,
+        updateCategory,
+        deleteCategory,
+        addSubcategory,
+        updateSubcategory,
+        deleteSubcategory,
+        addItem,
+        updateItem,
+        deleteItem,
+        toggleCategoryExpansion
+    } = useContext(MenuContext);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [isOnline, setIsOnline] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [restaurants, setRestaurants] = useState([]);
 
     // Modal states
     const [showModal, setShowModal] = useState(false);
@@ -51,137 +64,13 @@ const Dashboard = () => {
         // { label: "Charges", path: "/charges" }
     ];
 
-    // Configure axios defaults
-    useEffect(() => {
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
-    }, [token]);
-
-    // Fetch menu items
-    const fetchMenu = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/menu`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setCategories(response.data);
-            setLoading(false);
-        } catch (error) {
-            setError('Error fetching menu items');
-            setLoading(false);
-        }
-    };
-
-    // Fetch restaurants
-    const fetchRestaurants = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/restaurants`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setRestaurants(response.data);
-        } catch (error) {
-            console.error('Error fetching restaurants:', error);
-            setError('Error fetching restaurants');
-        }
-    };
-
-    useEffect(() => {
-        if (token) {
-            fetchRestaurants();
-            fetchMenu();
-        }
-    }, [token]);
-
-    // Add new menu item
-    const handleAddItem = async (newItem) => {
-        try {
-            const response = await axios.post(`${API_URL}/api/menu`, newItem, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setCategories([...categories, response.data]);
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error adding menu item');
-        }
-    };
-
-    // Update menu item
-    const handleUpdateItem = async (id, updatedItem) => {
-        try {
-            await axios.put(`${API_URL}/api/menu/${id}`, updatedItem, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error updating menu item');
-        }
-    };
-
-    // Delete menu item
-    const handleDeleteItem = async (categoryId, subcategoryId, itemId) => {
-        if (!categoryId || !subcategoryId || !itemId) {
-            setError('Category ID, Subcategory ID, and Item ID are required');
-            return;
-        }
-        try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            // Update local state after successful deletion
-            setCategories(prevCategories => 
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: subcategory.items.filter(item => item._id !== itemId)
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-
-            // Update selectedSubcategory if it contains the deleted item
-            if (selectedSubcategory?._id === subcategoryId) {
-                setSelectedSubcategory(prev => ({
-                    ...prev,
-                    items: prev.items.filter(item => item._id !== itemId)
-                }));
-            }
-
-            toast.success('Item deleted successfully');
-        } catch (error) {
-            setError('Error deleting item');
-            console.error('Error deleting item:', error);
-            toast.error('Failed to delete item');
-        }
-    };
-
     const handleStatusChange = (status) => {
         setIsOnline(status === 'online');
     };
 
     const openModal = (type, mode, data = null, parentId = null) => {
         if (mode === 'edit' && !data) {
-            setError('No data provided for editing');
+            toast.error('No data provided for editing');
             return;
         }
         setModalType(type);
@@ -200,278 +89,50 @@ const Dashboard = () => {
     const handleModalSubmit = () => {
         if (modalType === 'category') {
             if (modalMode === 'add') {
-                handleAddCategory(modalData.name);
+                addCategory(modalData.name);
             } else {
                 if (!modalData.itemId) {
-                    setError('Category ID is required for editing');
+                    toast.error('Category ID is required for editing');
                     return;
                 }
-                handleEditCategory(modalData.itemId, modalData.name);
+                updateCategory(modalData.itemId, modalData.name);
             }
         } else if (modalType === 'subcategory') {
             if (modalMode === 'add') {
                 if (!modalData.parentId) {
-                    setError('Category ID is required for adding subcategory');
+                    toast.error('Category ID is required for adding subcategory');
                     return;
                 }
-                handleAddSubcategory(modalData.parentId, modalData.name);
+                addSubcategory(modalData.parentId, modalData.name);
             } else {
                 if (!modalData.parentId || !modalData.itemId) {
-                    setError('Category ID and Subcategory ID are required for editing');
+                    toast.error('Category ID and Subcategory ID are required for editing');
                     return;
                 }
-                handleEditSubcategory(modalData.parentId, modalData.itemId, modalData.name);
+                updateSubcategory(modalData.parentId, modalData.itemId, modalData.name);
             }
         }
         setShowModal(false);
     };
 
-    // Add new category
-    const handleAddCategory = async (name) => {
-        try {
-            const newCategory = {
-                name: name,
-                isExpanded: true,
-                subcategories: []
-            };
-            await axios.post(`${API_URL}/api/menu`, newCategory, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error adding category');
-        }
-    };
-
-    // Update category
-    const handleEditCategory = async (categoryId, newName) => {
-        if (!categoryId) {
-            setError('Category ID is required');
-            return;
-        }
-        try {
-            const response = await axios.put(`${API_URL}/api/menu/${categoryId}`, { name: newName }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error updating category');
-            console.error('Error updating category:', error);
-        }
-    };
-
-    // Delete category
-    const handleDeleteCategory = async (categoryId) => {
-        try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error deleting category');
-        }
-    };
-
-    // Add new subcategory
-    const handleAddSubcategory = async (categoryId, name) => {
-        if (!categoryId) {
-            setError('Category ID is required');
-            return;
-        }
-        try {
-            const newSubcategory = {
-                name: name,
-                items: []
-            };
-            await axios.post(`${API_URL}/api/menu/${categoryId}/subcategories`, newSubcategory, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error adding subcategory');
-            console.error('Error adding subcategory:', error);
-        }
-    };
-
-    // Update subcategory
-    const handleEditSubcategory = async (categoryId, subcategoryId, newName) => {
-        if (!categoryId || !subcategoryId) {
-            setError('Category ID and Subcategory ID are required');
-            return;
-        }
-        try {
-            const response = await axios.put(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`, { name: newName }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error updating subcategory');
-            console.error('Error updating subcategory:', error);
-        }
-    };
-
-    // Delete subcategory
-    const handleDeleteSubcategory = async (categoryId, subcategoryId) => {
-        if (!categoryId || !subcategoryId) {
-            setError('Category ID and Subcategory ID are required');
-            return;
-        }
-        try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            fetchMenu(); // Refresh the menu data
-        } catch (error) {
-            setError('Error deleting subcategory');
-            console.error('Error deleting subcategory:', error);
-        }
-    };
-
     const handleStockChange = (itemId, newStockStatus) => {
-        setCategories(prevCategories =>
-            prevCategories.map(category => ({
-                ...category,
-                subcategories: category.subcategories.map(subcategory => ({
-                    ...subcategory,
-                    items: subcategory.items.map(item =>
-                        item.id === itemId
-                            ? { ...item, inStock: newStockStatus }
-                            : item
-                    )
-                }))
-            }))
-        );
+        // Implement stock change logic if needed
     };
 
-    const handleEditItem = async (categoryId, subcategoryId, itemId, itemData) => {
-        try {
-            // First update the backend
-            const response = await fetch(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(itemData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update item');
-            }
-
-            const updatedItem = await response.json();
-
-            // Update the categories state with the edited item
-            const updatedCategories = categories.map(category => {
-                if (category._id === categoryId) {
-                    return {
-                        ...category,
-                        subcategories: category.subcategories.map(subcategory => {
-                            if (subcategory._id === subcategoryId) {
-                                return {
-                                    ...subcategory,
-                                    items: subcategory.items.map(item =>
-                                        item._id === itemId ? updatedItem : item
-                                    )
-                                };
-                            }
-                            return subcategory;
-                        })
-                    };
-                }
-                return category;
-            });
-
-            // Update the state with the new categories
-            setCategories(updatedCategories);
-
-            // Force a re-render by updating the selectedSubcategory
-            const updatedSubcategory = updatedCategories
-                .find(cat => cat._id === categoryId)
-                ?.subcategories.find(sub => sub._id === subcategoryId);
-
-            if (updatedSubcategory) {
-                setSelectedSubcategory({ ...updatedSubcategory });
-            }
-
-            // Show success message
-            toast.success('Item updated successfully');
-        } catch (error) {
-            console.error('Error updating item:', error);
-            toast.error('Failed to update item');
+    const handleOffcanvasSave = (itemData) => {
+        if (!selectedCategory || !selectedSubcategory) {
+            toast.error('Please select a category and subcategory first');
+            return;
         }
-    };
 
-    const toggleCategoryExpansion = (categoryId) => {
-        setCategories(categories.map(category => {
-            if (category._id === categoryId) {
-                return { ...category, isExpanded: !category.isExpanded };
-            }
-            return category;
-        }));
-    };
-
-
-    // Add new item to subcategory
-    const handleAddItemToSubcategory = async (categoryId, subcategoryId, itemData) => {
-        try {
-            const response = await axios.post(
-                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
-                itemData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
-
-            // Update local state after successful addition
-            setCategories(prevCategories => 
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: [...subcategory.items, response.data]
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-
-            // Update selectedSubcategory if it's the one we're adding to
-            if (selectedSubcategory?._id === subcategoryId) {
-                setSelectedSubcategory(prev => ({
-                    ...prev,
-                    items: [...prev.items, response.data]
-                }));
-            }
-
-            toast.success('Item added successfully');
-        } catch (error) {
-            console.error('Error adding item:', error);
-            setError('Error adding item');
-            toast.error('Failed to add item');
+        if (editingItem) {
+            updateItem(selectedCategory, selectedSubcategory._id, editingItem._id, itemData);
+        } else {
+            addItem(selectedCategory, selectedSubcategory._id, itemData);
         }
+        setShowOffcanvas(false);
+        setEditingItem(null);
+        setIsAddingNewItem(false);
     };
 
     // Update the category selection logic
@@ -491,41 +152,17 @@ const Dashboard = () => {
         setSelectedSubcategory(subcategory);
     };
 
-    const handleOffcanvasSave = (itemData) => {
-        if (!selectedCategory || !selectedSubcategory) {
-            setError('Please select a category and subcategory first');
-            return;
-        }
-
-        if (editingItem) {
-            handleEditItem(selectedCategory, selectedSubcategory._id, editingItem._id, itemData);
-        } else {
-            handleAddItemToSubcategory(selectedCategory, selectedSubcategory._id, itemData);
-        }
-        setShowOffcanvas(false);
-        setEditingItem(null);
-        setIsAddingNewItem(false);
-    };
-
-    // Update the item deletion button click handler
-    const handleItemDeleteClick = (categoryId, subcategoryId, itemId) => {
-        if (!categoryId || !subcategoryId || !itemId) {
-            setError('Missing required IDs for item deletion');
-            return;
-        }
-        handleDeleteItem(categoryId, subcategoryId, itemId);
-    };
-
     if (!token) {
         return <div>Please login to access the dashboard</div>;
     }
+
+    console.log(selectedSubcategory,"ssc")
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
 
     return (
         <div className="container-fluid">
-
             {/* Replace Modal with ItemOffcanvas */}
             <ItemOffcanvas
                 show={showOffcanvas}
@@ -584,10 +221,8 @@ const Dashboard = () => {
             {showModal && <div className="modal-backdrop fade show"></div>}
 
             <div className="row" style={{ marginTop: "48px" }}>
-                {/* Sidebar */}
-
                 <Navbar />
-                <Sidebar/>
+                <Sidebar />
 
                 {/* Main Content */}
                 <div className="col-lg-10 ms-auto">
@@ -661,7 +296,7 @@ const Dashboard = () => {
                                                                     <li>
                                                                         <button
                                                                             className="dropdown-item text-danger"
-                                                                            onClick={() => handleDeleteCategory(category._id)}
+                                                                            onClick={() => deleteCategory(category._id)}
                                                                         >
                                                                             Delete
                                                                         </button>
@@ -703,7 +338,7 @@ const Dashboard = () => {
                                                                                 <li>
                                                                                     <button
                                                                                         className="dropdown-item text-danger"
-                                                                                        onClick={() => handleDeleteSubcategory(category._id, subcategory._id)}
+                                                                                        onClick={() => deleteSubcategory(category._id, subcategory._id)}
                                                                                     >
                                                                                         Delete
                                                                                     </button>
@@ -752,7 +387,7 @@ const Dashboard = () => {
                                             <div className="list-group">
                                                 {selectedSubcategory.items.length > 0 ? (
                                                     selectedSubcategory.items.map((item) => (
-                                                        <div key={item.id} className="list-group-item">
+                                                        <div key={item._id} className="list-group-item">
                                                             <div className="d-flex justify-content-between align-items-start">
                                                                 <div>
                                                                     <div className="d-flex align-items-center mb-1">
@@ -760,8 +395,10 @@ const Dashboard = () => {
                                                                         <h6 className="mb-0">{item.name}</h6>
                                                                     </div>
                                                                     <small className="text-muted">
-                                                                        ₹{item.totalPrice} | {item.customisable ? 'customisable' : ''}
+                                                                        ₹{item.totalPrice}
+                                                                        {item.customisable && ` | customisable`}
                                                                     </small>
+
                                                                 </div>
                                                                 <div className="dropdown">
                                                                     <button className="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
@@ -782,7 +419,7 @@ const Dashboard = () => {
                                                                         <li>
                                                                             <button
                                                                                 className="dropdown-item text-danger"
-                                                                                onClick={() => handleItemDeleteClick(selectedCategory, selectedSubcategory._id, item._id)}
+                                                                                onClick={() => deleteItem(selectedCategory, selectedSubcategory._id, item._id)}
                                                                             >
                                                                                 Delete
                                                                             </button>

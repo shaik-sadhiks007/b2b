@@ -122,9 +122,13 @@ router.post('/:categoryId/subcategories/:subcategoryId/items',
             };
 
             subcategory.items.push(newItem);
-            const updatedCategory = await category.save();
+            const savedCategory = await category.save();
             
-            res.status(201).json(updatedCategory);
+            // Get the newly added item with its _id from the saved category
+            const updatedSubcategory = savedCategory.subcategories.id(req.params.subcategoryId);
+            const savedItem = updatedSubcategory.items[updatedSubcategory.items.length - 1];
+            
+            res.status(201).json(savedItem);
         } catch (error) {
             console.error('Error in item creation:', error);
             res.status(400).json({ 

@@ -85,16 +85,7 @@ const OrderHistory = () => {
         return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading orders...</p>
-                </div>
-            </div>
-        );
-    }
+    
 
     return (
         <div className="container-fluid px-0">
@@ -103,10 +94,15 @@ const OrderHistory = () => {
                 <Sidebar />
             </div>
             <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
-                <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <h1 className="text-3xl font-bold text-gray-900 mb-8">Order History</h1>
-                        {orders.length === 0 ? (
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                                <p className="mt-4 text-gray-600">Loading orders...</p>
+                            </div>
+                        ) : orders.length === 0 ? (
                             <div className="text-center py-12">
                                 <p className="text-gray-500 text-lg">No orders found</p>
                             </div>

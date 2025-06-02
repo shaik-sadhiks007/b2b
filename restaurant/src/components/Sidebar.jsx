@@ -38,7 +38,7 @@ const Sidebar = () => {
                                     to={item.path}
                                     className="text-decoration-none text-dark"
                                 >
-                                    <div className={`p-3 d-flex align-items-center hover-bg-light rounded-3 mb-1 ${
+                                    <div className={`p-3 d-flex align-items-center rounded-3 mb-1 ${
                                         isActive ? 'bg-blue-50' : ''
                                     }`}>
                                         <i className={`bi ${item.icon} me-3`}></i>

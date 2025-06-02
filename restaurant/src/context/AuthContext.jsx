@@ -1,13 +1,14 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../api/api';
+import { toast } from 'react-toastify';
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState([]);
-    const [loading, setLoading] = useState(true);
+const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true);
     const [restaurant, setRestaurant] = useState(null);
 
     // Memoize fetchUserData to prevent unnecessary re-renders
@@ -160,6 +161,8 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         setUser(null);
         setRestaurant(null);
+        delete axios.defaults.headers.common['Authorization'];
+        toast.success('Logged out successfully');
     }, []);
 
     const value = {
@@ -180,4 +183,6 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-}; 
+};
+
+export default AuthProvider;

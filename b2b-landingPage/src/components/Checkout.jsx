@@ -368,12 +368,18 @@ const Checkout = () => {
                             {cartData?.items?.map((item) => (
                                 <div key={item.itemId} className="flex items-center justify-between py-4 border-b border-gray-100">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-                                            <img
-                                                src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
-                                                alt={item.name}
-                                                className="w-full h-full object-cover"
-                                            />
+                                        <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden relative">
+                                            {item.photos?.length > 0 ? (
+                                                <img
+                                                    src={item.photos[0]}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                                                    <span className="text-white text-sm font-bold text-center px-2">{item.name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <h3 className="font-medium text-gray-800">{item.name}</h3>

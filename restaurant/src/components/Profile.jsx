@@ -38,6 +38,8 @@ const Profile = () => {
     const [coordinates, setCoordinates] = useState({ lat: '', lng: '' });
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [editingDay, setEditingDay] = useState(null);
+    const [editingTimes, setEditingTimes] = useState({ openTime: '', closeTime: '' });
 
     const [formData, setFormData] = useState({
         restaurantName: '',
@@ -434,6 +436,33 @@ const Profile = () => {
         }
     };
 
+    const handleEditTime = (day, slot) => {
+        setEditingDay(day);
+        setEditingTimes({
+            openTime: slot.openTime,
+            closeTime: slot.closeTime
+        });
+    };
+
+    const handleSaveTime = () => {
+        if (editingDay) {
+            setFormData(prev => ({
+                ...prev,
+                operatingHours: {
+                    ...prev.operatingHours,
+                    timeSlots: {
+                        ...prev.operatingHours.timeSlots,
+                        [editingDay]: {
+                            ...prev.operatingHours.timeSlots[editingDay],
+                            openTime: editingTimes.openTime,
+                            closeTime: editingTimes.closeTime
+                        }
+                    }
+                }
+            }));
+            setEditingDay(null);
+        }
+    };
 
     return (
         <div className="container-fluid px-0">
@@ -580,6 +609,13 @@ const Profile = () => {
                                                 <div className="card">
                                                     <div className="card-body">
                                                         <div className="row g-3">
+                                                            <div className="col-12 mb-3">
+                                                                <div className="alert alert-info">
+                                                                    <Clock size={18} className="me-2" />
+                                                                    Set your default operating hours. These will apply to all days you mark as open.
+                                                                    You can customize individual day timings directly.
+                                                                </div>
+                                                            </div>
                                                             <div className="col-md-6">
                                                                 <label className="form-label">Default Opening Time</label>
                                                                 <input
@@ -587,7 +623,26 @@ const Profile = () => {
                                                                     className="form-control"
                                                                     name="operatingHours.defaultOpenTime"
                                                                     value={formData.operatingHours?.defaultOpenTime || '09:00'}
-                                                                    onChange={handleInputChange}
+                                                                    onChange={(e) => {
+                                                                        const newTime = e.target.value;
+                                                                        setFormData(prev => {
+                                                                            const newTimeSlots = {};
+                                                                            Object.entries(prev.operatingHours.timeSlots).forEach(([day, slot]) => {
+                                                                                newTimeSlots[day] = {
+                                                                                    ...slot,
+                                                                                    openTime: slot.isOpen ? newTime : slot.openTime
+                                                                                };
+                                                                            });
+                                                                            return {
+                                                                                ...prev,
+                                                                                operatingHours: {
+                                                                                    ...prev.operatingHours,
+                                                                                    defaultOpenTime: newTime,
+                                                                                    timeSlots: newTimeSlots
+                                                                                }
+                                                                            };
+                                                                        });
+                                                                    }}
                                                                 />
                                                             </div>
                                                             <div className="col-md-6">
@@ -596,91 +651,122 @@ const Profile = () => {
                                                                     type="time"
                                                                     className="form-control"
                                                                     name="operatingHours.defaultCloseTime"
-                                                                    value={formData.operatingHours?.defaultCloseTime}
-                                                                    onChange={handleInputChange}
+                                                                    value={formData.operatingHours?.defaultCloseTime || '22:00'}
+                                                                    onChange={(e) => {
+                                                                        const newTime = e.target.value;
+                                                                        setFormData(prev => {
+                                                                            const newTimeSlots = {};
+                                                                            Object.entries(prev.operatingHours.timeSlots).forEach(([day, slot]) => {
+                                                                                newTimeSlots[day] = {
+                                                                                    ...slot,
+                                                                                    closeTime: slot.isOpen ? newTime : slot.closeTime
+                                                                                };
+                                                                            });
+                                                                            return {
+                                                                                ...prev,
+                                                                                operatingHours: {
+                                                                                    ...prev.operatingHours,
+                                                                                    defaultCloseTime: newTime,
+                                                                                    timeSlots: newTimeSlots
+                                                                                }
+                                                                            };
+                                                                        });
+                                                                    }}
                                                                 />
                                                             </div>
-                                                            {Object.entries(formData.operatingHours.timeSlots).map(([day, slot]) => (
-                                                                <div key={day} className="col-md-6">
-                                                                    <div className="card">
-                                                                        <div className="card-body">
-                                                                            <div className="form-check mb-2">
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    className="form-check-input"
-                                                                                    checked={slot.isOpen}
-                                                                                    onChange={(e) => {
-                                                                                        setFormData(prev => ({
-                                                                                            ...prev,
-                                                                                            operatingHours: {
-                                                                                                ...prev.operatingHours,
-                                                                                                timeSlots: {
-                                                                                                    ...prev.operatingHours.timeSlots,
-                                                                                                    [day]: {
-                                                                                                        ...slot,
-                                                                                                        isOpen: e.target.checked,
-                                                                                                        openTime: e.target.checked ? prev.operatingHours.defaultOpenTime : slot.openTime,
-                                                                                                        closeTime: e.target.checked ? prev.operatingHours.defaultCloseTime : slot.closeTime
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                        }));
-                                                                                    }}
-                                                                                />
-                                                                                <label className="form-check-label text-capitalize">{day}</label>
-                                                                            </div>
-                                                                            <div className="row g-2">
-                                                                                <div className="col-6">
-                                                                                    <input
-                                                                                        type="time"
-                                                                                        className="form-control"
-                                                                                        value={slot.openTime}
-                                                                                        onChange={(e) => {
-                                                                                            setFormData(prev => ({
-                                                                                                ...prev,
-                                                                                                operatingHours: {
-                                                                                                    ...prev.operatingHours,
-                                                                                                    timeSlots: {
-                                                                                                        ...prev.operatingHours.timeSlots,
-                                                                                                        [day]: {
-                                                                                                            ...slot,
-                                                                                                            openTime: e.target.value
+                                                            <div className="col-12">
+                                                                <div className="row g-2">
+                                                                    {Object.entries(formData.operatingHours.timeSlots).map(([day, slot]) => (
+                                                                        <div key={day} className="col-md-6 col-lg-4">
+                                                                            <div className="card h-100">
+                                                                                <div className="card-body">
+                                                                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                                                                        <div className="form-check form-switch">
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                className="form-check-input"
+                                                                                                checked={slot.isOpen}
+                                                                                                onChange={(e) => {
+                                                                                                    setFormData(prev => ({
+                                                                                                        ...prev,
+                                                                                                        operatingHours: {
+                                                                                                            ...prev.operatingHours,
+                                                                                                            timeSlots: {
+                                                                                                                ...prev.operatingHours.timeSlots,
+                                                                                                                [day]: {
+                                                                                                                    ...slot,
+                                                                                                                    isOpen: e.target.checked,
+                                                                                                                    openTime: e.target.checked ? prev.operatingHours.defaultOpenTime : slot.openTime,
+                                                                                                                    closeTime: e.target.checked ? prev.operatingHours.defaultCloseTime : slot.closeTime
+                                                                                                                }
+                                                                                                            }
                                                                                                         }
-                                                                                                    }
-                                                                                                }
-                                                                                            }));
-                                                                                        }}
-                                                                                        disabled={!slot.isOpen}
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="col-6">
-                                                                                    <input
-                                                                                        type="time"
-                                                                                        className="form-control"
-                                                                                        value={slot.closeTime}
-                                                                                        onChange={(e) => {
-                                                                                            setFormData(prev => ({
-                                                                                                ...prev,
-                                                                                                operatingHours: {
-                                                                                                    ...prev.operatingHours,
-                                                                                                    timeSlots: {
-                                                                                                        ...prev.operatingHours.timeSlots,
-                                                                                                        [day]: {
-                                                                                                            ...slot,
-                                                                                                            closeTime: e.target.value
-                                                                                                        }
-                                                                                                    }
-                                                                                                }
-                                                                                            }));
-                                                                                        }}
-                                                                                        disabled={!slot.isOpen}
-                                                                                    />
+                                                                                                    }));
+                                                                                                }}
+                                                                                            />
+                                                                                            <label className="form-check-label text-capitalize fw-medium">{day}</label>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    {slot.isOpen ? (
+                                                                                        <div className="row g-2">
+                                                                                            <div className="col-6">
+                                                                                                <label className="form-label small">Opening Time</label>
+                                                                                                <input
+                                                                                                    type="time"
+                                                                                                    className="form-control form-control-sm"
+                                                                                                    value={slot.openTime}
+                                                                                                    onChange={(e) => {
+                                                                                                        setFormData(prev => ({
+                                                                                                            ...prev,
+                                                                                                            operatingHours: {
+                                                                                                                ...prev.operatingHours,
+                                                                                                                timeSlots: {
+                                                                                                                    ...prev.operatingHours.timeSlots,
+                                                                                                                    [day]: {
+                                                                                                                        ...slot,
+                                                                                                                        openTime: e.target.value
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }));
+                                                                                                    }}
+                                                                                                />
+                                                                                            </div>
+                                                                                            <div className="col-6">
+                                                                                                <label className="form-label small">Closing Time</label>
+                                                                                                <input
+                                                                                                    type="time"
+                                                                                                    className="form-control form-control-sm"
+                                                                                                    value={slot.closeTime}
+                                                                                                    onChange={(e) => {
+                                                                                                        setFormData(prev => ({
+                                                                                                            ...prev,
+                                                                                                            operatingHours: {
+                                                                                                                ...prev.operatingHours,
+                                                                                                                timeSlots: {
+                                                                                                                    ...prev.operatingHours.timeSlots,
+                                                                                                                    [day]: {
+                                                                                                                        ...slot,
+                                                                                                                        closeTime: e.target.value
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }));
+                                                                                                    }}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div className="text-danger small">
+                                                                                            Business Closed
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
+                                                                    ))}
                                                                 </div>
-                                                            ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1013,6 +1099,45 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+
+            {editingDay && (
+                <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Edit {editingDay.charAt(0).toUpperCase() + editingDay.slice(1)} Hours</h5>
+                                <button type="button" className="btn-close" onClick={() => setEditingDay(null)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <label className="form-label">Opening Time</label>
+                                        <input
+                                            type="time"
+                                            className="form-control"
+                                            value={editingTimes.openTime}
+                                            onChange={(e) => setEditingTimes(prev => ({ ...prev, openTime: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="col-md-6">
+                                        <label className="form-label">Closing Time</label>
+                                        <input
+                                            type="time"
+                                            className="form-control"
+                                            value={editingTimes.closeTime}
+                                            onChange={(e) => setEditingTimes(prev => ({ ...prev, closeTime: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setEditingDay(null)}>Cancel</button>
+                                <button type="button" className="btn btn-primary" onClick={handleSaveTime}>Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -349,27 +349,31 @@ router.get('/public/:restaurantId', async (req, res) => {
             return res.status(404).json({ message: 'Menu not found for this restaurant' });
         }
 
-        // Format the response to include only necessary fields
-        const formattedMenu = menu.map(category => ({
-            _id: category._id,
-            name: category.name,
-            subcategories: category.subcategories.map(subcategory => ({
-                _id: subcategory._id,
-                name: subcategory.name,
-                items: subcategory.items.map(item => ({
-                    _id: item._id,
-                    name: item.name,
-                    description: item.description,
-                    isVeg: item.isVeg,
-                    customisable: item.customisable,
-                    basePrice: item.basePrice,
-                    totalPrice: item.totalPrice,
-                    packagingCharges: item.packagingCharges,
-                    inStock: item.inStock,
-                    photos: item.photos
-                }))
+        // Format the response to include only necessary fields and filter out empty categories/subcategories
+        const formattedMenu = menu
+            .map(category => ({
+                _id: category._id,
+                name: category.name,
+                subcategories: category.subcategories
+                    .filter(subcategory => subcategory.items && subcategory.items.length > 0)
+                    .map(subcategory => ({
+                        _id: subcategory._id,
+                        name: subcategory.name,
+                        items: subcategory.items.map(item => ({
+                            _id: item._id,
+                            name: item.name,
+                            description: item.description,
+                            isVeg: item.isVeg,
+                            customisable: item.customisable,
+                            basePrice: item.basePrice,
+                            totalPrice: item.totalPrice,
+                            packagingCharges: item.packagingCharges,
+                            inStock: item.inStock,
+                            photos: item.photos
+                        }))
+                    }))
             }))
-        }));
+            .filter(category => category.subcategories.length > 0); // Filter out categories with no subcategories
 
         res.json(formattedMenu);
     } catch (error) {

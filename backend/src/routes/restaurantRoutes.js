@@ -542,8 +542,8 @@ router.get('/public/all', async (req, res) => {
                 category: restaurant.category || '',
                 online: isOnline,
                 operatingHours: {
-                    openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
-                    closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+                    openTime: openTime || null,
+                    closeTime: closeTime || null
                 },
                 currentTime: currentTime // Adding current time for reference
             };
@@ -571,7 +571,7 @@ router.get('/public/:id', async (req, res) => {
         const restaurant = await Restaurant.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('restaurantName images.profileImage description rating location menu operatingHours');
+        }).select('restaurantName images.profileImage description rating location menu operatingHours serviceType');
 
         if (!restaurant) {
             return res.status(404).json({ message: 'Restaurant not found' });
@@ -622,6 +622,7 @@ router.get('/public/:id', async (req, res) => {
             location: restaurant.location || '',
             menu: restaurant.menu || [],
             online: isOnline,
+            serviceType: restaurant.serviceType || '',
             operatingHours: {
                 openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
                 closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null

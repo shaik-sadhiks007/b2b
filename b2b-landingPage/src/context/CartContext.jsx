@@ -79,7 +79,8 @@ export const CartProvider = ({ children }) => {
                             serviceType
                         },
                         restaurantName,
-                        items: [...items]
+                        items: [...items],
+                        serviceType
                     }];
                     newCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
                 } else if (carts[0].restaurantId._id !== restaurantId) {
@@ -90,14 +91,18 @@ export const CartProvider = ({ children }) => {
                             serviceType
                         },
                         restaurantName,
-                        items: [...items]
+                        items: [...items],
+                        serviceType
+
                     }];
                     newCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
                 } else {
                     newCarts = [...carts];
                     newCarts[0] = {
                         ...newCarts[0],
-                        items: [...newCarts[0].items, ...items]
+                        items: [...newCarts[0].items, ...items],
+                        serviceType
+
                     };
                     newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
                 }

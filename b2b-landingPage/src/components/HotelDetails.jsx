@@ -88,10 +88,6 @@ const HotelDetails = () => {
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
     const [pendingAddItem, setPendingAddItem] = useState(null);
 
-    // Debug expanded categories
-    useEffect(() => {
-        console.log('Expanded categories:', expandedCategories);
-    }, [expandedCategories]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -143,6 +139,7 @@ const HotelDetails = () => {
         }
     }, [fetchCart]);
 
+
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prevCategories => {
             if (prevCategories.includes(categoryId)) {
@@ -167,17 +164,21 @@ const HotelDetails = () => {
         }
 
         // Check if there are items from a different restaurant
-        if (carts.length > 0 && carts[0].restaurantId !== restaurant._id) {
+
+        if (carts.length > 0 && carts[0].restaurantId._id !== restaurant._id) {
             setPendingAddItem(item);
             setShowRestaurantModal(true);
             return;
         }
 
         // Find if cart for this restaurant exists
-        const cartForRestaurant = carts.find(c => c.restaurantId === restaurant._id);
+        const cartForRestaurant = carts.find((c) => {
+            return c.restaurantId._id === restaurant._id
+        });
+
         let items = [];
         if (cartForRestaurant) {
-            items = [...cartForRestaurant.items, {
+            items = [{
                 itemId: item._id,
                 name: item.name,
                 quantity: 1,
@@ -187,7 +188,9 @@ const HotelDetails = () => {
                 isVeg: item.isVeg,
                 photos: item.photos || []
             }];
+
         } else {
+
             items = [{
                 itemId: item._id,
                 name: item.name,
@@ -199,6 +202,8 @@ const HotelDetails = () => {
                 photos: item.photos || []
             }];
         }
+
+
 
         const result = await addToCart(
             restaurant._id,
@@ -225,10 +230,10 @@ const HotelDetails = () => {
                 toast.success('Cart cleared successfully');
                 setShowRestaurantModal(false);
                 setPendingAddItem(null);
-                
+
                 // Wait for a moment to ensure cart state is updated
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 // Now add the item
                 if (pendingAddItem) {
                     const item = pendingAddItem;
@@ -382,15 +387,19 @@ const HotelDetails = () => {
                                                                                 </span>
                                                                             )}
                                                                         </div>
-                                                                        {item?.photos.length !== 0 && (
-                                                                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                                                                        <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative">
+                                                                            {item?.photos?.length > 0 ? (
                                                                                 <img
-                                                                                    src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
+                                                                                    src={item.photos[0]}
                                                                                     alt={item.name}
                                                                                     className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
                                                                                 />
-
-                                                                            </div>)}
+                                                                            ) : (
+                                                                                <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                                                                                    <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
                                                                             disabled={!restaurant?.online}

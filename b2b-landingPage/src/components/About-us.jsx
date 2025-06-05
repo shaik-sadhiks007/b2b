@@ -1,10 +1,13 @@
 import React from 'react';
-import aboutUsImage from '../assets/bridge.avif';
-import logo from '../assets/b2bupdate.png'; // Replace with your own image
-import Footer from "./Footer"
+import aboutUsImage from '../assets/aboutus.png';
+import logo from '../assets/b2bupdate.png'; 
+import Footer from '../components/Footer';
+
 const AboutUs = () => {
   return (
+
     <div className="min-h-screen bg-white text-gray-800">
+      
       {/* Full-width Banner Image with text overlay */}
       <div className="w-full h-[100vh] relative">
         <img

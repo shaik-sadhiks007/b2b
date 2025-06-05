@@ -25,6 +25,9 @@ import ProtectedRoute from './components/ProtectedRoute'
 import GuestLogin from "./components/GuestLogin"
 import Profile from "./components/Profile"
 import AboutUs from "./components/About-us"
+import Helpbutton from './components/Helpbutton';
+import Whatsappbutton from './components/Whatsappbutton';
+import Contactus from './components/Contactus';
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -53,6 +56,8 @@ function AppContent() {
           onLoginClick={onLoginClick}
         />
       )}
+      <Helpbutton />
+      <Whatsappbutton />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -79,6 +84,8 @@ function AppContent() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
         <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contactus" element={<Contactus />} />
+
       </Routes>
     </div>
   )

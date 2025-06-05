@@ -1,12 +1,63 @@
 import React from 'react';
-import aboutUsImage from '../assets/bridge.avif';
-import logo from '../assets/b2bupdate.png'; // Replace with your own image
+import aboutUsImage from '../assets/aboutus.png';
+import logo from '../assets/b2bupdate.png'; 
+import Footer from '../components/Footer';
+import Header from '../components/Header';
+import customers from '../assets/customers.webp';
+import billing from '../assets/billing.png';
+import website from '../assets/website.png';
+import order from '../assets/order-management.png';
+import promotion from '../assets/promotion.png';
+import telugu from '../assets/telugu.webp';
+import inventory from '../assets/inventory.png';
 
+const teamMembers = [
+  {
+    name: "Website",
+    
+    image: { website },
+    bio: "Gets a website to showcase their business",
+  },
+  {
+    name: "App in telugu",
+    
+    image: { telugu },
+    bio: "Use your application in telugu also",
+  },
+  {
+    name: "Order management",
+   
+    image: { order },
+    bio: "From order booking to pick-up/delivery everything is recored and notified",
+  },
+
+  {
+    name: "Inventory management",
+    
+    image: { inventory },
+    bio: "Can manage inventory",
+  },
+
+  {
+    name: "Promotions",
+
+    image: { promotion },
+    bio: "Helps in promotions",
+  },
+
+  {
+    name: "Instore-billing",
+   
+    image: { billing },
+    bio: "maintain all bills and katha accounts",
+  },
+];
 const AboutUs = () => {
   return (
     <div className="min-h-screen bg-white text-gray-800">
+      
       {/* Full-width Banner Image with text overlay */}
-      <div className="w-full h-[1000px] relative">
+      <div className="w-full h-[100vh] relative">
         <img
           src={aboutUsImage}
           alt="About Us Banner"
@@ -113,8 +164,36 @@ const AboutUs = () => {
             </ul>
           </div>
         </div>
+
+         <div className="px-6 md:px-16 mt-20 mb-16">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
+          For business owners
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0">
+          {teamMembers.map((member, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl shadow-md overflow-hidden  w-full hover:shadow-lg transition-shadow"
+            >
+              <img
+                src={member.image}
+                alt={member.name}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h3 className="text-xl font-semibold text-gray-800">{member.name}</h3>
+               
+                <p className="text-sm text-gray-600">{member.bio}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      
+
+
+
+      </div>
+      <Footer />
     </div>
   );
 };

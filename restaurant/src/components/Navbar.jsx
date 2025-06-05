@@ -30,64 +30,61 @@ const Navbar = () => {
                         <i className="bi bi-list fs-4"></i>
                     </button>
                     <div className="d-flex flex-column">
-                        <img src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq" alt="logo" width='40px' />
-
-                        {/* <small className="text-muted">restaurant partner</small> */}
+                       <Link  to ="/">
+                       <img
+                            src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
+                            alt="logo"
+                            width="40px"
+                        />
+                        </Link>
                     </div>
                 </div>
+
+                {/* Right-aligned section */}
                 <div className="d-flex align-items-center gap-4">
-                    {/* <button className="btn btn-link text-dark p-0">
-                        <i className="bi bi-bell fs-5"></i>
-                    </button>
-                    <button className="btn btn-link text-dark p-0">
-                        <i className="bi bi-gear fs-5"></i>
-                    </button> */}
+                    {/* About Us and Contact Us links - now moved to the right */}
+                    <div className="d-none d-md-flex gap-4">
+                        <Link className="text-decoration-none text-dark fw-medium" to="/aboutus">
+                            About Us
+                        </Link>
+                        <Link className="text-decoration-none text-dark fw-medium" to="/contactus">
+                            Contact Us
+                        </Link>
+                    </div>
+
+                    {/* User dropdown */}
                     <div className="d-flex align-items-center gap-2">
-                        {/* <div className="dropdown">
+                        <div className="dropdown">
                             <button
-                                className="btn btn-sm dropdown-toggle d-flex align-items-center gap-1"
+                                className="btn btn-link text-dark p-0 d-flex align-items-center gap-2"
                                 type="button"
                                 data-bs-toggle="dropdown"
                             >
-                                <span className={`badge rounded-pill ${isOnline ? 'bg-success' : 'bg-danger'}`}>
-                                    {isOnline ? 'Online' : 'Offline'}
-                                </span>
-                            </button>
-                            <ul className="dropdown-menu rounded-3 shadow-sm">
-                                <li>
-                                    <button
-                                        className="dropdown-item rounded-2"
-                                        onClick={() => onStatusChange('online')}
-                                    >
-                                        Online
-                                    </button>
-                                </li>
-                                <li>
-                                    <button
-                                        className="dropdown-item rounded-2"
-                                        onClick={() => onStatusChange('offline')}
-                                    >
-                                        Offline
-                                    </button>
-                                </li>
-                            </ul>
-                        </div> */}
-                        <div className="dropdown">
-                            <button className="btn btn-link text-dark p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                                 <span className="text-dark">{user?.username || 'User'}</span>
                                 <i className="bi bi-person-circle fs-5"></i>
                             </button>
                             <ul className="dropdown-menu dropdown-menu-end rounded-3 shadow-sm">
-                                <li><Link className="dropdown-item rounded-2" to="/profile">Profile</Link></li>
+                                <li>
+                                    <Link className="dropdown-item rounded-2" to="/profile">
+                                        Profile
+                                    </Link>
+                                </li>
                                 <li><hr className="dropdown-divider" /></li>
-                                <li><button className="dropdown-item rounded-2" onClick={handleLogoutClick}>Logout</button></li>
+                                <li>
+                                    <button
+                                        className="dropdown-item rounded-2"
+                                        onClick={handleLogoutClick}
+                                    >
+                                        Logout
+                                    </button>
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default Navbar;

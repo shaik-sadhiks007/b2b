@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 
+
 const InStoreBilling = () => {
     const [menuItems, setMenuItems] = useState([]);
     const [search, setSearch] = useState('');
@@ -252,6 +253,7 @@ const InStoreBilling = () => {
                     </div>
                 </div>
             </div>
+          
         </div>
     );
 };

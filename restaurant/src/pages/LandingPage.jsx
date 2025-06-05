@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import { AuthContext } from '../context/AuthContext';
 import { ORIGIN_URL } from '../api/api';
 import logo from '../assets/b2bupdate.png';
+import Footer from "../components/Footer";
 const LandingPage = () => {
     const navigate = useNavigate();
     const { user, restaurant, loading, updateToken } = useContext(AuthContext);
@@ -424,90 +425,7 @@ const LandingPage = () => {
             </div>
 
             {/* Footer */}
-            <footer className="bg-white py-5">
-                <div className="container">
-                    <div className="row mb-4">
-                        <div className="col-md-4 mb-5">
-                            <img src= { logo } alt="B2B" style={{ height: '30px', width: '30px' }} className="mb-3" />
-                            <h6 className="text-uppercase fw-bold mb-3">Your one-stop platform for business services.</h6>
-                            {/* <ul className="list-unstyled">
-                                {['Who We Are', 'Blog', 'Work With Us', 'Investor Relations', 'Report Fraud', 'Press Kit'].map((item, index) => (
-                                    <li key={index} className="mb-2">
-                                        <a href="#" className="text-decoration-none text-muted">
-                                            {item}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul> */}
-                        </div>
-
-                        <div className="col-md-4 mb-4">
-                            <h6 className="text-uppercase fw-bold mb-3">Quick Links</h6>
-                            <ul className="list-unstyled">
-                                <li><a href="/aboutus" className="hover:text-blue-500">About Us</a></li>
-                            </ul>
-
-                            {/* <h6 className="text-uppercase fw-bold mb-3 mt-4">Learn More</h6>
-                            <ul className="list-unstyled">
-                                {['Privacy', 'Security', 'Terms', 'Sitemap'].map((item, index) => (
-                                    <li key={index} className="mb-2">
-                                        <a href="#" className="text-decoration-none text-muted">
-                                            {item}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul> */}
-                        </div>
-
-                        <div className="col-md-4 mb-4">
-                            <h6 className="text-uppercase fw-bold mb-3">Contact Us</h6>
-                            <div className="d-flex mb-4">
-                                <ul className="list-unstyled">
-                                    <li>Email: <a href="mailto:example@email.com">support@b2b.com</a></li>
-                                    <li>Phone: <a href="tel:+1234567890">+1 (234) 567-890</a></li>
-                                    <li>Address: Vijayawada, India</li>
-                                </ul>
-                            
-                                {/* {['linkedin', 'instagram', 'twitter', 'youtube', 'facebook'].map((social, index) => (
-                                    <a key={index} href="#" className="me-2 text-decoration-none">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="24"
-                                            height="24"
-                                            fill="currentColor"
-                                            className={`bi bi-${social}`}
-                                            viewBox="0 0 16 16"
-                                        >
-                                            
-                                        </svg>
-                                    </a>
-                                ))} */}
-                            </div>
-
-                            {/* <div className="app-buttons">
-                                <a href="#" className="d-inline-block mb-2">
-                                    <img
-                                        src="/placeholder.svg"
-                                        alt="App Store"
-                                        style={{ height: '40px', width: '120px' }}
-                                        className="img-fluid"
-                                    />
-                                </a>
-                                <a href="#" className="d-inline-block">
-                                    <img
-                                        src="/placeholder.svg"
-                                        alt="Google Play"
-                                        style={{ height: '40px', width: '120px' }}
-                                        className="img-fluid"
-                                    />
-                                </a>
-                            </div> */}
-                        </div>
-                    </div>
-
-
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 };

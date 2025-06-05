@@ -28,6 +28,7 @@ import AboutUs from "./components/About-us"
 import Helpbutton from './components/Helpbutton';
 import Whatsappbutton from './components/Whatsappbutton';
 import Contactus from './components/Contactus';
+import Footer from './components/Footer';
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -58,6 +59,7 @@ function AppContent() {
       )}
       <Helpbutton />
       <Whatsappbutton />
+      
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -87,6 +89,7 @@ function AppContent() {
         <Route path="/contactus" element={<Contactus />} />
 
       </Routes>
+      <Footer />
     </div>
   )
 }

@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import Navbar from "./Navbar"
 import { openWindowWithToken } from "../utils/windowUtils"
-import Footer from "./Footer"
 import axios from 'axios'
 import { API_URL } from '../api/api'
 import Skeleton from 'react-loading-skeleton'
@@ -442,7 +441,7 @@ const Home = () => {
             />
 
             {/* Footer */}
-            <Footer />
+            
         </div>
     )
 }

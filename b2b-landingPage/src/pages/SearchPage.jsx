@@ -217,11 +217,19 @@ function SearchPage() {
                 }}
               >
                 <div className="aspect-w-16 aspect-h-9 mb-4">
-                  <img
-                    src={result.image || 'https://via.placeholder.com/400x225'}
-                    alt={result.name}
-                    className={`w-full h-48 object-cover rounded-lg ${!result.online ? 'grayscale' : ''}`}
-                  />
+                  {result.image ? (
+                    <img
+                      src={result.image}
+                      alt={result.name}
+                      className={`w-full h-48 object-cover rounded-lg ${!result.online ? 'grayscale' : ''}`}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-300 rounded-lg relative">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white text-xl font-bold text-center px-4">{result.name}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{result.name}</h3>
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
@@ -255,11 +263,19 @@ function SearchPage() {
                     navigate(`/${category}/${result.restaurant.id}`);
                   }}
                 >
-                  <img
-                    src={result.image || 'https://via.placeholder.com/400x225'}
-                    alt={result.name}
-                    className={`w-full h-48 object-cover rounded-lg ${!result.restaurant.online ? 'grayscale' : ''}`}
-                  />
+                  {result.image ? (
+                    <img
+                      src={result.image}
+                      alt={result.name}
+                      className={`w-full h-48 object-cover rounded-lg ${!result.restaurant.online ? 'grayscale' : ''}`}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-300 rounded-lg relative">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white text-xl font-bold text-center px-4">{result.name}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{result.name}</h3>

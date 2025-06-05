@@ -164,14 +164,20 @@ const CartPage = () => {
                                     <h2 className="text-xl font-semibold">{cart.restaurantName}</h2>
                                 </div>
                                 <div className="space-y-4">
-                                    {cart.items.map((item) => (
-                                        <div key={item.itemId} className="flex items-center gap-4 py-4 border-b">
-                                            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-                                                <img
-                                                    src={item.photos?.[0] || 'https://via.placeholder.com/150?text=Food'}
-                                                    alt={item.name}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                    {cart.items.map((item, index) => (
+                                        <div key={`${item.itemId}-${index}`} className="flex items-center gap-4 py-4 border-b">
+                                            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden relative">
+                                                {item.photos?.length > 0 ? (
+                                                    <img
+                                                        src={item.photos[0]}
+                                                        alt={item.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                                                        <span className="text-white text-sm font-bold text-center px-2">{item.name}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">

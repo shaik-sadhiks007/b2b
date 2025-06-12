@@ -1,9 +1,9 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { MenuContext } from "../context/MenuContext";
 import Sidebar from "../components/Sidebar";
-import ItemOffcanvas from "../components/ItemOffcanvas";
+import { BiImageAdd, BiTrash } from "react-icons/bi";
 import InventoryManager from "../components/InventoryManager";
 import Orders from "../components/Orders";
 import "../styles/Dashboard.css";
@@ -29,7 +29,7 @@ const Dashboard = () => {
     addItem,
     updateItem,
     deleteItem,
-    toggleCategoryExpansion,
+    addItemsBulk,
   } = useContext(MenuContext);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,23 +37,40 @@ const Dashboard = () => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedSubcategories, setExpandedSubcategories] = useState({});
 
-  // Modal states
+  // Modal states for categories/subcategories
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(""); // 'category', 'subcategory', 'item'
+  const [modalType, setModalType] = useState(""); // 'category', 'subcategory'
   const [modalMode, setModalMode] = useState("add"); // 'add' or 'edit'
   const [modalData, setModalData] = useState({
     name: "",
     price: "",
     isVeg: true,
-    customisable: false,
     parentId: null,
     itemId: null,
   });
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const [bulkItemsInput, setBulkItemsInput] = useState("");
+  const [bulkTarget, setBulkTarget] = useState({
+    categoryId: null,
+    subcategoryId: null,
+  });
 
-  // Add new state for offcanvas
-  const [showOffcanvas, setShowOffcanvas] = useState(false);
+  // Item form states
+  const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [isAddingNewItem, setIsAddingNewItem] = useState(false);
+  const [itemData, setItemData] = useState({
+    name: "",
+    description: "",
+    // serviceType: "Delivery",
+    foodType: "Veg",
+    basePrice: "",
+    photos: [],
+    packagingCharges: "",
+    totalPrice: "",
+    isVeg: true,
+    inStock: true,
+  });
+
   const [infoTooltip, setInfoTooltip] = useState({
     show: false,
     content: "",
@@ -61,7 +78,6 @@ const Dashboard = () => {
   });
 
   const [activeTab, setActiveTab] = useState("menu-editor");
-
   const navigate = useNavigate();
 
   const tabs = [
@@ -70,6 +86,15 @@ const Dashboard = () => {
     // { label: "Taxes", path: "/taxes", icon: "bi-calculator" },
     // { label: "Charges", path: "/charges", icon: "bi-credit-card" }
   ];
+
+  useEffect(() => {
+    const base = parseFloat(itemData.basePrice) || 0;
+    const packaging = parseFloat(itemData.packagingCharges) || 0;
+    setItemData((prev) => ({
+      ...prev,
+      totalPrice: (base + packaging).toFixed(2),
+    }));
+  }, [itemData.basePrice, itemData.packagingCharges]);
 
   const handleStatusChange = (status) => {
     setIsOnline(status === "online");
@@ -100,7 +125,6 @@ const Dashboard = () => {
       name: data?.name || "",
       totalPrice: data?.totalPrice || "",
       isVeg: data?.isVeg ?? true,
-      customisable: data?.customisable ?? false,
       parentId: parentId,
       itemId: data?._id || null,
     });
@@ -142,27 +166,6 @@ const Dashboard = () => {
     // Implement stock change logic if needed
   };
 
-  const handleOffcanvasSave = (itemData) => {
-    if (!selectedCategory || !selectedSubcategory) {
-      toast.error("Please select a category and subcategory first");
-      return;
-    }
-
-    if (editingItem) {
-      updateItem(
-        selectedCategory,
-        selectedSubcategory._id,
-        editingItem._id,
-        itemData
-      );
-    } else {
-      addItem(selectedCategory, selectedSubcategory._id, itemData);
-    }
-    setShowOffcanvas(false);
-    setEditingItem(null);
-    setIsAddingNewItem(false);
-  };
-
   const handleCategorySelect = (categoryId, subcategoryId = null) => {
     setSelectedCategory(categoryId);
     if (subcategoryId) {
@@ -181,8 +184,128 @@ const Dashboard = () => {
   const handleAddItemClick = (categoryId, subcategoryId) => {
     handleCategorySelect(categoryId, subcategoryId);
     setEditingItem(null);
-    setIsAddingNewItem(true);
-    setShowOffcanvas(true);
+    setItemData({
+      name: "",
+      description: "",
+      // serviceType: "Delivery",
+       foodType: "Veg",
+      basePrice: "",
+      photos: [],
+      packagingCharges: "",
+      totalPrice: "",
+      // customisable: true,
+      isVeg: true,
+      inStock: true,
+    });
+    setShowItemForm(true);
+  };
+
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setItemData({
+      name: item.name,
+      description: item.description,
+      // serviceType: item.serviceType,
+      //foodType: item.isVeg ? "Veg" : "Non-Veg",
+      basePrice: item.basePrice,
+      photos: item.photos || [],
+      packagingCharges: item.packagingCharges || "",
+      totalPrice: item.totalPrice || "",
+      // customisable: item.customisable,
+      isVeg: item.isVeg,
+      inStock: item.inStock,
+    });
+    setShowItemForm(true);
+  };
+
+  const handleBulkAddSubmit = async (e) => {
+    e.preventDefault();
+    if (!bulkTarget.categoryId || !bulkTarget.subcategoryId) {
+      toast.error("Please select a category and subcategory first");
+      return;
+    }
+    // Split by newlines or commas, trim, and filter out empty names
+    const itemNames = bulkItemsInput
+      .split(/\r?\n|,/)
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (itemNames.length === 0) {
+      toast.error("Please enter at least one item name");
+      return;
+    }
+
+    await addItemsBulk(
+      bulkTarget.categoryId,
+      bulkTarget.subcategoryId,
+      itemNames
+    );
+    setShowBulkAddModal(false);
+    setBulkItemsInput("");
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setItemData((prev) => ({
+          ...prev,
+          photos: [...prev.photos, reader.result],
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleItemInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setItemData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleItemSubmit = (e) => {
+    e.preventDefault();
+
+    if (!selectedCategory || !selectedSubcategory) {
+      toast.error("Please select a category and subcategory first");
+      return;
+    }
+
+    // Prepare the item data for submission
+    const submissionData = {
+      ...itemData,
+     
+      // Remove foodType if not needed in the backend
+    };
+
+    if (editingItem) {
+      updateItem(
+        selectedCategory,
+        selectedSubcategory._id,
+        editingItem._id,
+        submissionData
+      );
+    } else {
+      addItem(selectedCategory, selectedSubcategory._id, submissionData);
+    }
+
+    setShowItemForm(false);
+    setEditingItem(null);
   };
 
   const handleDeleteItem = (categoryId, subcategoryId, itemId, e) => {
@@ -203,7 +326,6 @@ const Dashboard = () => {
       },
     });
 
-    // Hide tooltip after 3 seconds
     setTimeout(() => {
       setInfoTooltip((prev) => ({ ...prev, show: false }));
     }, 3000);
@@ -230,83 +352,348 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Item Offcanvas */}
-      <ItemOffcanvas
-        show={showOffcanvas}
-        onHide={() => {
-          setShowOffcanvas(false);
-          setEditingItem(null);
-          setIsAddingNewItem(false);
-        }}
-        onSave={handleOffcanvasSave}
-        initialData={isAddingNewItem ? {} : editingItem || {}}
-        subcategoryName={selectedSubcategory?.name || ""}
-        subcategoryItems={selectedSubcategory?.items || []}
-      />
+      {/* Item Form Modal */}
+      {showItemForm && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show" style={{ display: "block" }}>
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {editingItem ? "Edit Item" : "Add New Item"} -{" "}
+                    {selectedSubcategory?.name}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowItemForm(false);
+                      setEditingItem(null);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <form onSubmit={handleItemSubmit}>
+                    <div className="row">
+                      {/* Left Column */}
+                      <div className="col-md-6">
+                        {/* Name */}
+                        <div className="mb-3">
+                          <label className="form-label">Item Name*</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="name"
+                            value={itemData.name}
+                            onChange={handleItemInputChange}
+                            required
+                          />
+                        </div>
 
-      {/* Modal for Categories and Subcategories */}
-      <div
-        className={`modal fade ${showModal ? "show" : ""}`}
-        tabIndex="-1"
-        style={{ display: showModal ? "block" : "none" }}
-        aria-hidden="true"
-      >
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">
-                {modalMode === "add"
-                  ? `Add ${
-                      modalType === "category" ? "Category" : "Subcategory"
-                    }`
-                  : `Edit ${
-                      modalType === "category" ? "Category" : "Subcategory"
-                    }`}
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setShowModal(false)}
-              ></button>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label className="form-label">
-                  {modalType === "category" ? "Category" : "Subcategory"} Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={modalData.name}
-                  onChange={(e) =>
-                    setModalData({ ...modalData, name: e.target.value })
-                  }
-                  placeholder={`Enter ${
-                    modalType === "category" ? "category" : "subcategory"
-                  } name`}
-                />
+                        {/* Description */}
+                        <div className="mb-3">
+                          <label className="form-label">Description</label>
+                          <textarea
+                            className="form-control"
+                            name="description"
+                            value={itemData.description}
+                            onChange={handleItemInputChange}
+                            rows="3"
+                          />
+                        </div>
+
+                        {/* Food Type */}
+                        <div className="mb-3">
+                          <label className="form-label">Food Type</label>
+                          <select
+                            className="form-select"
+                            name="foodType"
+                            value={itemData.foodType}
+                            onChange={handleItemInputChange}
+                          >
+                            <option value="Veg">Veg</option>
+                            <option value="Non-Veg">Non-Veg</option>
+                          </select>
+                        </div>
+
+                        {/* Service Type */}
+                        {/* <div className="mb-3">
+                          <label className="form-label">Service Type</label>
+                          <select
+                            className="form-select"
+                            name="serviceType"
+                            value={itemData.serviceType}
+                            onChange={handleItemInputChange}
+                          >
+                            <option value="Delivery">Delivery</option>
+                            <option value="Pickup">Pickup</option>
+                            <option value="Dine-in">Dine-in</option>
+                          </select>
+                        </div> */}
+                      </div>
+
+                      {/* Right Column */}
+                      <div className="col-md-6">
+                        {/* Base Price */}
+                        <div className="mb-3">
+                          <label className="form-label">Base Price*</label>
+                          <div className="input-group">
+                            <span className="input-group-text">₹</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              name="basePrice"
+                              value={itemData.basePrice}
+                              onChange={handleItemInputChange}
+                              min="0"
+                              step="0.01"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Packaging Charges */}
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Packaging Charges
+                          </label>
+                          <div className="input-group">
+                            <span className="input-group-text">₹</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              name="packagingCharges"
+                              value={itemData.packagingCharges}
+                              onChange={handleItemInputChange}
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Total Price (readonly) */}
+                        <div className="mb-3">
+                          <label className="form-label">Total Price</label>
+                          <div className="input-group">
+                            <span className="input-group-text">₹</span>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={itemData.totalPrice}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+
+                        {/* Toggle Switches */}
+                        {/* <div className="mb-3">
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              name="customisable"
+                              checked={itemData.customisable}
+                              onChange={handleItemInputChange}
+                              id="customisableSwitch"
+                            />
+                            <label className="form-check-label" htmlFor="customisableSwitch">
+                              Customisable
+                            </label>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              name="inStock"
+                              checked={itemData.inStock}
+                              onChange={handleItemInputChange}
+                              id="inStockSwitch"
+                            />
+                            <label className="form-check-label" htmlFor="inStockSwitch">
+                              In Stock
+                            </label>
+                          </div>
+                        </div> */}
+                      </div>
+                    </div>
+
+                    {/* Image Upload */}
+                    <div className="mb-3">
+                      <label className="form-label">Images</label>
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+                        {itemData.photos.map((photo, index) => (
+                          <div
+                            key={index}
+                            className="position-relative"
+                            style={{ width: "100px" }}
+                          >
+                            <img
+                              src={photo.url}
+                              alt={photo.name}
+                              className="img-thumbnail"
+                              style={{ height: "100px", objectFit: "cover" }}
+                            />
+                            <button
+                              type="button"
+                              className="position-absolute top-0 end-0 btn btn-sm btn-danger"
+                              onClick={() => removeImage(index)}
+                            >
+                              <BiTrash />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <label className="btn btn-outline-primary">
+                        <BiImageAdd className="me-1" />
+                        Add Images
+                        <input
+                          type="file"
+                          className="d-none"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          disabled={itemData.photos.length >= 5}
+                        />
+                      </label>
+                      <small className="text-muted ms-2">
+                        Max 5 images (500KB each)
+                      </small>
+                    </div>
+
+                    <div className="modal-footer">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setShowItemForm(false);
+                          setEditingItem(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-primary">
+                        {editingItem ? "Update Item" : "Add Item"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleModalSubmit}
-              >
-                {modalMode === "add" ? "Add" : "Save Changes"}
-              </button>
+          </div>
+        </>
+      )}
+      {showBulkAddModal && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show" style={{ display: "block" }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <form onSubmit={handleBulkAddSubmit}>
+                  <div className="modal-header">
+                    <h5 className="modal-title">Bulk Add Items</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowBulkAddModal(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Enter item names (one per line or comma-separated)
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows={6}
+                        value={bulkItemsInput}
+                        onChange={(e) => setBulkItemsInput(e.target.value)}
+                        placeholder="e.g. Pappu&#10;Rasam&#10;Curd"
+                      />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowBulkAddModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Add Items
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      {showModal && <div className="modal-backdrop fade show"></div>}
+        </>
+      )}
+
+      {/* Modal for Categories and Subcategories */}
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal fade show" style={{ display: "block" }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {modalMode === "add"
+                      ? `Add ${
+                          modalType === "category" ? "Category" : "Subcategory"
+                        }`
+                      : `Edit ${
+                          modalType === "category" ? "Category" : "Subcategory"
+                        }`}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      {modalType === "category" ? "Category" : "Subcategory"}{" "}
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={modalData.name}
+                      onChange={(e) =>
+                        setModalData({ ...modalData, name: e.target.value })
+                      }
+                      placeholder={`Enter ${
+                        modalType === "category" ? "category" : "subcategory"
+                      } name`}
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleModalSubmit}
+                  >
+                    {modalMode === "add" ? "Add" : "Save Changes"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div style={{ marginTop: "60px" }}>
         <Navbar />
@@ -356,13 +743,36 @@ const Dashboard = () => {
                   {/* Categories Section */}
                   <div className="col-md-12">
                     <div className="d-flex justify-content-between align-items-center mb-4">
-                      <h4 className="mb-0 fw-bold">Categories ({categories.length})</h4>
+                      <h4 className="mb-0 fw-bold fs-5 fs-sm-4 fs-md-3 fs-lg-2">
+                        Categories ({categories.length})
+                      </h4>
                       <button
-                        className="btn btn-primary px-3 py-2"
+                        className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
                         onClick={() => openModal("category", "add")}
                       >
-                        <i className="bi bi-plus-lg me-2 fs-5"></i>
-                        Add Category
+                        <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                        <span className="d-none d-sm-inline">Add Category</span>
+                        <span className="d-inline d-sm-none"></span>
+                      </button>
+                      <button
+                        className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
+                        onClick={() => {
+                          if (!selectedCategory || !selectedSubcategory) {
+                            toast.error(
+                              "Please select a category and subcategory first"
+                            );
+                            return;
+                          }
+                          setBulkTarget({
+                            categoryId: selectedCategory,
+                            subcategoryId: selectedSubcategory._id,
+                          });
+                          setShowBulkAddModal(true);
+                        }}
+                      >
+                       <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                        <span className="d-none d-sm-inline">Add Menu List</span>
+                        <span className="d-inline d-sm-none">List</span>
                       </button>
                     </div>
 
@@ -407,7 +817,7 @@ const Dashboard = () => {
                                 }}
                                 title="Info"
                               >
-                                <i className="bi bi-info-circle fs-5"></i>
+                                <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                               </button>
                               <button
                                 className="btn btn-outline-success p-2"
@@ -422,7 +832,7 @@ const Dashboard = () => {
                                 }}
                                 title="Add Subcategory"
                               >
-                                <i className="bi bi-plus-lg fs-5"></i>
+                                <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                               </button>
                               <button
                                 className="btn btn-outline-secondary p-2"
@@ -431,7 +841,7 @@ const Dashboard = () => {
                                   openModal("category", "edit", category);
                                 }}
                               >
-                                <i className="bi bi-pencil fs-5"></i>
+                                <i className="bi bi-pencil fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                               </button>
                               <button
                                 className="btn btn-outline-danger p-2"
@@ -440,7 +850,7 @@ const Dashboard = () => {
                                   deleteCategory(category._id);
                                 }}
                               >
-                                <i className="bi bi-trash fs-5"></i>
+                                <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                               </button>
                               <i
                                 className={`bi bi-chevron-${
@@ -454,10 +864,7 @@ const Dashboard = () => {
                           {expandedCategories[category._id] && (
                             <div className="accordion-body p-3 bg-light">
                               {category.subcategories.map((subcategory) => (
-                                <div
-                                  key={subcategory._id}
-                                  className="mb-3"
-                                >
+                                <div key={subcategory._id} className="mb-3">
                                   <div
                                     className={`d-flex justify-content-between align-items-center p-3 rounded ${
                                       selectedSubcategory?._id ===
@@ -468,11 +875,17 @@ const Dashboard = () => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleSubcategory(subcategory._id);
+                                      handleCategorySelect(
+                                        category._id,
+                                        subcategory._id
+                                      );
                                     }}
                                   >
                                     <div className="d-flex align-items-center">
-                                      <span className="fs-5 fw-medium">{subcategory.name}</span>
-                                      <span className="badge bg-secondary ms-3 fs-6">
+                                      <span className="fw-medium fs-6 fs-sm-5 fs-md-4 fs-lg-3">
+                                        {subcategory.name}
+                                      </span>
+                                      <span className="badge bg-secondary ms-3 fs-6 fs-sm-5 fs-md-5 fs-lg-4 gap-2">
                                         {subcategory.items.length}
                                       </span>
                                     </div>
@@ -488,7 +901,7 @@ const Dashboard = () => {
                                         }}
                                         title="Info"
                                       >
-                                        <i className="bi bi-info-circle fs-5"></i>
+                                        <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                       </button>
                                       <button
                                         className="btn btn-outline-secondary p-2"
@@ -502,7 +915,7 @@ const Dashboard = () => {
                                           );
                                         }}
                                       >
-                                        <i className="bi bi-pencil fs-5"></i>
+                                        <i className="bi bi-pencil fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                       </button>
                                       <button
                                         className="btn btn-outline-success p-2"
@@ -515,7 +928,7 @@ const Dashboard = () => {
                                         }}
                                         title="Add Item"
                                       >
-                                        <i className="bi bi-plus-lg fs-5"></i>
+                                        <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                       </button>
                                       <button
                                         className="btn btn-outline-danger p-2"
@@ -527,7 +940,7 @@ const Dashboard = () => {
                                           );
                                         }}
                                       >
-                                        <i className="bi bi-trash fs-5"></i>
+                                        <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                       </button>
                                       <i
                                         className={`bi bi-chevron-${
@@ -544,21 +957,19 @@ const Dashboard = () => {
                                         <div
                                           key={item._id}
                                           className="d-flex justify-content-between align-items-center p-3 my-2 bg-white rounded"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingItem(item);
-                                            setShowOffcanvas(true);
-                                          }}
+                                          onClick={() => handleEditItem(item)}
                                         >
                                           <div className="d-flex align-items-center">
-                                            <i
+                                            {/* <i
                                               className={`bi bi-circle-fill me-3 ${
                                                 item.isVeg
                                                   ? "text-success"
                                                   : "text-danger"
                                               } fs-6`}
-                                            ></i>
-                                            <span className="fs-5">{item.name}</span>
+                                            ></i> */}
+                                            <span className="fs-5">
+                                              {item.name}
+                                            </span>
                                           </div>
                                           <div className="d-flex align-items-center gap-3">
                                             <button
@@ -572,7 +983,7 @@ const Dashboard = () => {
                                               }}
                                               title="Info"
                                             >
-                                              <i className="bi bi-info-circle fs-5"></i>
+                                              <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                             </button>
                                             <button
                                               className="btn btn-outline-danger p-2"
@@ -586,7 +997,7 @@ const Dashboard = () => {
                                               }
                                               title="Delete Item"
                                             >
-                                              <i className="bi bi-trash fs-5"></i>
+                                              <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                             </button>
                                           </div>
                                         </div>

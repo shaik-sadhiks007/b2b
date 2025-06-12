@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import logo from '../assets/b2bupdate.png';
+import Contactus from '../components/Contactus';
 const Footer = () => {
     return (
         <footer className="bg-gray-800 py-5">
@@ -18,6 +19,7 @@ const Footer = () => {
                         <h6 className="text-uppercase text-white fw-bold mb-3">Quick Links</h6>
                         <ul className="list-unstyled">
                             <li><a href="/aboutus" className="text-gray-400 hover:text-white">About Us</a></li>
+                            <li><a href="/contactus" className="text-gray-400 hover:text-white">Contact Us</a></li>
                         </ul>
                     </div>
 

@@ -173,6 +173,22 @@ export const MenuProvider = ({ children }) => {
             toast.error('Failed to add item');
         }
     };
+     const addItemsBulk = async (categoryId, subcategoryId, itemNames) => {
+        if (!Array.isArray(itemNames) || itemNames.length === 0) {
+            setError('No item names provided');
+            toast.error('No item names provided');
+            return;
+        }
+        try {
+            for (const name of itemNames) {
+                await addItem(categoryId, subcategoryId, { name, basePrice: "30", totalPrice: "30", isVeg: true, });
+            }
+            toast.success('Items added successfully');
+        } catch (error) {
+            setError('Error adding items in bulk');
+            toast.error('Failed to add items in bulk');
+        }
+    };
 
     // Update item
     const updateItem = async (categoryId, subcategoryId, itemId, itemData) => {
@@ -296,7 +312,8 @@ export const MenuProvider = ({ children }) => {
         updateItem,
         deleteItem,
         toggleCategoryExpansion,
-        fetchMenu
+        fetchMenu,
+        addItemsBulk
     };
 
     return (

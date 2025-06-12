@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 
+
 const InStoreBilling = () => {
     const { user } = useContext(AuthContext);
     const [menuItems, setMenuItems] = useState([]);
@@ -254,6 +255,7 @@ const InStoreBilling = () => {
                     </div>
                 </div>
             </div>
+          
         </div>
     );
 };

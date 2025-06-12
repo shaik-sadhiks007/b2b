@@ -17,6 +17,8 @@ import restaurantService from '../services/restaurantService';
 import { AuthContext } from '../context/AuthContext';
 import { CloudCog } from 'lucide-react';
 import { API_URL } from '../api/api';
+import Review from '../components/Review';
+
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -513,7 +515,7 @@ const AddRestaurant = () => {
 
                     if (currentStep === 4 || step === 5) {
                         // Redirect to home page after completing step 4
-                        navigate('/');
+                        navigate('/review');
                     } else {
                         setCurrentStep(step);
                     }
@@ -857,6 +859,7 @@ const AddRestaurant = () => {
                     </div>
                 </div>
             </div>
+            
         </div>
     );
 };

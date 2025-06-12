@@ -4,28 +4,28 @@ import { Link } from 'react-router-dom';
 
 const Header = () => {
     const { user, loading, handleLogout, token } = useContext(AuthContext);
-    const [isScrolled, setIsScrolled] = useState(false);
+    // const [isScrolled, setIsScrolled] = useState(false);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 50) {
-                setIsScrolled(true);
-            } else {
-                setIsScrolled(false);
-            }
-        };
+    // useEffect(() => {
+    //     const handleScroll = () => {
+    //         if (window.scrollY > 50) {
+    //             setIsScrolled(false);
+    //         } else {
+    //             setIsScrolled(false);
+    //         }
+    //     };
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    //     window.addEventListener('scroll', handleScroll);
+    //     return () => window.removeEventListener('scroll', handleScroll);
+    // }, []);
 
     return (
         <nav
-            className={`navbar navbar-expand-lg fixed-top ${isScrolled ? 'bg-white shadow-sm' : 'bg-transparent'}`}
+            className= "navbar navbar-expand-lg fixed-top bg-white shadow-sm"
             style={{ transition: 'all 0.3s ease-in-out' }}
         >
             <div className="container">
-                <Link className={`navbar-brand fw-bold ${isScrolled ? 'text-dark' : 'text-white'}`} to="/">
+                <Link className= "navbar-brand fw-bold text-dark" to="/">
                     <img src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq" alt="logo" width='40px'/>
                 </Link>
                 <div className="ms-auto">
@@ -35,11 +35,11 @@ const Header = () => {
                         </div>
                     ) : user ? (
                         <div className="d-flex align-items-center gap-3">
-                            <span className={`${isScrolled ? 'text-dark' : 'text-white'}`}>
+                            <span className='text-dark'>
                                 Welcome, {user.username || user.email}
                             </span>
                             <button
-                                className={`btn ${isScrolled ? 'btn-outline-danger' : 'btn-outline-light'}`}
+                                className= "btn btn-outline-danger"
                                 onClick={handleLogout}
                             >
                                 Logout
@@ -47,13 +47,14 @@ const Header = () => {
                         </div>
                     ) : (
                         <Link to="/login">
-                            <button className={`btn ${isScrolled ? 'btn-outline-primary' : 'btn-outline-light'}`}>
+                            <button className= "btn btn-outline-primary">
                                 Login
                             </button>
                         </Link>
                     )}
                 </div>
             </div>
+           
         </nav>
     );
 };

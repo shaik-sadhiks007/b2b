@@ -20,17 +20,19 @@ import Aboutus from './components/Aboutus'
 import { MenuProvider } from './context/MenuContext'
 import PrivateRoute from './components/PrivateRoute'
 import AuthProvider from './context/AuthContext'
-
+import Footer from './components/Footer';
+import Contactus from './components/Contactus';
+import Helpbutton from './components/Helpbutton';
+import Whatsappbutton from './components/Whatsappbutton';
 function App() {
   return (
     <MobileMenuProvider>
       <AuthProvider>
         <MenuProvider>
           <Router>
-            <ToastContainer
-              autoClose={1000}
-            />
-
+            <ToastContainer  autoClose={1000}/>
+                <Helpbutton />
+                <Whatsappbutton />
             <Routes>
               {/* Public Routes */}
               <Route path='/' element={<LandingPage />} />
@@ -38,7 +40,8 @@ function App() {
               <Route path='/register' element={<Register />} />
               <Route path='/forgot-password' element={<ForgotPassword />} />
               <Route path='/Aboutus' element={<Aboutus />} />
-
+              <Route path = '/Footer' element={<Footer />}  />
+              <Route path = '/contactus' element ={<Contactus />}  />
               {/* Protected Routes */}
               <Route path='/orders' element={
                 <PrivateRoute>

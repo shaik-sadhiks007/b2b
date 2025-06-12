@@ -5,19 +5,20 @@ const Order = require('../models/orderModel');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const Restaurant = require('../models/Restaurant');
 
-// // Initialize Firebase Admin if not already initialized
-// if (!admin.apps.length) {
-//     try {
-//         const serviceAccount = require('../../serviceAccountKey.json');
-//         admin.initializeApp({
-//             credential: admin.credential.cert(serviceAccount)
-//         });
-//     } catch (error) {
-//         console.error('Error initializing Firebase Admin:', error);
-//         throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
-//     }
-// }
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = require('../../serviceAccountKey.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error) {
+        console.error('Error initializing Firebase Admin:', error);
+        throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
+    }
+}
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -26,6 +27,16 @@ const generateToken = (user) => {
         process.env.JWT_SECRET,
         { expiresIn: '30d' }
     );
+};
+
+// Set token cookie
+const setTokenCookie = (res, token) => {
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1 * 24 * 60 * 60 * 1000
+    });
 };
 
 // Generate OTP
@@ -40,7 +51,7 @@ const register = async (req, res) => {
 
         // Verify Firebase user and check email verification
         const firebaseUser = await admin.auth().getUser(firebaseUid);
-        
+
         if (!firebaseUser.emailVerified) {
             return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
         }
@@ -54,12 +65,13 @@ const register = async (req, res) => {
             username,
             email,
             role: 'user',
-            firebaseUid 
+            firebaseUid
         });
 
-        const token = generateToken(user);
+        // const token = generateToken(user);
+        // setTokenCookie(res, token);
+
         res.status(201).json({
-            token,
             user: {
                 id: user._id,
                 username: user.username,
@@ -81,8 +93,9 @@ const login = async (req, res) => {
 
         if (user && user.firebaseUid === firebaseUid) {
             const token = generateToken(user);
+            setTokenCookie(res, token);
+
             res.json({
-                token,
                 user: {
                     id: user._id,
                     username: user.username,
@@ -119,8 +132,9 @@ const googleLogin = async (req, res) => {
         }
 
         const token = generateToken(user);
+        setTokenCookie(res, token);
+
         res.json({
-            token,
             user: {
                 id: user._id,
                 username: user.username,
@@ -138,9 +152,6 @@ const guestLogin = async (req, res) => {
     try {
         const { firebaseUid } = req.body;
 
-        // Verify Firebase user exists
-        // const firebaseUser = await admin.auth().getUser(firebaseUid);
-
         // Check if guest user already exists
         let user = await User.findOne({ firebaseUid });
 
@@ -151,12 +162,13 @@ const guestLogin = async (req, res) => {
                 email: `guest_${firebaseUid.slice(0, 6)}@gmail.com`,
                 role: 'guest',
                 firebaseUid
-            }); 
+            });
         }
 
         const token = generateToken(user);
+        setTokenCookie(res, token);
+
         res.json({
-            token,
             user: {
                 id: user._id,
                 username: user.username,
@@ -233,7 +245,16 @@ const resendOTP = async (req, res) => {
 // Get user profile
 const getProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        let user = await User.findById(req.user.id).select('-password');
+        // Convert Mongoose document to plain JavaScript object
+        user = user.toObject();
+        
+        // Find restaurant and add its ID
+        let restaurant = await Restaurant.findOne({ owner: user._id });
+        if (restaurant) {
+            user.restaurantId = restaurant._id;
+        }
+
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -305,6 +326,35 @@ const uploadImage = async (req, res) => {
     }
 };
 
+// Add logout function
+const logout = (req, res) => {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out successfully' });
+};
+
+// Transfer token between domains
+const transferToken = async (req, res) => {
+    try {
+        // Get the token from the source domain's cookie
+        const token = req.cookies.token;
+
+        if (!token) {
+            return res.status(401).json({ message: 'No token found' });
+        }
+
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Set the token cookie for the target domain
+        setTokenCookie(res, token);
+
+        res.json({ message: 'Token transferred successfully' });
+    } catch (error) {
+        console.error('Token transfer error:', error);
+        res.status(500).json({ message: 'Failed to transfer token' });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -314,5 +364,7 @@ module.exports = {
     resendOTP,
     getProfile,
     updateProfile,
-    uploadImage
+    uploadImage,
+    logout,
+    transferToken
 };

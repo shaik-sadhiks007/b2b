@@ -26,7 +26,6 @@ const router = express.Router();
 // Get all menu items for a specific restaurant
 router.get('/', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
-        console.log(req.restaurant._id, "restaurant details");
         const menu = await Menu.find({ restaurantId: req.restaurant._id });
         res.json(menu);
     } catch (error) {

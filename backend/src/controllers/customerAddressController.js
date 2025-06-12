@@ -14,8 +14,6 @@ const getAllAddresses = async (req, res) => {
 const createAddress = async (req, res) => {
   try {
     const { isDefault, ...addressData } = req.body;
-
-    console.log(req.user,"addre")
     
     // If this is set as default, unset all other default addresses for this user
     if (isDefault) {

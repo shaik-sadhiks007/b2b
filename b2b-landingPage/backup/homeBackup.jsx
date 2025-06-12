@@ -5,14 +5,32 @@ import { Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import Navbar from "./Navbar"
-import { openWindowWithToken } from "../utils/windowUtils"
 import Footer from "./Footer"
 import axios from 'axios'
 import { API_URL } from '../api/api'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { useLocationContext } from '../context/LocationContext'
+import logo from '../assets/b2bupdate.png'
+import { useQueryClient } from '@tanstack/react-query'
 
+export const fetchRestaurantDetails = async ({ queryKey }) => {
+    const [_, restaurantId, location] = queryKey;
+    const savedLocation = localStorage.getItem('userLocation');
+
+    const restaurantUrl = `${API_URL}/api/restaurants/public/${restaurantId}${savedLocation && location ? `?lat=${JSON.parse(savedLocation).coordinates.lat}&lng=${JSON.parse(savedLocation).coordinates.lng}` : ''}`;
+    const menuUrl = `${API_URL}/api/menu/public/${restaurantId}`;
+
+    const [restaurantResponse, menuResponse] = await Promise.all([
+        axios.get(restaurantUrl),
+        axios.get(menuUrl)
+    ]);
+
+    return {
+        restaurantData: restaurantResponse.data,
+        menuData: menuResponse.data,
+    };
+};
 
 const categories = [
     { name: "All", value: "all", icon: "🌐", color: "bg-indigo-100" },
@@ -58,11 +76,13 @@ const Home = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
-    const [restaurants, setRestaurants] = useState([])
+    const [allBusinesses, setAllBusinesses] = useState([])
+    const [filteredBusinesses, setFilteredBusinesses] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
     const { location, setLocation, onAllowLocation: contextAllowLocation } = useLocationContext()
+    const queryClient = useQueryClient()
 
     // Add localStorage change listener
     useEffect(() => {
@@ -199,55 +219,50 @@ const Home = () => {
         return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
     }, [])
 
-    const handleServiceProviderClick = (provider) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            navigate(provider.link, {
-                state: {
-                    hotelData: provider,
-                    token
-                }
-            });
-        } else {
-            navigate('/login');
-        }
-    };
-
     const handleRestaurantClick = (restaurant) => {
         // Get the category from the restaurant or default to 'restaurant'
         const category = restaurant.category?.toLowerCase() || 'restaurant';
         navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
     };
 
+    // Fetch all businesses when location changes
     useEffect(() => {
-        const fetchRestaurants = async () => {
+        const fetchBusinesses = async () => {
             try {
-                setLoading(true); 
+                setLoading(true);
                 const savedLocation = localStorage.getItem('userLocation');
                 let url = `${API_URL}/api/restaurants/public/all`;
 
-                // Add category to query params if not "all"
-                if (selectedCategory !== "all") {
-                    url += `?category=${encodeURIComponent(selectedCategory)}`;
-                }
-
                 if (savedLocation) {
                     const { coordinates } = JSON.parse(savedLocation);
-                    url += `${selectedCategory !== "all" ? '&' : '?'}lat=${coordinates.lat}&lng=${coordinates.lng}`;
+                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
                 }
 
                 const response = await axios.get(url);
-                setRestaurants(response.data);
+                setAllBusinesses(response.data);
+                setFilteredBusinesses(response.data);
             } catch (err) {
                 setError('Failed to fetch restaurants');
                 console.error('Error fetching restaurants:', err);
             } finally {
-                setLoading(false); 
+                setLoading(false);
             }
         };
 
-        fetchRestaurants();
-    }, [selectedCategory, localStorage.getItem('userLocation')]);
+        fetchBusinesses();
+    }, [localStorage.getItem('userLocation')]);
+
+    // Filter businesses when category changes
+    useEffect(() => {
+        if (selectedCategory === 'all') {
+            setFilteredBusinesses(allBusinesses);
+        } else {
+            const filtered = allBusinesses.filter(business => 
+                business.category?.toLowerCase() === selectedCategory.toLowerCase()
+            );
+            setFilteredBusinesses(filtered);
+        }
+    }, [selectedCategory, allBusinesses]);
 
     const renderRestaurants = () => {
         if (loading) {
@@ -260,7 +275,7 @@ const Home = () => {
             return <ErrorCard message={error} />;
         }
 
-        if (restaurants.length === 0) {
+        if (filteredBusinesses.length === 0) {
             return (
                 <div className="text-center py-8 col-span-full mt-5">
                     <p className="text-xl text-gray-600 mb-2">Sorry, we are not in your location yet 😔</p>
@@ -269,11 +284,18 @@ const Home = () => {
             );
         }
 
-        return restaurants.map((restaurant) => (
+        return filteredBusinesses.map((restaurant) => (
             <div
                 key={restaurant._id}
                 className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
                 onClick={() => handleRestaurantClick(restaurant)}
+                onMouseEnter={() => {
+                    queryClient.prefetchQuery({
+                        queryKey: ['restaurantAndMenu', restaurant._id, location],
+                        queryFn: fetchRestaurantDetails,
+                        staleTime: 5 * 60 * 1000, // 5 minutes
+                    });
+                }}
             >
                 <div className="relative h-48 w-full">
                     <img
@@ -304,12 +326,19 @@ const Home = () => {
                                 {restaurant.online ? 'Open' : 'Closed'}
                             </span>
                         </div>
-                        {restaurant.operatingHours?.openTime && restaurant.operatingHours?.closeTime && (
+                        {restaurant.operatingHours?.openTime && restaurant.operatingHours?.closeTime ? (
                             <div className="flex items-center gap-1.5 text-gray-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                                 </svg>
                                 <span className="text-sm">{restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.5 text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">Business opens on next day</span>
                             </div>
                         )}
                     </div>
@@ -336,10 +365,10 @@ const Home = () => {
                         B2B
                     </h1> */}
 
-                    <img
-                        src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
-                        alt="logo"
+                    <img 
+                        src= { logo } 
                         loading="lazy"
+                        alt="logo" 
                         style={{
                             maxWidth: '100%',
                             width: '300px',
@@ -349,7 +378,7 @@ const Home = () => {
                     />
 
                     {/* Search and Location Inputs Row */}
-                    <div className="w-full flex gap-4">
+                    <div className="w-full flex flex-col md:flex-row gap-4 px-4 md:px-0">
                         {/* Location Input */}
                         <div className="relative flex-1">
                             <input

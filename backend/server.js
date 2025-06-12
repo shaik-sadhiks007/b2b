@@ -4,6 +4,9 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const fs = require('fs');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -38,9 +41,64 @@ const customerAddressRoutes = require('./src/routes/customerAddressRoutes');
 const searchRoutes = require('./src/routes/searchRoutes');
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(server, {
+    cors: {
+        origin: [
+            process.env.FRONTEND_URL || 'http://localhost:5173',
+            process.env.SECOND_FRONTEND_URL || 'http://localhost:5174'
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+    console.log(`Socket connected: ${socket.id}`);
+
+    socket.on('newOrder', (orderData) => {
+        console.log('New order received:', orderData);
+        io.emit('newOrder', orderData); // Changed from orderUpdate to newOrder
+    });
+
+    socket.on('orderStatusUpdate', (orderData) => {
+        console.log('Order status update:', orderData);
+        io.emit('orderStatusUpdate', orderData); // Broadcast status updates
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`Socket disconnected: ${socket.id}`);
+    });
+});
+
+// Define allowed origins
+const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    process.env.SECOND_FRONTEND_URL || 'http://localhost:5174'
+];
+
+// CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
@@ -64,6 +122,6 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 }); 

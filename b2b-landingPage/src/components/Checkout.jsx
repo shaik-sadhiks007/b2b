@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -6,6 +6,11 @@ import { API_URL } from '../api/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useCart } from '../context/CartContext';
+import { HotelContext } from '../contextApi/HotelContextProvider';
+import io from 'socket.io-client';
+
+// Initialize socket connection
+const socket = io(API_URL, { withCredentials: true });
 
 const CheckoutItemSkeleton = () => (
     <div className="flex items-center justify-between py-4 border-b border-gray-100">
@@ -92,6 +97,7 @@ const Checkout = () => {
     const [orderType, setOrderType] = useState('DELIVERY');
     const navigate = useNavigate();
     const { carts, clearCart } = useCart();
+    const { user } = useContext(HotelContext);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -107,8 +113,7 @@ const Checkout = () => {
     useEffect(() => {
         const initializeCheckout = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) {
+                if (!user) {
                     navigate('/login');
                     return;
                 }
@@ -120,9 +125,7 @@ const Checkout = () => {
                 }
 
                 // Fetch addresses
-                const addressesResponse = await axios.get(`${API_URL}/api/customer-address`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const addressesResponse = await axios.get(`${API_URL}/api/customer-address`);
 
                 const cartData = carts[0];
 
@@ -151,7 +154,7 @@ const Checkout = () => {
         };
 
         initializeCheckout();
-    }, [navigate, carts]);
+    }, [navigate, carts, user]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -201,7 +204,6 @@ const Checkout = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
             const cartData = carts[0];
             const orderData = {
                 items: cartData.items.map(item => ({
@@ -230,30 +232,19 @@ const Checkout = () => {
                 }
             }
 
-            // Show loading toast
-            const loadingToast = toast.loading('Processing your order...');
-
-            const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            const response = await axios.post(`${API_URL}/api/orders/place-order`, orderData);
             if (response.data) {
+                // Emit new order event through socket
+                socket.emit('newOrder', response.data.order);
 
-
-                // Dismiss loading toast
-                toast.dismiss(loadingToast);
-
-                // Show success toast
                 toast.success('Order placed successfully! Redirecting to order details...');
                 setTimeout(() => {
                     navigate(`/ordersuccess/${response.data.order._id}`);
                 }, 500);
 
-                // Clear cart using context
                 await clearCart();
             }
         } catch (err) {
-            console.error('Order placement error:', err);
 
             if (err.response?.data?.error) {
                 toast.error(err.response.data.error);
@@ -291,11 +282,9 @@ const Checkout = () => {
 
     const handleAddAddress = async () => {
         try {
-            const token = localStorage.getItem('token');
             const response = await axios.post(
                 `${API_URL}/api/customer-address`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}` } }
+                formData
             );
 
             // Add the new address to the addresses list
@@ -414,8 +403,8 @@ const Checkout = () => {
                                                 <div
                                                     key={address._id}
                                                     className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedAddress?._id === address._id
-                                                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                                                            : 'border-gray-200 hover:border-blue-300'
+                                                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                        : 'border-gray-200 hover:border-blue-300'
                                                         }`}
                                                     onClick={() => setSelectedAddress(address)}
                                                 >

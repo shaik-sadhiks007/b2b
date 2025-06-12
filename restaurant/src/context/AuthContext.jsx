@@ -3,42 +3,31 @@ import axios from 'axios';
 import { API_URL } from '../api/api';
 import { toast } from 'react-toastify';
 
+// Set axios defaults for all requests
+axios.defaults.withCredentials = true;
+
 export const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
     const [restaurant, setRestaurant] = useState(null);
 
     // Memoize fetchUserData to prevent unnecessary re-renders
-    const fetchUserData = useCallback(async (authToken) => {
-        if (!authToken) {
-            setLoading(false);
-            return false;
-        }
-        
+    const fetchUserData = useCallback(async () => {
         try {
             setLoading(true);
-            // console.log('Fetching user data with token:', authToken);
+            const response = await axios.get(`${API_URL}/api/auth/profile`);
             
-            const response = await axios.get(`${API_URL}/api/auth/profile`, {
-                headers: { Authorization: `Bearer ${authToken}` }
-            });
-            
-            // console.log('User data received:', response.data);
             setUser(response.data);
             
             // Fetch restaurant data for the user
-            await fetchRestaurantData(authToken);
+            await fetchRestaurantData();
             
             return true;
         } catch (error) {
             console.error('Error fetching user data:', error);
             if (error.response && error.response.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('transferToken');
-                setToken(null);
                 setUser(null);
                 setRestaurant(null);
             }
@@ -49,13 +38,9 @@ const AuthProvider = ({ children }) => {
     }, []);
 
     // Function to fetch restaurant data
-    const fetchRestaurantData = useCallback(async (authToken) => {
-        if (!authToken) return null;
-        
+    const fetchRestaurantData = useCallback(async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/restaurants`, {
-                headers: { Authorization: `Bearer ${authToken}` }
-            });
+            const response = await axios.get(`${API_URL}/api/restaurants`);
             
             if (response.data && response.data.length > 0) {
                 setRestaurant(response.data[0]);
@@ -71,17 +56,10 @@ const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Function to update token and fetch user data
-    const updateToken = useCallback(async (newToken) => {
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
-        await fetchUserData(newToken);
-    }, [fetchUserData]);
-
     // Login function
-    const login = useCallback(async (newToken) => {
-        await updateToken(newToken);
-    }, [updateToken]);
+    const login = useCallback(async () => {
+        await fetchUserData();
+    }, [fetchUserData]);
 
     // Function to handle restaurant registration click
     const handleRestaurantRegistration = useCallback(() => {
@@ -104,75 +82,43 @@ const AuthProvider = ({ children }) => {
             // If restaurant is published, navigate to dashboard
             return { navigate: '/dashboard' };
         }
+
+        if (restaurant.status === 'review') {
+            // If restaurant is published, navigate to dashboard
+            return { navigate: '/review' };
+        }
         
         // Default case: show service selection modal
         return { showServiceModal: true };
     }, [user, restaurant]);
 
-    // Check for token changes
-    useEffect(() => {
-        const checkToken = async () => {
-            const currentToken = localStorage.getItem('token');
-            const transferToken = localStorage.getItem('transferToken');
-            
-            // If token has changed in localStorage, update our state
-            if (currentToken !== token) {
-                setToken(currentToken);
-            }
-            
-            // If we have a transfer token, use it
-            if (transferToken) {
-                localStorage.setItem('token', transferToken);
-                localStorage.removeItem('transferToken');
-                setToken(transferToken);
-                await fetchUserData(transferToken);
-            } 
-            // If we have a token but no user data, fetch it
-            else if (currentToken && !user) {
-                await fetchUserData(currentToken);
-            }
-            // If we have no token, ensure user is null
-            else if (!currentToken && user) {
-                setUser(null);
-                setRestaurant(null);
-            }
-        };
-
-        checkToken();
-    }, [token, user, fetchUserData]);
-
     // Initial load
     useEffect(() => {
         const initializeAuth = async () => {
-            const currentToken = localStorage.getItem('token');
-            if (currentToken) {
-                await fetchUserData(currentToken);
-            } else {
-                setLoading(false);
-            }
+            await fetchUserData();
         };
 
         initializeAuth();
     }, [fetchUserData]);
 
-    const handleLogout = useCallback(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('transferToken');
-        setToken(null);
-        setUser(null);
-        setRestaurant(null);
-        delete axios.defaults.headers.common['Authorization'];
-        toast.success('Logged out successfully');
+    const handleLogout = useCallback(async () => {
+        try {
+            await axios.post(`${API_URL}/api/auth/logout`);
+            setUser(null);
+            setRestaurant(null);
+            toast.success('Logged out successfully');
+        } catch (error) {
+            console.error('Error during logout:', error);
+            toast.error('Failed to logout');
+        }
     }, []);
 
     const value = {
         user,
         loading,
-        token,
         restaurant,
         handleLogout,
         fetchUserData,
-        updateToken,
         handleRestaurantRegistration,
         fetchRestaurantData,
         login

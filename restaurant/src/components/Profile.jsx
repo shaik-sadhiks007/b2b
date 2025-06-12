@@ -24,7 +24,7 @@ const customIcon = new L.Icon({
 });
 
 const Profile = () => {
-    const { token } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -303,23 +303,20 @@ const Profile = () => {
     };
 
     useEffect(() => {
-        fetchRestaurantProfile();
-    }, [token]);
+        if (user) {
+            fetchRestaurantProfile();
+        }
+    }, [user]);
 
     const fetchRestaurantProfile = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/restaurants/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axios.get(`${API_URL}/api/restaurants/profile`);
             setRestaurant(response.data);
 
             // Set image preview if profile image exists
             if (response.data.images?.profileImage) {
                 setImagePreview(response.data.images.profileImage);
             }
-
 
             setFormData({
                 restaurantName: response.data.restaurantName || '',
@@ -369,7 +366,6 @@ const Profile = () => {
         }
     };
 
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name.includes('.')) {
@@ -416,11 +412,7 @@ const Profile = () => {
                 return;
             }
 
-            const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData);
 
             // Update the restaurant state with the response
             setRestaurant(prev => ({
@@ -463,6 +455,10 @@ const Profile = () => {
             setEditingDay(null);
         }
     };
+
+    if (!user) {
+        return <div>Please login to view profile</div>;
+    }
 
     return (
         <div className="container-fluid px-0">

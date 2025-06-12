@@ -1,25 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin } from 'lucide-react';
 import { API_URL } from '../api/api';
+import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { user } = useContext(HotelContext);
 
     useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
         fetchOrders();
-    }, []);
+    }, [user, navigate]);
 
     const fetchOrders = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/orders/order-history`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }); 
+            const response = await axios.get(`${API_URL}/api/orders/order-history`);
             setOrders(response.data);
             setLoading(false);
         } catch (error) {
@@ -30,10 +33,8 @@ const Orders = () => {
 
     const handleCancelOrder = async (orderId) => {
         try {
-            const token = localStorage.getItem('token');
             await axios.patch(`${API_URL}/api/orders/${orderId}`, 
-                { status: 'CANCELLED' },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { status: 'CANCELLED' }
             );
             toast.success('Order cancelled successfully');
             fetchOrders(); // Refresh the orders list

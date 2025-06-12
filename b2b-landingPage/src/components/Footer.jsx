@@ -1,42 +1,29 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
-import { ORIGIN_URL } from '../api/api';
+import { ORIGIN_URL, RESTAURANT_URL } from '../api/api';
 import {Link} from 'react-router-dom';
+
+console.log('ORIGIN_URL in Footer:', ORIGIN_URL);
+
 const Footer = () => {
     const navigate = useNavigate();
 
     const handleRestaurantClick = (e) => {
+        console.log('Restaurant click handler called');
         e.preventDefault();
-        const token = localStorage.getItem('token');        
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-
-        const targetWindow = openWindowWithToken(ORIGIN_URL);
+        console.log('Opening window with URL:', RESTAURANT_URL);
+        const targetWindow = openWindowWithToken(RESTAURANT_URL, ORIGIN_URL);
         
         if (!targetWindow) {
+            console.log('Failed to open window, navigating to login');
             navigate('/login');
+        } else {
+            console.log('Window opened successfully');
         }
     };
 
-    const handleDeliveryPartnerClick = (e) => {
-        e.preventDefault();
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-
-        // Add your delivery partner URL here
-        const targetWindow = openWindowWithToken("http://localhost:5175", "http://localhost:5175");
-        
-        if (!targetWindow) {
-            navigate('/login');
-        }
-    };
+ 
 
     return (
         <footer className="bg-gray-900 text-white py-12">

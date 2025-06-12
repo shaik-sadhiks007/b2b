@@ -8,6 +8,7 @@ import AddRestaurant from './pages/AddRestaurant'
 import { MobileMenuProvider } from './context/MobileMenuContext'
 import Dashboard from './pages/Dashboard'
 import Orders from './components/Orders'
+import ItemSummary from './components/ItemSummary'
 import InventoryManager from './components/InventoryManager'
 import InStoreBilling from './components/InStoreBilling'
 import OrderHistory from './components/OrderHistory'
@@ -29,7 +30,7 @@ function App() {
       <AuthProvider>
         <MenuProvider>
           <Router>
-            <ToastContainer />
+            <ToastContainer  autoClose={1000}/>
                 <Helpbutton />
                 <Whatsappbutton />
             <Routes>
@@ -45,6 +46,11 @@ function App() {
               <Route path='/orders' element={
                 <PrivateRoute>
                   <Orders />
+                </PrivateRoute>
+              } />
+              <Route path='/orders/item-summary' element={
+                <PrivateRoute>
+                  <ItemSummary />
                 </PrivateRoute>
               } />
               <Route path='/inventory' element={

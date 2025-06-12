@@ -21,11 +21,17 @@ import ProtectedRoute from './components/ProtectedRoute'
 import GuestLogin from "./components/GuestLogin"
 import Profile from "./components/Profile"
 import AboutUs from "./components/About-us"
-import Helpbutton from './components/Helpbutton';
-import Whatsappbutton from './components/Whatsappbutton';
-import Contactus from './components/Contactus';
-import Footer from './components/Footer';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+
 function AppContent() {
+
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
 
@@ -53,9 +59,6 @@ function AppContent() {
           onLoginClick={onLoginClick}
         />
       )}
-      <Helpbutton />
-      <Whatsappbutton />
-      
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -82,36 +85,39 @@ function AppContent() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
         <Route path="/about-us" element={<AboutUs />} />
-        <Route path="/contactus" element={<Contactus />} />
-
       </Routes>
-      <Footer />
     </div>
   )
 }
 
 function App() {
+
+  const queryClient = new QueryClient()
+
   return (
     <Router>
-      <HotelDataProvider>
-        <CartProvider>
-          <LocationProvider>
-            <AppContent />
-            <ToastContainer
-              position="top-right"
-              autoClose={2000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
-          </LocationProvider>
-        </CartProvider>
-      </HotelDataProvider>
+      <QueryClientProvider client={queryClient}>
+        <HotelDataProvider>
+          <CartProvider>
+            <LocationProvider>
+              <AppContent />
+              <ReactQueryDevtools initialIsOpen={false} />
+              <ToastContainer
+                position="top-right"
+                autoClose={2000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
+            </LocationProvider>
+          </CartProvider>
+        </HotelDataProvider>
+      </QueryClientProvider>
     </Router>
   )
 }

@@ -1,52 +1,96 @@
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
-import React, { createContext, useEffect, useState, useContext } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { API_URL } from "../api/api";
 
 export const HotelContext = createContext();
 
 const HotelDataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
-    const { clearCartState } = useCart();
+
+    // Configure axios defaults
+    axios.defaults.withCredentials = true;
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (token) {
+        // Check if user is logged in by making a request to the profile endpoint
+        const checkAuth = async () => {
             try {
-                const decodedToken = jwtDecode(token);
-                const currentTime = Math.floor(Date.now() / 1000);
-
-                if (decodedToken.exp && decodedToken.exp > currentTime) {
-                    setUser(decodedToken);
-                } else {
-                    console.warn("Token expired, logging out...");
-                    logout();
-                }
+                const response = await axios.get(`${API_URL}/api/auth/profile`);
+                setUser(response.data);
             } catch (error) {
-                console.error("Invalid token:", error);
-                logout();
+                console.warn("Not authenticated");
+                setUser(null);
             }
-        }
+        };
+
+        checkAuth();
     }, []);
 
-    const login = (token) => {
-        localStorage.setItem("token", token);
-        const decodedToken = jwtDecode(token);
-        setUser(decodedToken);
+    // Email/Password login
+    const emailPasswordLogin = async (userData) => {
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/login`, {
+                email: userData.email,
+                firebaseUid: userData.firebaseUid
+            });
+            setUser(response.data.user);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     };
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        clearCartState(); // Clear cart state when logging out
-        setUser(null);
-        navigate('/');
+    // Google login
+    const googleLogin = async (userData) => {
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/google-login`, {
+                email: userData.email,
+                name: userData.name,
+                firebaseUid: userData.firebaseUid
+            });
+            setUser(response.data.user);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // Guest login
+    const guestLogin = async (userData) => {
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/guest-login`, {
+                firebaseUid: userData.firebaseUid
+            });
+            setUser(response.data.user);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // Logout
+    const logout = async () => {
+        try {
+            await axios.post(`${API_URL}/api/auth/logout`);
+            setUser(null);
+            navigate('/')
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if the API call fails, we should clear the user state
+            setUser(null);
+        }
     };
 
     return (
-        <HotelContext.Provider value={{ user, setUser, logout, login }}>
+        <HotelContext.Provider value={{
+            user,
+            setUser,
+            emailPasswordLogin,
+            googleLogin,
+            guestLogin,
+            logout
+        }}>
             {children}
         </HotelContext.Provider>
     );

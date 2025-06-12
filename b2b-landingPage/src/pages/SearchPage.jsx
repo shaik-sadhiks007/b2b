@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useContext } from 'react'
 import { Search, Star, MapPin, Clock, X } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import { useLocationContext } from '../context/LocationContext'
 import { useCart } from '../context/CartContext'
+import { HotelContext } from '../contextApi/HotelContextProvider'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import debounce from 'lodash/debounce'
@@ -25,6 +26,7 @@ const cuisines = [
 
 function SearchPage() {
   const navigate = useNavigate()
+  const { user } = useContext(HotelContext)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchType, setSearchType] = useState('products')
   const [searchResults, setSearchResults] = useState([])
@@ -49,8 +51,7 @@ function SearchPage() {
   } = useLocationContext();
 
   const handleAddToCart = async (item) => {
-    const token = localStorage.getItem('token')
-    if (!token) {
+    if (!user) {
       navigate('/login')
       return
     }
@@ -88,11 +89,12 @@ function SearchPage() {
       }]
     }
 
+
     const result = await addToCart(
       item.restaurant.id,
       item.restaurant.name,
       items,
-      item.restaurant.photos || []
+      item.restaurant.serviceType
     )
 
     if (result.success) {
@@ -145,12 +147,7 @@ function SearchPage() {
         params.lng = coordinates.lng
       }
 
-      const response = await axios.get(`${API_URL}/api/search`, {
-        params,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await axios.get(`${API_URL}/api/search`, { params })
       setSearchResults(response.data.results)
     } catch (error) {
       console.error('Search error:', error)
@@ -216,7 +213,7 @@ function SearchPage() {
                   navigate(`/${category}/${result.id}`);
                 }}
               >
-                <div className="aspect-w-16 aspect-h-9 mb-4">
+                <div className="aspect-w-16 aspect-h-9 mb-4 relative">
                   {result.image ? (
                     <img
                       src={result.image}
@@ -230,6 +227,9 @@ function SearchPage() {
                       </div>
                     </div>
                   )}
+                  <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    {result.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : result.serviceType}
+                  </span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{result.name}</h3>
                 <div className="flex items-center gap-2 text-gray-600 mb-2">
@@ -245,7 +245,6 @@ function SearchPage() {
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${result.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {result.online ? 'Open' : 'Closed'}
                   </span>
-                  <span className="text-sm">{result.serviceType}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="px-2 py-1 bg-gray-100 rounded-full text-sm">
@@ -257,7 +256,7 @@ function SearchPage() {
               // Product Card
               <div className="p-4">
                 <div 
-                  className="aspect-w-16 aspect-h-9 mb-4 cursor-pointer"
+                  className="aspect-w-16 aspect-h-9 mb-4 cursor-pointer relative"
                   onClick={() => {
                     const category = result.restaurant.category?.toLowerCase() || 'restaurant';
                     navigate(`/${category}/${result.restaurant.id}`);
@@ -276,6 +275,9 @@ function SearchPage() {
                       </div>
                     </div>
                   )}
+                  <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    {result.restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{result.name}</h3>

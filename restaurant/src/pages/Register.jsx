@@ -29,11 +29,11 @@ const Register = () => {
                             firebaseUid: user.uid
                         });
 
-                        if (response.data.token) {
+                        if (response.data) {
                             alert("Registration Successful!");
                             navigate('/login');
                         } else {
-                            throw new Error("Registration failed - no token received");
+                            throw new Error("Registration failed");
                         }
                     } catch (error) {
                         console.error("Registration failed:", error);
@@ -95,11 +95,11 @@ const Register = () => {
                         firebaseUid: user.uid
                     });
 
-                    if (response.data.token) {
+                    if (response.data) {
                         alert("Registration Successful!");
                         navigate('/login');
                     } else {
-                        throw new Error("Registration failed - no token received");
+                        throw new Error("Registration failed");
                     }
                 } catch (error) {
                     console.error("Registration failed:", error);

@@ -1,23 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
+import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const OrderSuccess = () => {
     const navigate = useNavigate();
     const { orderId } = useParams();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { user } = useContext(HotelContext);
 
     useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+
         const fetchOrderDetails = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`${API_URL}/api/orders/${orderId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axios.get(`${API_URL}/api/orders/${orderId}`);
                 setOrder(response.data.order);
                 setLoading(false);
             } catch (error) {
@@ -27,7 +31,7 @@ const OrderSuccess = () => {
         };
 
         fetchOrderDetails();
-    }, [orderId]);
+    }, [orderId, user, navigate]);
 
     if (loading) {
         return (

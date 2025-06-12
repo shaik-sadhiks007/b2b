@@ -11,7 +11,7 @@ import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
 
 const Dashboard = () => {
-  const { token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const {
     categories,
     loading,
@@ -331,7 +331,7 @@ const Dashboard = () => {
     }, 3000);
   };
 
-  if (!token) {
+  if (!user) {
     return <div>Please login to access the dashboard</div>;
   }
 

@@ -102,7 +102,6 @@ const updateCartQuantity = async (req, res) => {
 
         // Use .find instead of findIndex
         const item = cart.items.find(item => {
-            console.log(item.itemId.toString(), itemId, "item.itemId.toString()");
             return item.itemId.toString() == itemId;
         });
         if (!item) return res.status(404).json({ message: "Item not found in cart" });

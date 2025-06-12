@@ -200,20 +200,6 @@ const Home = () => {
         return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
     }, [])
 
-    const handleServiceProviderClick = (provider) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            navigate(provider.link, {
-                state: {
-                    hotelData: provider,
-                    token
-                }
-            });
-        } else {
-            navigate('/login');
-        }
-    };
-
     const handleRestaurantClick = (restaurant) => {
         // Get the category from the restaurant or default to 'restaurant'
         const category = restaurant.category?.toLowerCase() || 'restaurant';
@@ -366,7 +352,7 @@ const Home = () => {
                     />
 
                     {/* Search and Location Inputs Row */}
-                    <div className="w-full flex gap-4">
+                    <div className="w-full flex flex-col md:flex-row gap-4 px-4 md:px-0">
                         {/* Location Input */}
                         <div className="relative flex-1">
                             <input

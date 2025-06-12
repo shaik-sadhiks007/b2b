@@ -1,45 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
 import banner from "../assets/banner.jpeg";
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import Header from '../components/Header';
 import { AuthContext } from '../context/AuthContext';
-import { ORIGIN_URL } from '../api/api';
 import logo from '../assets/b2bupdate.png';
 import Footer from "../components/Footer";
+import { ORIGIN_URL,API_URL } from "../api/api";
+
 const LandingPage = () => {
     const navigate = useNavigate();
-    const { user, restaurant, loading, updateToken } = useContext(AuthContext);
+    const { user, restaurant, loading } = useContext(AuthContext);
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [showServiceModal, setShowServiceModal] = useState(false);
-
-    useEffect(() => {
-        // Check for token in localStorage first
-        const transferToken = localStorage.getItem('transferToken');
-        if (transferToken) {
-            localStorage.setItem('token', transferToken);
-            localStorage.removeItem('transferToken');
-            updateToken(transferToken);
-        }
-
-        // Define the message handler function
-        const messageHandler = (event) => {
-            if (event.origin !== ORIGIN_URL) return;  // Verify origin using config
-            const { token } = event.data;
-            if (token) {
-                updateToken(token);
-            }
-        };
-
-        // Add event listener
-        window.addEventListener("message", messageHandler);
-
-        // Cleanup
-        return () => {
-            window.removeEventListener('message', messageHandler);
-        };
-    }, [updateToken]);
 
     useEffect(() => {
         // Check if user is logged in and has a published restaurant
@@ -59,6 +32,62 @@ const LandingPage = () => {
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+        // Listen for messages from the parent window
+        const handleMessage = async (event) => {
+            console.log('Message received:', event.data);
+            console.log('Message origin:', event.origin);
+            console.log('Expected origin:', ORIGIN_URL);
+            
+            // Verify the origin of the message
+            if (event.origin === ORIGIN_URL) {
+                console.log('Origin verified');
+                if (event.data.type === 'INITIATE_TOKEN_TRANSFER') {
+                    console.log('Initiating token transfer');
+                    try {
+                        // Make a request to the backend to transfer the token
+                        console.log('Making request to:', `${API_URL}/api/auth/transfer-token`);
+                        const response = await fetch(`${API_URL}/api/auth/transfer-token`, {
+                            method: 'POST',
+                            credentials: 'include', // This is important to include cookies
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                sourceOrigin: event.data.sourceOrigin
+                            })
+                        });
+
+                        console.log('Response status:', response.status);
+                        const data = await response.json();
+                        console.log('Response data:', data);
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Failed to transfer token');
+                        }
+
+                        // Token should now be set in the cookies for this domain
+                        console.log('Token transferred successfully');
+                        
+                        // Optionally refresh the page or update the UI
+                        window.location.reload();
+                    } catch (error) {
+                        console.error('Error transferring token:', error);
+                        // Show error to user
+                        alert('Failed to transfer authentication. Please try logging in again.');
+                    }
+                }
+            } else {
+                console.log('Origin mismatch. Expected:', ORIGIN_URL, 'Got:', event.origin);
+            }
+        };
+
+        console.log('Setting up message listener');
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
     }, []);
 
     const toggleQuestion = (index) => {
@@ -182,7 +211,12 @@ const LandingPage = () => {
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"
                                     onClick={() => {
-                                        if (user && restaurant) {
+                                        if (!user) {
+                                            navigate('/login');
+                                            return;
+                                        }
+                                        
+                                        if (restaurant) {
                                             if (restaurant.status === 'published') {
                                                 navigate('/dashboard');
                                             } else if (restaurant.status === 'review') {

@@ -8,6 +8,9 @@ import { API_URL } from '../api/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { HotelContext } from '../contextApi/HotelContextProvider';
+import { useQuery } from '@tanstack/react-query';
+import { fetchRestaurantDetails } from './Home';
+import { useLocationContext } from '../context/LocationContext';
 
 const MenuItemSkeleton = () => (
     <div className="flex gap-4 p-4 border rounded-lg">
@@ -81,52 +84,26 @@ const HotelDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { carts, addToCart, isItemInCart, fetchCart, clearCart } = useCart();
-    const [restaurant, setRestaurant] = useState(null);
-    const [menu, setMenu] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [expandedCategories, setExpandedCategories] = useState([]);
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
     const [pendingAddItem, setPendingAddItem] = useState(null);
     const { user } = useContext(HotelContext);
+    const { location } = useLocationContext();
+
+    const { data, isLoading, isError, error } = useQuery({
+        queryKey: ['restaurantAndMenu', id, location],
+        queryFn: fetchRestaurantDetails,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    const restaurant = data?.restaurantData;
+    const menu = data?.menuData;
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Get location from localStorage if available
-                const savedLocation = localStorage.getItem('userLocation');
-                let url = `${API_URL}/api/restaurants/public/${id}`;
-
-                if (savedLocation) {
-                    const { coordinates } = JSON.parse(savedLocation);
-                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
-                }
-
-                const [restaurantResponse, menuResponse] = await Promise.all([
-                    axios.get(url),
-                    axios.get(`${API_URL}/api/menu/public/${id}`)
-                ]);
-
-                setRestaurant(restaurantResponse.data);
-                setMenu(menuResponse.data);
-
-                // Set first category as expanded by default
-                if (menuResponse.data && menuResponse.data.length > 0) {
-                    setExpandedCategories([menuResponse.data[0]._id]);
-                }
-            } catch (err) {
-                console.error('Error fetching data:', err);
-                setError('Failed to fetch restaurant details');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [id]);
+        if (menu && menu.length > 0) {
+            setExpandedCategories([menu[0]._id]);
+        }
+    }, [menu]);
 
     // Separate useEffect for cart fetching
     useEffect(() => {
@@ -244,9 +221,9 @@ const HotelDetails = () => {
         }
     };
 
-    if (loading) return <RestaurantDetailsSkeleton />;
-    if (error) return <div className="flex justify-center items-center h-screen">{error}</div>;
-    if (!restaurant && !loading) return <div className="flex justify-center items-center h-screen">Restaurant not found</div>;
+    if (isLoading) return <RestaurantDetailsSkeleton />;
+    if (isError) return <div className="flex justify-center items-center h-screen">{error.message}</div>;
+    if (!restaurant && !isLoading) return <div className="flex justify-center items-center h-screen">Restaurant not found</div>;
 
     return (
         <>

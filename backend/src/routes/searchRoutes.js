@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware.js');
 const Restaurant = require('../models/Restaurant.js');
 const Menu = require('../models/Menu.js');
 const moment = require('moment-timezone');
@@ -127,7 +126,8 @@ router.get('/', async (req, res) => {
                         id: item.restaurant._id,
                         name: item.restaurant.restaurantName,
                         online: isOnline,
-                        distance: distance !== null ? parseFloat(distance.toFixed(2)) : null
+                        distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
+                        serviceType: item.restaurant.serviceType
                     }
                 };
             });
@@ -271,23 +271,5 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Error performing search', message: error.message });
     }
 });
-
-// Helper function to calculate distance between two points
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in km
-    return parseFloat(distance.toFixed(1));
-}
-
-function deg2rad(deg) {
-    return deg * (Math.PI / 180);
-}
 
 module.exports = router;

@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
+import { AuthContext } from '../context/AuthContext';
 
 const InStoreBilling = () => {
+    const { user } = useContext(AuthContext);
     const [menuItems, setMenuItems] = useState([]);
     const [search, setSearch] = useState('');
     const [cart, setCart] = useState([]);
@@ -16,15 +18,14 @@ const InStoreBilling = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchMenuItems();
-    }, []);
+        if (user) {
+            fetchMenuItems();
+        }
+    }, [user]);
 
     const fetchMenuItems = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/menu`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await axios.get(`${API_URL}/api/menu`);
             // Always flatten menu items for the provided structure
             let items = [];
             const data = response.data.menu ? response.data.menu : response.data;
@@ -80,7 +81,6 @@ const InStoreBilling = () => {
     const handleSubmitOrder = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
             const payload = {
                 items: cart.map(item => ({
                     itemId: item._id,
@@ -95,9 +95,7 @@ const InStoreBilling = () => {
                 customerName,
                 customerPhone
             };
-            await axios.post(`${API_URL}/api/orders/instore-order`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.post(`${API_URL}/api/orders/instore-order`, payload);
             toast.success('In-store order placed successfully');
             setCart([]);
             setShowModal(false);
@@ -114,6 +112,10 @@ const InStoreBilling = () => {
         (item.category && item.category.toLowerCase().includes(search.toLowerCase())) ||
         (item.subcategory && item.subcategory.toLowerCase().includes(search.toLowerCase()))
     );
+
+    if (!user) {
+        return <div>Please login to access in-store billing</div>;
+    }
 
     return (
         <div className="container-fluid px-0">

@@ -3,13 +3,12 @@ import { auth } from "../firebase/FIrebase";
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import { HotelContext } from "../contextApi/HotelContextProvider";
-import axios from "axios";
 import { Link } from "react-router-dom";
-import { API_URL } from "../api/api";
+import { toast } from 'react-toastify';
 
 const GuestLogin = () => {
     const navigate = useNavigate();
-    const { login } = useContext(HotelContext);
+    const { guestLogin } = useContext(HotelContext);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -22,19 +21,16 @@ const GuestLogin = () => {
             const user = userCredential.user;
 
             // Create a guest user in your backend
-            const response = await axios.post(`${API_URL}/api/auth/guest-login`, {
+            await guestLogin({
                 firebaseUid: user.uid
             });
-
-            if (response.data && response.data.token) {
-                login(response.data.token);
-                navigate('/');
-            } else {
-                throw new Error('Invalid token received from server');
-            }
+            
+            toast.success("Guest login successful!");
+            navigate('/');
         } catch (error) {
             console.error('Guest login error:', error);
             setError(error.message || "Guest login failed!");
+            toast.error("Guest login failed!");
         } finally {
             setLoading(false);
         }

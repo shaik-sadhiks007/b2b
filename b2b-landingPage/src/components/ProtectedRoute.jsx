@@ -1,26 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import LoginPopup from './LoginPopup';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const ProtectedRoute = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginPopup, setShowLoginPopup] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
+    const { user } = useContext(HotelContext);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        setIsAuthenticated(!!token);
+        // Set loading to false after initial render
         setIsLoading(false);
     }, []);
 
     const handleGuestContinue = () => {
         setShowLoginPopup(false);
         navigate('/guest-login');
-        // You can add any guest-specific logic here
     };
 
     const handleClosePopup = () => {
@@ -46,10 +45,9 @@ const ProtectedRoute = ({ children }) => {
     }
 
     // If not authenticated and popup is shown, display the popup
-    if (!isAuthenticated && showLoginPopup) {
+    if (!user && showLoginPopup) {
         return (
             <>
-                {/* <Navigate to="/" replace /> */}
                 <LoginPopup
                     isOpen={true}
                     onClose={handleClosePopup}
@@ -58,11 +56,6 @@ const ProtectedRoute = ({ children }) => {
             </>
         );
     }
-
-    // If not authenticated and popup is closed, redirect to home
-    // if (!isAuthenticated && !showLoginPopup) {
-    //     return <Navigate to="/" replace />;
-    // }
 
     // If authenticated, show the protected content
     return children;

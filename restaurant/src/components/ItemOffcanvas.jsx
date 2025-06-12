@@ -89,10 +89,6 @@ const ItemOffcanvas = ({
       return;
     }
 
-    if (itemData.photos.length === 0) {
-      toast.error("At least one photo is required");
-      return;
-    }
 
     // Validate description length
     // if (itemData.description.length < 20) {

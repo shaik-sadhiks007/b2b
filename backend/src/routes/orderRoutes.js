@@ -8,12 +8,14 @@ const {
     orderSuccess,
     postRestaurantOrderStatus,
     getRestaurantOrderStatus,
-    getRestaurantOrderCounts
+    getRestaurantOrderCounts,
+    getAcceptedItemsSummary
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const router = express.Router();
 
+router.get('/accepted-items-summary', authMiddleware, restaurantMiddleware, getAcceptedItemsSummary);
 router.get('/counts', authMiddleware, restaurantMiddleware, getRestaurantOrderCounts);
 router.post('/place-order',authMiddleware, placeOrder);
 router.get("/order-history/restaurant",authMiddleware,restaurantMiddleware, orderHistory);

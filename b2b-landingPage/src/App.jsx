@@ -3,11 +3,7 @@ import { Search, Mic, Camera } from "lucide-react"
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom"
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import LocationModal from "./components/LocationModal"
-import CategoryShortcuts from "./components/CategoryShortcuts"
 import Navbar from "./components/Navbar"
-import LocationSuggestions from "./components/LocationSuggestions"
-import { ScrollProvider } from "./context/ScrollContext"
 import HotelDataProvider from "./contextApi/HotelContextProvider"
 import Login from "./authentication/Login"
 import Register from "./authentication/Register"
@@ -86,29 +82,27 @@ function AppContent() {
 
 function App() {
   return (
-    <CartProvider>
-      <Router>
-        <HotelDataProvider>
-          <ScrollProvider>
-            <LocationProvider>
-              <AppContent />
-              <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-              />
-            </LocationProvider>
-          </ScrollProvider>
-        </HotelDataProvider>
-      </Router>
-    </CartProvider>
+    <Router>
+      <HotelDataProvider>
+        <CartProvider>
+          <LocationProvider>
+            <AppContent />
+            <ToastContainer
+              position="top-right"
+              autoClose={2000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
+          </LocationProvider>
+        </CartProvider>
+      </HotelDataProvider>
+    </Router>
   )
 }
 

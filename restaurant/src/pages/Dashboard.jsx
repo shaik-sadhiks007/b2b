@@ -9,9 +9,20 @@ import Orders from '../components/Orders';
 import '../styles/Dashboard.css';
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
+import { Pie } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    ArcElement,
+    Tooltip,
+    Legend
+} from 'chart.js';
+import { API_URL } from '../api/api';
+import { useEffect } from 'react';
+import axios from 'axios';
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
-    const { token } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const {
         categories,
         loading,
@@ -58,7 +69,9 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     const tabs = [
-        { label: "Menu editor", path: "/menu", icon: "bi-menu-button-wide" },
+        { id: 'menu-editor', label: "Menu editor", path: "/menu", icon: "bi-menu-button-wide" },
+        // { id: 'total-items-summary', label: "Total Items Summary", path: "/summary", icon: "bi-pie-chart" },
+        // { label: "Instore Order", path: "/instore", icon: "bi-shop" },
         // { label: "Manage inventory", path: "/inventory", icon: "bi-box-seam" },
         // { label: "Taxes", path: "/taxes", icon: "bi-calculator" },
         // { label: "Charges", path: "/charges", icon: "bi-credit-card" }
@@ -152,11 +165,9 @@ const Dashboard = () => {
         setSelectedSubcategory(subcategory);
     };
 
-    if (!token) {
+    if (!user) {
         return <div>Please login to access the dashboard</div>;
     }
-
-    console.log(selectedSubcategory, "ssc")
 
 
     return (
@@ -231,9 +242,9 @@ const Dashboard = () => {
                             {tabs.map((tab, index) => (
                                 <button
                                     key={index}
-                                    onClick={() => setActiveTab(tab.label.toLowerCase().replace(' ', '-'))}
+                                    onClick={() => setActiveTab(tab.id)}
                                     className={`btn btn-link text-decoration-none d-flex align-items-center gap-2 ${
-                                        activeTab === tab.label.toLowerCase().replace(' ', '-')
+                                        activeTab === tab.id
                                             ? 'text-primary border-bottom border-2 border-primary'
                                             : 'text-gray-600'
                                     }`}
@@ -454,6 +465,9 @@ const Dashboard = () => {
                                 </div>
                             )}
                         </div>
+                    ) : activeTab === 'instore-order' ? (
+                        // Instore Order Content
+                        <InstoreOrder />
                     ) : activeTab === 'manage-inventory' ? (
                         // Inventory Manager Content
                         <InventoryManager

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import { API_URL } from '../api/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const MenuItemSkeleton = () => (
     <div className="flex gap-4 p-4 border rounded-lg">
@@ -87,17 +88,13 @@ const HotelDetails = () => {
     const [expandedCategories, setExpandedCategories] = useState([]);
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
     const [pendingAddItem, setPendingAddItem] = useState(null);
-
+    const { user } = useContext(HotelContext);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 setError(null);
-
-                // Fetch restaurant details
-                const token = localStorage.getItem('token');
-                const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
                 // Get location from localStorage if available
                 const savedLocation = localStorage.getItem('userLocation');
@@ -109,8 +106,8 @@ const HotelDetails = () => {
                 }
 
                 const [restaurantResponse, menuResponse] = await Promise.all([
-                    axios.get(url, { headers }),
-                    axios.get(`${API_URL}/api/menu/public/${id}`, { headers })
+                    axios.get(url),
+                    axios.get(`${API_URL}/api/menu/public/${id}`)
                 ]);
 
                 setRestaurant(restaurantResponse.data);
@@ -133,12 +130,10 @@ const HotelDetails = () => {
 
     // Separate useEffect for cart fetching
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
+        if (user) {
             fetchCart();
         }
-    }, [fetchCart]);
-
+    }, [fetchCart, user]);
 
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prevCategories => {
@@ -150,10 +145,15 @@ const HotelDetails = () => {
     };
 
     const handleAddToCart = async (item) => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!user) {
             toast.error('Please login to add items to cart');
             navigate('/login');
+            return;
+        }
+
+        // Check if item is out of stock
+        if (!item.inStock) {
+            toast.error('This item is out of stock');
             return;
         }
 
@@ -164,46 +164,22 @@ const HotelDetails = () => {
         }
 
         // Check if there are items from a different restaurant
-
         if (carts.length > 0 && carts[0].restaurantId._id !== restaurant._id) {
             setPendingAddItem(item);
             setShowRestaurantModal(true);
             return;
         }
 
-        // Find if cart for this restaurant exists
-        const cartForRestaurant = carts.find((c) => {
-            return c.restaurantId._id === restaurant._id
-        });
-
-        let items = [];
-        if (cartForRestaurant) {
-            items = [{
-                itemId: item._id,
-                name: item.name,
-                quantity: 1,
-                basePrice: Number(item.basePrice),
-                packagingCharges: Number(item.packagingCharges),
-                totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg,
-                photos: item.photos || []
-            }];
-
-        } else {
-
-            items = [{
-                itemId: item._id,
-                name: item.name,
-                quantity: 1,
-                basePrice: Number(item.basePrice),
-                packagingCharges: Number(item.packagingCharges),
-                totalPrice: Number(item.totalPrice),
-                isVeg: item.isVeg,
-                photos: item.photos || []
-            }];
-        }
-
-
+        const items = [{
+            itemId: item._id,
+            name: item.name,
+            quantity: 1,
+            basePrice: Number(item.basePrice),
+            packagingCharges: Number(item.packagingCharges),
+            totalPrice: Number(item.totalPrice),
+            isVeg: item.isVeg,
+            photos: item.photos || []
+        }];
 
         const result = await addToCart(
             restaurant._id,
@@ -213,13 +189,12 @@ const HotelDetails = () => {
         );
 
         if (!result.success) {
-            // if (result.error === 'Different restaurant') {
-            //     setPendingAddItem(item);
-            //     setShowRestaurantModal(true);
-            // } else {
-            //     toast.error(result.error || 'Failed to add to cart');
-            // }
-            toast.error(result.error || 'Failed to add to cart');
+            if (result.error === 'Different restaurant') {
+                setPendingAddItem(item);
+                setShowRestaurantModal(true);
+            } else {
+                toast.error(result.error || 'Failed to add to cart');
+            }
         }
     };
 
@@ -362,55 +337,63 @@ const HotelDetails = () => {
                                                             <h4 className="text-lg font-medium mb-3">{subcategory.name}</h4>
                                                             <div className="space-y-4">
                                                                 {subcategory.items.map(item => (
-                                                                    <div key={item._id} className="flex gap-4 p-4 border rounded-lg">
-                                                                        <div className="flex-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className={`w-3 h-3 border ${item.isVeg ? 'border-green-600' : 'border-red-600'
-                                                                                    } flex items-center justify-center`}>
-                                                                                    <span className={`w-1.5 h-1.5 ${item.isVeg ? 'bg-green-600' : 'bg-red-600'
-                                                                                        } rounded-full`}></span>
-                                                                                </span>
-                                                                                <h5 className="font-medium">{item.name}</h5>
-                                                                            </div>
-                                                                            {item?.description && (<p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                                                                                {item.description}
-                                                                            </p>)}
-                                                                            <div className="mt-2">
-                                                                                <span className="font-medium">₹{item.totalPrice}</span>
-                                                                                <span className="text-xs text-gray-500 ml-2">
-                                                                                    (₹{item.basePrice} + ₹{item.packagingCharges} packaging)
-                                                                                </span>
-                                                                            </div>
-                                                                            {item.customisable && (
-                                                                                <span className="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                                                                    Customizable
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative">
-                                                                            {item?.photos?.length > 0 ? (
-                                                                                <img
-                                                                                    src={item.photos[0]}
-                                                                                    alt={item.name}
-                                                                                    className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
-                                                                                />
-                                                                            ) : (
-                                                                                <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
-                                                                                    <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
+                                                                    <div key={item._id} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg">
+                                                                        <div className="flex gap-4 flex-1">
+                                                                            <div className="flex-1">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className={`w-3 h-3 border ${item.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center`}>
+                                                                                        <span className={`w-1.5 h-1.5 ${item.isVeg ? 'bg-green-600' : 'bg-red-600'} rounded-full`}></span>
+                                                                                    </span>
+                                                                                    <h5 className="font-medium">{item.name}</h5>
+                                                                                    {!item.inStock && (
+                                                                                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                                                                            Out of Stock
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
-                                                                            )}
+                                                                                {item?.description && (
+                                                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                                                        {item.description}
+                                                                                    </p>
+                                                                                )}
+                                                                                <div className="mt-2">
+                                                                                    <span className="font-medium">₹{item.totalPrice}</span>
+                                                                                    <span className="text-xs text-gray-500 ml-2">
+                                                                                        (₹{item.basePrice} + ₹{item.packagingCharges} packaging)
+                                                                                    </span>
+                                                                                </div>
+                                                                                {item.customisable && (
+                                                                                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                                                                        Customizable
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative flex-shrink-0">
+                                                                                {item?.photos?.length > 0 ? (
+                                                                                    <img
+                                                                                        src={item.photos[0]}
+                                                                                        alt={item.name}
+                                                                                        className={`w-full h-full object-cover ${(!restaurant?.online || !item.inStock) ? 'grayscale' : ''}`}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                                                                                        <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
-                                                                            disabled={!restaurant?.online}
-                                                                            className={`self-center px-4 py-2 ${!restaurant?.online
-                                                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                                                : isItemInCart(item._id)
-                                                                                    ? 'bg-green-600 text-white'
-                                                                                    : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
-                                                                                } rounded transition-colors`}
+                                                                            disabled={!restaurant?.online || !item.inStock}
+                                                                            className={`w-full md:w-[160px] md:self-center px-4 py-2 ${
+                                                                                !restaurant?.online || !item.inStock
+                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                                                    : isItemInCart(item._id)
+                                                                                        ? 'bg-green-600 text-white'
+                                                                                        : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
+                                                                            } rounded transition-colors`}
                                                                         >
-                                                                            {!restaurant?.online ? 'CLOSED' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
+                                                                            {!restaurant?.online ? 'CLOSED' : !item.inStock ? 'OUT OF STOCK' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>
                                                                     </div>
                                                                 ))}

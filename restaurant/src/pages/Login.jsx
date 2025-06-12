@@ -30,11 +30,11 @@ const Login = () => {
         firebaseUid: user.uid
       });
 
-      if (response.data && response.data.token) {
-        login(response.data.token);
+      if (response.data) {
+        await login();
         navigate('/');
       } else {
-        throw new Error('Invalid token received from server');
+        throw new Error('Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -53,11 +53,11 @@ const Login = () => {
         firebaseUid: user.uid
       });
 
-      if (response.data && response.data.token) {
-        login(response.data.token);
+      if (response.data) {
+        await login();
         navigate('/');
       } else {
-        throw new Error('Invalid token received from server');
+        throw new Error('Google Login failed');
       }
     } catch (error) {
       console.error('Google login error:', error);

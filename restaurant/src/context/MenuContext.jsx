@@ -7,20 +7,19 @@ import { toast } from 'react-toastify';
 export const MenuContext = createContext();
 
 export const MenuProvider = ({ children }) => {
-    const { token } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-    // Configure axios defaults
+    // Fetch menu items when user is authenticated
     useEffect(() => {
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        if (user) {
             fetchMenu();
         }
-    }, [token]);
+    }, [user]);
 
     // Fetch menu items
     const fetchMenu = async () => {

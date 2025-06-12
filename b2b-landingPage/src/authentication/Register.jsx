@@ -4,6 +4,7 @@ import axios from "axios";
 import { auth, createUserWithEmailAndPassword, sendEmailVerification } from "../firebase/FIrebase";
 import { onAuthStateChanged, reload } from "firebase/auth";
 import { API_URL } from "../api/api";
+import { toast } from 'react-toastify'
 
 const Register = () => {
     const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -29,15 +30,15 @@ const Register = () => {
                             firebaseUid: user.uid
                         });
 
-                        if (response.data.token) {
-                            alert("Registration Successful!");
+                        if (response.status === 201) {
+                            toast.success("Registration Successful!");
                             navigate('/login');
                         } else {
-                            throw new Error("Registration failed - no token received");
+                            throw new Error("Registration failed");
                         }
                     } catch (error) {
                         console.error("Registration failed:", error);
-                        setError(error.message || "Registration failed!");
+                        setError("user regsitered already please login!");
                     }
                 }
             }
@@ -95,15 +96,15 @@ const Register = () => {
                         firebaseUid: user.uid
                     });
 
-                    if (response.data.token) {
-                        alert("Registration Successful!");
+                    if (response.status === 201) {
+                        toast.success("Registration Successful!");
                         navigate('/login');
                     } else {
-                        throw new Error("Registration failed - no token received");
+                        throw new Error("Registration failed");
                     }
                 } catch (error) {
                     console.error("Registration failed:", error);
-                    setError(error.message || "Registration failed!");
+                    setError("user regsitered already please login!");
                 }
             } else {
                 setError("Email not verified yet. Please check your inbox and click the verification link.");

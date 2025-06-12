@@ -4,9 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { HotelContext } from "../contextApi/HotelContextProvider";
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from "../firebase/FIrebase";
 import { API_URL } from "../api/api";
+import { toast } from 'react-toastify';
 
 const Login = () => {
-  const { login } = useContext(HotelContext);
+  const { emailPasswordLogin, googleLogin, guestLogin } = useContext(HotelContext);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -21,22 +22,17 @@ const Login = () => {
     e.preventDefault();
     try {
       // Sign in with Firebase
-      
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
       // Get user data from backend
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      await emailPasswordLogin({
         email: user.email,
         firebaseUid: user.uid
       });
-
-      if (response.data && response.data.token) {
-        login(response.data.token);
-        navigate('/');
-      } else {
-        throw new Error('Invalid token received from server');
-      }
+      
+      toast.success("Login successful!");
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message || "Login failed!");
@@ -48,40 +44,20 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const response = await axios.post(`${API_URL}/api/auth/google-login`, {
+      await googleLogin({
         email: user.email,
         name: user.displayName,
         firebaseUid: user.uid
       });
-
-      if (response.data && response.data.token) {
-        login(response.data.token);
-        navigate('/');
-      } else {
-        throw new Error('Invalid token received from server');
-      }
+      
+      toast.success("Google login successful!");
+      navigate('/');
     } catch (error) {
       console.error('Google login error:', error);
       setError(error.message || "Google Login failed!");
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, formData.email);
-      setSuccessMessage("Password reset email sent! Please check your inbox.");
-      setError("");
-    } catch (error) {
-      console.error('Password reset error:', error);
-      setError(error.message || "Failed to send password reset email");
-      setSuccessMessage("");
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -35,7 +35,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 const Profile = () => {
-    const { token } = useContext(HotelContext);
+    const { user: contextUser, setUser: setContextUser } = useContext(HotelContext);
     const [user, setUser] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -65,15 +65,17 @@ const Profile = () => {
     const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
+        if (!contextUser) {
+            navigate('/login');
+            return;
+        }
         fetchUserData();
         fetchAddresses();
-    }, [token]);
+    }, [contextUser, navigate]);
 
     const fetchUserData = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/auth/profile`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const response = await axios.get(`${API_URL}/api/auth/profile`);
             setUser(response.data);
         } catch (error) {
             setError('Failed to fetch user data');
@@ -85,9 +87,7 @@ const Profile = () => {
 
     const fetchAddresses = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/customer-address`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const response = await axios.get(`${API_URL}/api/customer-address`);
             setAddresses(response.data);
         } catch (error) {
             console.error('Error fetching addresses:', error);
@@ -165,15 +165,13 @@ const Profile = () => {
             if (editingAddress) {
                 await axios.put(
                     `${API_URL}/api/customer-address/${editingAddress._id}`,
-                    addressForm,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                    addressForm
                 );
                 toast.success('Address updated successfully');
             } else {
                 await axios.post(
                     `${API_URL}/api/customer-address`,
-                    addressForm,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                    addressForm
                 );
                 toast.success('Address added successfully');
             }
@@ -218,8 +216,7 @@ const Profile = () => {
     const handleDeleteConfirm = async () => {
         try {
             await axios.delete(
-                `${API_URL}/api/customer-address/${addressToDelete}`,
-                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                `${API_URL}/api/customer-address/${addressToDelete}`
             );
             toast.success('Address deleted successfully');
             fetchAddresses();
@@ -239,8 +236,7 @@ const Profile = () => {
         try {
             await axios.put(
                 `${API_URL}/api/customer-address/${addressId}/set-default`,
-                {},
-                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                {}
             );
             toast.success('Default address updated');
             fetchAddresses();
@@ -305,7 +301,7 @@ const Profile = () => {
                             className="w-24 h-24 rounded-full object-cover"
                         />
                         <div>
-                            <h2 className="text-2xl font-bold">{user?.username}</h2>
+                            <h2 className="text-2xl font-bold capitalize">{user?.username}</h2>
                             <p className="text-gray-600">{user?.email}</p>
                             <p className="text-gray-500 capitalize">{user?.role}</p>
                         </div>

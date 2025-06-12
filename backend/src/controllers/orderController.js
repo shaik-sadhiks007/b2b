@@ -14,6 +14,36 @@ exports.placeOrder = async (req, res) => {
             return res.status(400).json({ error: "Order must contain at least one item." });
         }
 
+        // Check if all items are in stock
+        for (const item of items) {
+            // Find the menu item within categories and subcategories
+            const menu = await MenuOfRestaurant.find({ restaurantId });
+            if (!menu) {
+                return res.status(404).json({ error: "Menu not found for this restaurant" });
+            }
+
+            let foundItem = null;
+            // Search through all menus
+            for (const menuItem of menu) {
+                // Search through subcategories of each menu
+                for (const subcategory of menuItem.subcategories) {
+                    const menuItemFound = subcategory.items.find(i => i._id.toString() === item.itemId);
+                    if (menuItemFound) {
+                        foundItem = menuItemFound;
+                        break;
+                    }
+                }
+                if (foundItem) break; // Break out of menu loop if item is found
+            }
+
+            if (!foundItem) {
+                return res.status(404).json({ error: `Item ${item.name} not found` });
+            }
+            if (!foundItem.inStock) {
+                return res.status(400).json({ error: `${item.name} is out of stock` });
+            }
+        }
+
         let customerAddressId;
         let customerName;
         let customerPhone;
@@ -139,9 +169,13 @@ exports.placeOrder = async (req, res) => {
 
 exports.orderHistory = async (req, res) => {
     try {
-        const orders = await Order.find({ 
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+
+        const filter = {
             restaurantId: req.restaurant._id,
-            status: { 
+            status: {
                 $in: [
                     'ORDER_DELIVERED',
                     'ORDER_CANCELLED',
@@ -150,11 +184,24 @@ exports.orderHistory = async (req, res) => {
                     'CANCELLED'
                 ]
             }
-        })
-        .populate("customerAddress")
-        .sort({ createdAt: -1 });
+        };
 
-        res.status(200).json(orders);
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate("customerAddress")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order history" });
     }
@@ -275,7 +322,6 @@ exports.postRestaurantOrderStatus = async (req, res) => {
         const { orderId } = req.params; 
 
         const order = await Order.findById(orderId);
-        console.log(order, "order");
 
         if (!order) {
             return res.status(404).json({ error: "Order not found" });
@@ -299,11 +345,32 @@ exports.postRestaurantOrderStatus = async (req, res) => {
 exports.getRestaurantOrderStatus = async (req, res) => {
     try {
         const { status } = req.params;
-        const orders = await Order.find({ 
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+
+        const totalOrders = await Order.countDocuments({ 
             status,
             restaurantId: req.restaurant._id 
         });
-        res.status(200).json(orders);
+
+        const orders = await Order.find({ 
+            status,
+            restaurantId: req.restaurant._id 
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
@@ -330,6 +397,39 @@ exports.getRestaurantOrderCounts = async (req, res) => {
         res.status(200).json(countsObject);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
+    }
+};
+
+// Get total items to pack for ACCEPTED orders (for pie chart summary)
+exports.getAcceptedItemsSummary = async (req, res) => {
+    try {
+        const orders = await Order.find({
+            restaurantId: req.restaurant._id,
+            status: 'ACCEPTED'
+        });
+
+        // Aggregate item quantities
+        let totalItemsToPack = 0;
+        const itemSummary = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemSummary[item.name]) {
+                    itemSummary[item.name] = 0;
+                }
+                itemSummary[item.name] += item.quantity;
+                totalItemsToPack += item.quantity; // Accumulate total items
+            });
+        });
+
+        // Convert to array for charting
+        const summaryArray = Object.entries(itemSummary).map(([name, quantity]) => ({ name, quantity }));
+
+        res.status(200).json({
+            itemDetails: summaryArray,
+            totalItems: totalItemsToPack
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch accepted items summary" });
     }
 };  
 

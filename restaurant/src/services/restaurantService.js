@@ -1,10 +1,8 @@
 import axios from 'axios';
 import { API_URL } from '../api/api';
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return { Authorization: `Bearer ${token}` };
-};
+// Configure axios to use cookies
+axios.defaults.withCredentials = true;
 
 const restaurantService = {
     // Create new restaurant (Step 1)
@@ -12,7 +10,6 @@ const restaurantService = {
         try {
             const response = await axios.post(`${API_URL}/api/restaurants`, formData, {
                 headers: {
-                    ...getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             });
@@ -27,7 +24,6 @@ const restaurantService = {
         try {
             const response = await axios.post(`${API_URL}/api/restaurants/documents`, formData, {
                 headers: {
-                    ...getAuthHeader(),
                     'Content-Type': 'multipart/form-data'
                 }
             });
@@ -40,9 +36,7 @@ const restaurantService = {
     // Get all restaurants for the current user
     getMyRestaurants: async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/restaurants/my-restaurants`, {
-                headers: getAuthHeader()
-            });
+            const response = await axios.get(`${API_URL}/api/restaurants/my-restaurants`);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -52,9 +46,7 @@ const restaurantService = {
     // Get a specific restaurant
     getRestaurant: async (restaurantId) => {
         try {
-            const response = await axios.get(`${API_URL}/api/restaurants/${restaurantId}`, {
-                headers: getAuthHeader()
-            });
+            const response = await axios.get(`${API_URL}/api/restaurants/${restaurantId}`);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -64,9 +56,7 @@ const restaurantService = {
     // Update a restaurant
     updateRestaurant: async (id, updateData) => {
         try {
-            const response = await axios.put(`${API_URL}/api/restaurants/${id}`, updateData, {
-                headers: getAuthHeader()
-            });
+            const response = await axios.put(`${API_URL}/api/restaurants/${id}`, updateData);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -81,7 +71,6 @@ const restaurantService = {
                 formData,
                 {
                     headers: {
-                        ...getAuthHeader(),
                         'Content-Type': 'multipart/form-data',
                     },
                 }
@@ -95,9 +84,7 @@ const restaurantService = {
     // Delete a restaurant
     deleteRestaurant: async (id) => {
         try {
-            const response = await axios.delete(`${API_URL}/api/restaurants/${id}`, {
-                headers: getAuthHeader()
-            });
+            const response = await axios.delete(`${API_URL}/api/restaurants/${id}`);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -109,7 +96,6 @@ const restaurantService = {
         try {
             const response = await axios.post(`${API_URL}/api/upload`, formData, {
                 headers: {
-                    ...getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             });

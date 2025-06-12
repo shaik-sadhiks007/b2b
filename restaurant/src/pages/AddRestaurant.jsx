@@ -748,11 +748,7 @@ const AddRestaurant = () => {
     useEffect(() => {
         const fetchRestaurant = async () => {
             try {
-                const response = await axios.get(`${API_URL}/api/restaurants`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await axios.get(`${API_URL}/api/restaurants`);
 
                 if (response.data && response.data.length > 0) {
                     const restaurantData = response.data[0];

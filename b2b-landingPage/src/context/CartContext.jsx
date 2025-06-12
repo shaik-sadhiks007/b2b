@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../api/api';
+import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const CartContext = createContext();
 
@@ -9,6 +10,7 @@ export const CartProvider = ({ children }) => {
     const [cartCount, setCartCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { user } = useContext(HotelContext);
 
     const clearCartState = useCallback(() => {
         setCarts([]);
@@ -16,18 +18,25 @@ export const CartProvider = ({ children }) => {
         setError(null);
     }, []);
 
+    // Effect to clear cart when user logs out
+    useEffect(() => {
+        if (!user) {
+            clearCartState();
+        }
+    }, [user, clearCartState]);
+
     const fetchCart = useCallback(async () => {
+        if (!user) {
+            clearCartState();
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                clearCartState();
-                setLoading(false);
-                return;
-            }
             const response = await axios.get(`${API_URL}/api/cart`, {
-                headers: { Authorization: `Bearer ${token}` }
+                withCredentials: true
             });
             setCarts(response.data);
             const totalItems = response.data.reduce((sum, cart) =>
@@ -41,14 +50,10 @@ export const CartProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [clearCartState]);
+    }, [clearCartState, user]);
 
     const addToCart = useCallback(async (restaurantId, restaurantName, items, serviceType) => {
-
-        // console.log('old cart', carts)
-        const token = localStorage.getItem('token');
-
-        if (!token) return { success: false, error: 'Not logged in' };
+        if (!user) return { success: false, error: 'Not logged in' };
 
         // --- Optimistic Update ---
         const originalCarts = JSON.parse(JSON.stringify(carts)); // Deep copy for rollback
@@ -67,9 +72,8 @@ export const CartProvider = ({ children }) => {
                 // Update existing cart with new items list
                 newCarts = [...carts];
                 const oldItemCount = newCarts[existingCartIndex].items.reduce((sum, item) => sum + item.quantity, 0);
-                newCarts[existingCartIndex] = { ...newCarts[existingCartIndex], items: items, photos: photos };
+                newCarts[existingCartIndex] = { ...newCarts[existingCartIndex], items: items };
                 newCartCount = cartCount - oldItemCount + items.reduce((sum, item) => sum + item.quantity, 0);
-
             } else {
                 // Handle both empty cart and existing cart cases
                 if (carts.length === 0) {
@@ -93,7 +97,6 @@ export const CartProvider = ({ children }) => {
                         restaurantName,
                         items: [...items],
                         serviceType
-
                     }];
                     newCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
                 } else {
@@ -102,7 +105,6 @@ export const CartProvider = ({ children }) => {
                         ...newCarts[0],
                         items: [...newCarts[0].items, ...items],
                         serviceType
-
                     };
                     newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
                 }
@@ -112,39 +114,30 @@ export const CartProvider = ({ children }) => {
             setCarts(newCarts);
             setCartCount(newCartCount);
 
-            // console.log(newCarts, "newcart in context")
-            // --- End Optimistic Update ---
-
             // Make the API call
             const response = await axios.post(`${API_URL}/api/cart`, {
                 restaurantId,
                 restaurantName,
                 items,
             }, {
-                headers: { Authorization: `Bearer ${token}` }
+                withCredentials: true
             });
 
             if (response.status === 200 || response.status === 201) {
                 success = true;
-                // API success, state is already updated optimistically
             } else if (response.status === 409) {
-                // Handle different restaurant error specifically
-                console.error('API add to cart failed: Different restaurant', response.data);
-                throw { status: 409, data: response.data }; // Throw object to catch below
+                throw { status: 409, data: response.data };
             } else {
-                console.error('API add to cart failed', response.status, response.data);
                 throw new Error(response.data?.message || 'API add to cart failed');
             }
 
         } catch (err) {
             console.error('Failed to add to cart:', err);
             // --- Rollback Optimistic Update ---
-            setCarts(originalCarts); // Revert state
-            setCartCount(originalCartCount); // Revert count
-            // --- End Rollback ---
+            setCarts(originalCarts);
+            setCartCount(originalCartCount);
 
             if (err.status === 409) {
-                // Return the specific error object for different restaurant
                 return {
                     success: false,
                     error: 'Different restaurant',
@@ -152,17 +145,15 @@ export const CartProvider = ({ children }) => {
                 };
             }
 
-            setError('Failed to add to cart: ' + (err.message || 'Unknown error')); // Set error state
+            setError('Failed to add to cart: ' + (err.message || 'Unknown error'));
             return { success: false, error: err.message || 'Failed to add to cart' };
         }
 
         return { success: success };
-
-    }, [carts, cartCount, setCarts, setCartCount, setError]); // Dependencies: state, state setters, error setter
+    }, [carts, cartCount, user]);
 
     const updateCartItem = useCallback(async (itemId, quantity) => {
-        const token = localStorage.getItem('token');
-        if (!token) return { success: false, error: 'Not logged in' };
+        if (!user) return { success: false, error: 'Not logged in' };
 
         const originalCarts = JSON.parse(JSON.stringify(carts));
         const originalCartCount = cartCount;
@@ -171,23 +162,21 @@ export const CartProvider = ({ children }) => {
         try {
             const cartIndex = carts.findIndex(cart => cart.items?.some(item => item.itemId === itemId));
             if (cartIndex === -1) {
-                console.error('Item not found in cart for update', itemId);
                 return { success: false, error: 'Item not found in cart' };
             }
 
             const itemIndex = carts[cartIndex].items.findIndex(item => item.itemId === itemId);
             if (itemIndex === -1) {
-                console.error('Item not found in cart for update', itemId);
                 return { success: false, error: 'Item not found in cart' };
             }
 
             const itemToUpdate = carts[cartIndex].items[itemIndex];
             const newQuantity = Math.max(1, quantity);
 
-            const newItemTotalPrice = (itemToUpdate.basePrice + (itemToUpdate.packagingCharges || 0)) * newQuantity;
+            // const newItemTotalPrice = (itemToUpdate.basePrice + (itemToUpdate.packagingCharges || 0)) * newQuantity;
 
             const updatedItems = carts[cartIndex].items.map((item, index) =>
-                index === itemIndex ? { ...item, quantity: newQuantity, totalPrice: newItemTotalPrice } : item
+                index === itemIndex ? { ...item, quantity: newQuantity } : item
             );
             const updatedCart = { ...carts[cartIndex], items: updatedItems };
 
@@ -201,13 +190,12 @@ export const CartProvider = ({ children }) => {
             const response = await axios.patch(`${API_URL}/api/cart/${itemId}`, {
                 quantity: newQuantity
             }, {
-                headers: { Authorization: `Bearer ${token}` }
+                withCredentials: true
             });
 
             if (response.status === 200) {
                 success = true;
             } else {
-                console.error('API update failed', response.status, response.data);
                 throw new Error(response.data?.message || 'API update failed');
             }
         } catch (err) {
@@ -219,11 +207,10 @@ export const CartProvider = ({ children }) => {
         }
 
         return { success: success };
-    }, [carts, cartCount, setCarts, setCartCount, setError]);
+    }, [carts, cartCount, user]);
 
     const removeCartItem = useCallback(async (itemId) => {
-        const token = localStorage.getItem('token');
-        if (!token) return { success: false, error: 'Not logged in' };
+        if (!user) return { success: false, error: 'Not logged in' };
 
         const originalCarts = JSON.parse(JSON.stringify(carts));
         const originalCartCount = cartCount;
@@ -232,13 +219,11 @@ export const CartProvider = ({ children }) => {
         try {
             const cartIndex = carts.findIndex(cart => cart.items?.some(item => item.itemId === itemId));
             if (cartIndex === -1) {
-                console.error('Item not found in cart for removal', itemId);
                 return { success: false, error: 'Item not found in cart' };
             }
 
             const itemToRemove = carts[cartIndex].items.find(item => item.itemId === itemId);
             if (!itemToRemove) {
-                console.error('Item not found in cart for removal', itemId);
                 return { success: false, error: 'Item not found in cart' };
             }
 
@@ -261,13 +246,12 @@ export const CartProvider = ({ children }) => {
             setError(null);
 
             const response = await axios.delete(`${API_URL}/api/cart/${itemId}`, {
-                headers: { Authorization: `Bearer ${token}` }
+                withCredentials: true
             });
 
             if (response.status === 200) {
                 success = true;
             } else {
-                console.error('API deletion failed', response.status, response.data);
                 throw new Error(response.data?.message || 'API deletion failed');
             }
         } catch (err) {
@@ -279,11 +263,10 @@ export const CartProvider = ({ children }) => {
         }
 
         return { success: success };
-    }, [carts, cartCount, setCarts, setCartCount, setError]);
+    }, [carts, cartCount, user]);
 
     const clearCart = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!user) return { success: false, error: 'Not logged in' };
 
         const originalCarts = JSON.parse(JSON.stringify(carts));
         const originalCartCount = cartCount;
@@ -296,13 +279,12 @@ export const CartProvider = ({ children }) => {
 
         try {
             const response = await axios.delete(`${API_URL}/api/cart`, {
-                headers: { Authorization: `Bearer ${token}` }
+                withCredentials: true
             });
 
             if (response.status === 200) {
                 success = true;
             } else {
-                console.error('API clear failed', response.status, response.data);
                 throw new Error(response.data?.message || 'API clear failed');
             }
         } catch (err) {
@@ -314,24 +296,20 @@ export const CartProvider = ({ children }) => {
         }
 
         return { success: success };
-    }, [carts, cartCount, setCarts, setCartCount, setError, setLoading]);
+    }, [carts, cartCount, user]);
 
     const isItemInCart = useCallback((itemId) => {
         return carts.some(cart => cart.items?.some(item => item.itemId === itemId));
     }, [carts]);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
+        if (user) {
             fetchCart();
         } else {
             setLoading(false);
             clearCartState();
         }
-        return () => {
-            // console.log('CartContext useEffect cleaning up');
-        };
-    }, [fetchCart, clearCartState, setLoading]);
+    }, [fetchCart, clearCartState, user]);
 
     return (
         <CartContext.Provider value={{

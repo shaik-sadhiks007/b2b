@@ -3,7 +3,6 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
-const auth = require('../middleware/auth');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const Restaurant = require('../models/Restaurant');
@@ -39,7 +38,7 @@ cloudinary.config({
 });
 
 // Create new restaurant (Step 1)
-router.post('/', auth, upload.single('profileImage'), async (req, res) => {
+router.post('/', authMiddleware, upload.single('profileImage'), async (req, res) => {
     try {
         // Parse the formData JSON string
         const formDataObj = JSON.parse(req.body.formData || '{}');
@@ -121,7 +120,7 @@ router.post('/', auth, upload.single('profileImage'), async (req, res) => {
 });
 
 // Update restaurant step
-router.put('/:id/step/:step', auth, upload.fields([
+router.put('/:id/step/:step', authMiddleware, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'panCardImage', maxCount: 1 },
     { name: 'gstImage', maxCount: 1 },
@@ -256,7 +255,7 @@ router.put('/:id/step/:step', auth, upload.fields([
 });
 
 // Get all restaurants for the current user
-router.get('/my-restaurants', auth, async (req, res) => {
+router.get('/my-restaurants', authMiddleware, async (req, res) => {
     try {
         const restaurants = await Restaurant.find({ owner: req.user._id });
         res.json(restaurants);
@@ -270,7 +269,6 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
     try {
         // Use the restaurant ID from the authenticated user
 
-        console.log(req.restaurant, "req.restaurant");
         const restaurant = await Restaurant.findById(req.restaurant._id);
 
 
@@ -287,7 +285,7 @@ router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) =>
 });
 
 // Update restaurant profile
-router.patch('/profile', auth, restaurantMiddleware, upload.fields([
+router.patch('/profile', authMiddleware, restaurantMiddleware, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'panCardImage', maxCount: 1 },
     { name: 'gstImage', maxCount: 1 },
@@ -380,10 +378,10 @@ router.patch('/profile', auth, restaurantMiddleware, upload.fields([
 });
 
 // Get all restaurants for a user
-router.get('/', auth, async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     try {
         const restaurants = await Restaurant.find({
-            owner: req.user._id
+            owner: req.user.id
         });
 
         // Ensure the contact structure is correct for each restaurant
@@ -409,26 +407,8 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// Get a specific restaurant
-router.get('/', auth, async (req, res) => {
-    try {
-        const restaurant = await Restaurant.findOne({
-            // _id: req.params.id,
-            owner: req.user._id
-        });
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
-        }
-
-        res.json(restaurant);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching restaurant', error: error.message });
-    }
-});
-
 // Get restaurant by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const restaurant = await Restaurant.findOne({
             _id: req.params.id,
@@ -457,7 +437,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Delete a restaurant
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const restaurant = await Restaurant.findOneAndDelete({
             _id: req.params.id,

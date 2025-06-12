@@ -5,15 +5,15 @@ const menuItemSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    foodType: {
-        type: String,
-        enum: ['Veg', 'Non-Veg', 'Egg'],
-        required: true
-    },
-    customisable: {
-        type: Boolean,
-        default: false
-    },
+    // foodType: {
+    //     type: String,
+    //     enum: ['Veg', 'Non-Veg', 'Egg'],
+    //     required: true
+    // },
+    // customisable: {
+    //     type: Boolean,
+    //     default: false
+    // },
     basePrice: {
         type: String,
         required: true
@@ -24,15 +24,16 @@ const menuItemSchema = new mongoose.Schema({
     },
     isVeg: {
         type: Boolean,
-        required: true
+        required: true,
+    default: true,
     },
     photos: [{
         type: String
     }],
-    serviceType: {
-        type: String,
-        enum: ['Delivery', 'Dine-in', 'Both'],
-    },
+    // serviceType: {
+    //     type: String,
+    //     enum: ['Delivery', 'Dine-in', 'Both'],
+    // },
     totalPrice: {
         type: String,
         required: true

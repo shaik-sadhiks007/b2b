@@ -6,17 +6,45 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const Restaurant = require('../models/Restaurant');
+const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+
+// Initialize AWS Secrets Manager client
+const secretsClient = new SecretsManagerClient({
+    region: "eu-north-1",
+});
+
+// Function to get Firebase service account from AWS Secrets Manager
+const getFirebaseServiceAccount = async () => {
+    try {
+        const response = await secretsClient.send(
+            new GetSecretValueCommand({
+                SecretId: "firebase/serviceAccountKey",
+                VersionStage: "AWSCURRENT",
+            })
+        );
+        return JSON.parse(response.SecretString);
+    } catch (error) {
+        console.error('Error fetching Firebase service account from AWS Secrets Manager:', error);
+        throw new Error('Failed to fetch Firebase service account credentials');
+    }
+};
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     try {
-        const serviceAccount = require('../../serviceAccountKey.json');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
+        getFirebaseServiceAccount()
+            .then(serviceAccount => {
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount)
+                });
+            })
+            .catch(error => {
+                console.error('Error initializing Firebase Admin:', error);
+                throw new Error('Firebase Admin initialization failed. Please check your AWS Secrets Manager configuration.');
+            });
     } catch (error) {
-        console.error('Error initializing Firebase Admin:', error);
-        throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
+        console.error('Error in Firebase Admin initialization:', error);
+        throw new Error('Firebase Admin initialization failed');
     }
 }
 
@@ -50,11 +78,11 @@ const register = async (req, res) => {
         const { username, email, firebaseUid } = req.body;
 
         // Verify Firebase user and check email verification
-        // const firebaseUser = await admin.auth().getUser(firebaseUid);
+        const firebaseUser = await admin.auth().getUser(firebaseUid);
 
-        // if (!firebaseUser.emailVerified) {
-        //     return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
-        // }
+        if (!firebaseUser.emailVerified) {
+            return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
+        }
 
         const userExists = await User.findOne({ email });
         if (userExists) {

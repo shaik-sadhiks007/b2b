@@ -36,6 +36,8 @@ const Dashboard = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedSubcategories, setExpandedSubcategories] = useState({});
+  const [defaultCategory, setDefaultCategory] = useState(null);
+  const [defaultSubcategory, setDefaultSubcategory] = useState(null);
 
   // Modal states for categories/subcategories
   const [showModal, setShowModal] = useState(false);
@@ -61,7 +63,6 @@ const Dashboard = () => {
   const [itemData, setItemData] = useState({
     name: "",
     description: "",
-    // serviceType: "Delivery",
     foodType: "Veg",
     basePrice: "",
     photos: [],
@@ -82,9 +83,6 @@ const Dashboard = () => {
 
   const tabs = [
     { label: "Menu editor", path: "/menu", icon: "bi-menu-button-wide" },
-    // { label: "Manage inventory", path: "/inventory", icon: "bi-box-seam" },
-    // { label: "Taxes", path: "/taxes", icon: "bi-calculator" },
-    // { label: "Charges", path: "/charges", icon: "bi-credit-card" }
   ];
 
   useEffect(() => {
@@ -95,6 +93,19 @@ const Dashboard = () => {
       totalPrice: (base + packaging).toFixed(2),
     }));
   }, [itemData.basePrice, itemData.packagingCharges]);
+
+  useEffect(() => {
+    // Automatically set the first category and subcategory as defaults when categories load
+    if (categories.length > 0 && !defaultCategory) {
+      const firstCategory = categories[0];
+      setDefaultCategory(firstCategory._id);
+      
+      if (firstCategory.subcategories.length > 0) {
+        const firstSubcategory = firstCategory.subcategories[0];
+        setDefaultSubcategory(firstSubcategory._id);
+      }
+    }
+  }, [categories, defaultCategory]);
 
   const handleStatusChange = (status) => {
     setIsOnline(status === "online");
@@ -187,43 +198,29 @@ const Dashboard = () => {
     setItemData({
       name: "",
       description: "",
-      // serviceType: "Delivery",
-       foodType: "Veg",
+      foodType: "Veg",
       basePrice: "",
       photos: [],
       packagingCharges: "",
       totalPrice: "",
-      // customisable: true,
       isVeg: true,
       inStock: true,
     });
     setShowItemForm(true);
   };
 
-  const handleEditItem = (item) => {
-    setEditingItem(item);
-    setItemData({
-      name: item.name,
-      description: item.description,
-      // serviceType: item.serviceType,
-      //foodType: item.isVeg ? "Veg" : "Non-Veg",
-      basePrice: item.basePrice,
-      photos: item.photos || [],
-      packagingCharges: item.packagingCharges || "",
-      totalPrice: item.totalPrice || "",
-      // customisable: item.customisable,
-      isVeg: item.isVeg,
-      inStock: item.inStock,
-    });
-    setShowItemForm(true);
-  };
-
   const handleBulkAddSubmit = async (e) => {
     e.preventDefault();
-    if (!bulkTarget.categoryId || !bulkTarget.subcategoryId) {
+    
+    // Use selected values or fall back to defaults
+    const categoryId = bulkTarget.categoryId || defaultCategory;
+    const subcategoryId = bulkTarget.subcategoryId || defaultSubcategory;
+
+    if (!categoryId || !subcategoryId) {
       toast.error("Please select a category and subcategory first");
       return;
     }
+
     // Split by newlines or commas, trim, and filter out empty names
     const itemNames = bulkItemsInput
       .split(/\r?\n|,/)
@@ -235,11 +232,7 @@ const Dashboard = () => {
       return;
     }
 
-    await addItemsBulk(
-      bulkTarget.categoryId,
-      bulkTarget.subcategoryId,
-      itemNames
-    );
+    await addItemsBulk(categoryId, subcategoryId, itemNames);
     setShowBulkAddModal(false);
     setBulkItemsInput("");
   };
@@ -247,13 +240,11 @@ const Dashboard = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
       }
 
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file");
         return;
@@ -286,11 +277,8 @@ const Dashboard = () => {
       return;
     }
 
-    // Prepare the item data for submission
     const submissionData = {
       ...itemData,
-     
-      // Remove foodType if not needed in the backend
     };
 
     if (editingItem) {
@@ -335,6 +323,16 @@ const Dashboard = () => {
     return <div>Please login to access the dashboard</div>;
   }
 
+  // Helper function to get category/subcategory names
+  const getCategoryName = (id) => categories.find(c => c._id === id)?.name || "Not selected";
+  const getSubcategoryName = (catId, subId) => {
+    if (!catId || !subId) return "Not selected";
+    const category = categories.find(c => c._id === catId);
+    if (!category) return "Not selected";
+    const subcategory = category.subcategories.find(s => s._id === subId);
+    return subcategory?.name || "Not selected";
+  };
+
   return (
     <div className="container-fluid px-0">
       {/* Info Tooltip */}
@@ -376,9 +374,7 @@ const Dashboard = () => {
                 <div className="modal-body">
                   <form onSubmit={handleItemSubmit}>
                     <div className="row">
-                      {/* Left Column */}
                       <div className="col-md-6">
-                        {/* Name */}
                         <div className="mb-3">
                           <label className="form-label">Item Name*</label>
                           <input
@@ -391,7 +387,6 @@ const Dashboard = () => {
                           />
                         </div>
 
-                        {/* Description */}
                         <div className="mb-3">
                           <label className="form-label">Description</label>
                           <textarea
@@ -403,7 +398,6 @@ const Dashboard = () => {
                           />
                         </div>
 
-                        {/* Food Type */}
                         <div className="mb-3">
                           <label className="form-label">Food Type</label>
                           <select
@@ -416,26 +410,9 @@ const Dashboard = () => {
                             <option value="Non-Veg">Non-Veg</option>
                           </select>
                         </div>
-
-                        {/* Service Type */}
-                        {/* <div className="mb-3">
-                          <label className="form-label">Service Type</label>
-                          <select
-                            className="form-select"
-                            name="serviceType"
-                            value={itemData.serviceType}
-                            onChange={handleItemInputChange}
-                          >
-                            <option value="Delivery">Delivery</option>
-                            <option value="Pickup">Pickup</option>
-                            <option value="Dine-in">Dine-in</option>
-                          </select>
-                        </div> */}
                       </div>
 
-                      {/* Right Column */}
                       <div className="col-md-6">
-                        {/* Base Price */}
                         <div className="mb-3">
                           <label className="form-label">Base Price*</label>
                           <div className="input-group">
@@ -453,7 +430,6 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {/* Packaging Charges */}
                         <div className="mb-3">
                           <label className="form-label">
                             Packaging Charges
@@ -472,7 +448,6 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {/* Total Price (readonly) */}
                         <div className="mb-3">
                           <label className="form-label">Total Price</label>
                           <div className="input-group">
@@ -485,40 +460,9 @@ const Dashboard = () => {
                             />
                           </div>
                         </div>
-
-                        {/* Toggle Switches */}
-                        {/* <div className="mb-3">
-                          <div className="form-check form-switch">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              name="customisable"
-                              checked={itemData.customisable}
-                              onChange={handleItemInputChange}
-                              id="customisableSwitch"
-                            />
-                            <label className="form-check-label" htmlFor="customisableSwitch">
-                              Customisable
-                            </label>
-                          </div>
-                          <div className="form-check form-switch">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              name="inStock"
-                              checked={itemData.inStock}
-                              onChange={handleItemInputChange}
-                              id="inStockSwitch"
-                            />
-                            <label className="form-check-label" htmlFor="inStockSwitch">
-                              In Stock
-                            </label>
-                          </div>
-                        </div> */}
                       </div>
                     </div>
 
-                    {/* Image Upload */}
                     <div className="mb-3">
                       <label className="form-label">Images</label>
                       <div className="d-flex flex-wrap gap-2 mb-2">
@@ -591,7 +535,7 @@ const Dashboard = () => {
               <div className="modal-content">
                 <form onSubmit={handleBulkAddSubmit}>
                   <div className="modal-header">
-                    <h5 className="modal-title">Bulk Add Items</h5>
+                    <h5 className="modal-title">Enter your items List</h5>
                     <button
                       type="button"
                       className="btn-close"
@@ -599,6 +543,19 @@ const Dashboard = () => {
                     ></button>
                   </div>
                   <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Category: {getCategoryName(bulkTarget.categoryId || defaultCategory)}
+                      </label>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Subcategory: {getSubcategoryName(
+                          bulkTarget.categoryId || defaultCategory,
+                          bulkTarget.subcategoryId || defaultSubcategory
+                        )}
+                      </label>
+                    </div>
                     <div className="mb-3">
                       <label className="form-label">
                         Enter item names (one per line or comma-separated)
@@ -746,34 +703,30 @@ const Dashboard = () => {
                       <h4 className="mb-0 fw-bold fs-5 fs-sm-4 fs-md-3 fs-lg-2">
                         Categories ({categories.length})
                       </h4>
-                      <button
-                        className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
-                        onClick={() => openModal("category", "add")}
-                      >
-                        <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                        <span className="d-none d-sm-inline">Add Category</span>
-                        <span className="d-inline d-sm-none"></span>
-                      </button>
-                      <button
-                        className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
-                        onClick={() => {
-                          if (!selectedCategory || !selectedSubcategory) {
-                            toast.error(
-                              "Please select a category and subcategory first"
-                            );
-                            return;
-                          }
-                          setBulkTarget({
-                            categoryId: selectedCategory,
-                            subcategoryId: selectedSubcategory._id,
-                          });
-                          setShowBulkAddModal(true);
-                        }}
-                      >
-                       <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                        <span className="d-none d-sm-inline">Add Menu List</span>
-                        <span className="d-inline d-sm-none">List</span>
-                      </button>
+                      <div className="d-flex gap-2">
+                        <button
+                          className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
+                          onClick={() => openModal("category", "add")}
+                        >
+                          <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                          <span className="d-none d-sm-inline">Add Category</span>
+                          <span className="d-inline d-sm-none"></span>
+                        </button>
+                        <button
+                          className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
+                          onClick={() => {
+                            setBulkTarget({
+                              categoryId: selectedCategory || defaultCategory,
+                              subcategoryId: selectedSubcategory?._id || defaultSubcategory,
+                            });
+                            setShowBulkAddModal(true);
+                          }}
+                        >
+                          <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                          <span className="d-none d-sm-inline">Add Menu List</span>
+                          <span className="d-inline d-sm-none">List</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Accordion for Categories */}
@@ -960,13 +913,6 @@ const Dashboard = () => {
                                           onClick={() => handleEditItem(item)}
                                         >
                                           <div className="d-flex align-items-center">
-                                            {/* <i
-                                              className={`bi bi-circle-fill me-3 ${
-                                                item.isVeg
-                                                  ? "text-success"
-                                                  : "text-danger"
-                                              } fs-6`}
-                                            ></i> */}
                                             <span className="fs-5">
                                               {item.name}
                                             </span>
@@ -1016,16 +962,13 @@ const Dashboard = () => {
               )}
             </div>
           ) : activeTab === "manage-inventory" ? (
-            // Inventory Manager Content
             <InventoryManager
               categories={categories}
               onStockChange={handleStockChange}
             />
           ) : activeTab === "orders" ? (
-            // Orders Content
             <Orders />
           ) : (
-            // Other tabs content
             <div className="container-fluid px-3">
               <div className="text-center p-4">
                 <h5>Coming Soon</h5>

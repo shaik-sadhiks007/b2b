@@ -133,7 +133,7 @@ const AboutUs = () => {
     <div className="p-6">
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">Digitalize your business</h3>
       <p className="text-lg text-gray-700 leading-relaxed">
-        Showcase your products and services on website that reflects your brand identity. Reach more customers and grow your business with an easy-to-navigate, mobile-friendly design.
+        Showcase your products and services on our website that reflects your brand identity. Reach more customers and grow your business with an easy-to-navigate, mobile-friendly design.
         <ul>
           <li className="mt-2">Enhance your customer experience</li>
           <li className="mt-2">Automate processes</li>  

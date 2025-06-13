@@ -50,11 +50,11 @@ const register = async (req, res) => {
         const { username, email, firebaseUid } = req.body;
 
         // Verify Firebase user and check email verification
-        const firebaseUser = await admin.auth().getUser(firebaseUid);
+        // const firebaseUser = await admin.auth().getUser(firebaseUid);
 
-        if (!firebaseUser.emailVerified) {
-            return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
-        }
+        // if (!firebaseUser.emailVerified) {
+        //     return res.status(400).json({ message: 'Email not verified. Please verify your email first.' });
+        // }
 
         const userExists = await User.findOne({ email });
         if (userExists) {

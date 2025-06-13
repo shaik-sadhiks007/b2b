@@ -65,21 +65,27 @@ const Profile = () => {
     const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
-        if (!contextUser) {
-            navigate('/login');
-            return;
-        }
         fetchUserData();
         fetchAddresses();
     }, [contextUser, navigate]);
+
+    useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
 
     const fetchUserData = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/auth/profile`);
             setUser(response.data);
         } catch (error) {
-            setError('Failed to fetch user data');
             console.error('Error fetching user data:', error);
+            // If fetching user data fails, it might be an authentication issue
+            toast.error('Session expired or unauthorized. Please log in again.');
+            setContextUser(null);
+            setTimeout(() => {
+                navigate('/login');
+            }, 1000); // Give toast time to show
         } finally {
             setLoading(false);
         }
@@ -91,7 +97,8 @@ const Profile = () => {
             setAddresses(response.data);
         } catch (error) {
             console.error('Error fetching addresses:', error);
-            setError('Failed to fetch addresses');
+            // Do not redirect here, as fetchUserData already handles the main auth check
+            // setError('Failed to fetch addresses'); // Keep this for other errors if needed
         }
     };
 
@@ -271,7 +278,6 @@ const Profile = () => {
             console.error('Password update error:', error);
             if (error.code === 'auth/requires-recent-login') {
                 toast.error('Please login again to change your password');
-                localStorage.removeItem('token');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
@@ -340,9 +346,8 @@ const Profile = () => {
                                             ...passwordData,
                                             newPassword: e.target.value
                                         })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.newPassword ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.newPassword && (
@@ -360,9 +365,8 @@ const Profile = () => {
                                             ...passwordData,
                                             confirmPassword: e.target.value
                                         })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.confirmPassword && (
@@ -416,9 +420,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.fullName}
                                         onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.fullName ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.fullName && (
@@ -433,9 +436,8 @@ const Profile = () => {
                                         type="tel"
                                         value={addressForm.phone}
                                         onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.phone ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.phone && (
@@ -450,9 +452,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.street}
                                         onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.street ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.street ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.street && (
@@ -467,9 +468,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.city}
                                         onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.city ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.city ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.city && (
@@ -484,9 +484,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.state}
                                         onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.state ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.state ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.state && (
@@ -501,9 +500,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.zip}
                                         onChange={(e) => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.zip ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.zip ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.zip && (
@@ -518,9 +516,8 @@ const Profile = () => {
                                         type="text"
                                         value={addressForm.country}
                                         onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                            formErrors.country ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.country ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         required
                                     />
                                     {formErrors.country && (
@@ -555,9 +552,8 @@ const Profile = () => {
                             {addresses.map((address) => (
                                 <div
                                     key={address._id}
-                                    className={`border rounded-lg p-4 ${
-                                        address.isDefault ? 'border-indigo-500 bg-indigo-50' : ''
-                                    }`}
+                                    className={`border rounded-lg p-4 ${address.isDefault ? 'border-indigo-500 bg-indigo-50' : ''
+                                        }`}
                                 >
                                     {address.isDefault && (
                                         <span className="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full mb-2">

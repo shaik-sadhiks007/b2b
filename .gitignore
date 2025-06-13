@@ -3,7 +3,7 @@ node_modules/
 .env
 
 # Firebase
-backend/firebase-service-account.json
+# backend/firebase-service-account.json
 
 # Build
 dist/

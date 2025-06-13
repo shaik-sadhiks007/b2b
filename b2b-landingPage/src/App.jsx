@@ -25,6 +25,8 @@ import Helpbutton from './components/Helpbutton';
 import Whatsappbutton from './components/Whatsappbutton';
 import Contactus from './components/Contactus';
 import Footer from './components/Footer';
+import OrderDetails from './components/OrderDetails';
+
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
@@ -77,6 +79,7 @@ function AppContent() {
             <Orders />
           </ProtectedRoute>
         } />
+        <Route path="/orders/:orderId" element={<OrderDetails />} />
         <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />

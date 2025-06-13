@@ -62,6 +62,11 @@ const CartPage = () => {
     const cart = carts[0]; // Get the first cart document
 
     useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
+    
+    useEffect(() => {
         if (!user && !loading && (!carts || carts.length === 0 || !carts[0]?.items || carts[0]?.items.length === 0)) {
             toast.error('Please login to view your cart');
             navigate('/login');
@@ -127,7 +132,7 @@ const CartPage = () => {
         }, 0);
     };
 
-    console.log(carts,"carts");
+    console.log(carts, "carts");
 
     if (loading) return <CartSkeleton />;
     if (error) return <div className="flex justify-center items-center h-screen text-red-600">{error}</div>;

@@ -52,13 +52,15 @@ const Footer = () => {
                         <h3 className="text-xl font-bold mb-4">Partner With Us</h3>
                         <ul className="space-y-2">
                             <li>
-                                <div 
+                                <a 
 
-                                    onClick={handleRestaurantClick}
+                                    // onClick={handleRestaurantClick}
+                                    href={RESTAURANT_URL}
+                                    target='_blank'
                                     className="text-gray-400 hover:text-white cursor-pointer"
                                 >
                                     Add your Business
-                                </div>
+                                </a>
                             </li>
                             <li>
                                 {/* <a 

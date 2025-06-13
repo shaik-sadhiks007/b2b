@@ -12,7 +12,7 @@ const socket = io(API_URL, { withCredentials: true });
 
 const statusTabs = [
     { id: 'ORDER_PLACED', label: 'New Orders', icon: 'bi-bell' },
-    { id: 'ACCEPTED', label: 'Preparing', icon: 'bi-clock' },
+    { id: 'ACCEPTED', label: 'Accepted', icon: 'bi-clock' },
     { id: 'ORDER_READY', label: 'Ready', icon: 'bi-check-circle' },
     { id: 'ORDER_PICKED_UP', label: 'Completed', icon: 'bi-check2-all' }
 ];

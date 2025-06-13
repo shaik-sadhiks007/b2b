@@ -91,6 +91,11 @@ const HotelDetails = () => {
     const { user } = useContext(HotelContext);
 
     useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
+    
+    useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
@@ -385,13 +390,12 @@ const HotelDetails = () => {
                                                                         <button
                                                                             onClick={() => handleAddToCart(item)}
                                                                             disabled={!restaurant?.online || !item.inStock}
-                                                                            className={`w-full md:w-[160px] md:self-center px-4 py-2 ${
-                                                                                !restaurant?.online || !item.inStock
+                                                                            className={`w-full md:w-[160px] md:self-center px-4 py-2 ${!restaurant?.online || !item.inStock
                                                                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                                                     : isItemInCart(item._id)
                                                                                         ? 'bg-green-600 text-white'
                                                                                         : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
-                                                                            } rounded transition-colors`}
+                                                                                } rounded transition-colors`}
                                                                         >
                                                                             {!restaurant?.online ? 'CLOSED' : !item.inStock ? 'OUT OF STOCK' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
                                                                         </button>

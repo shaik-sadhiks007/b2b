@@ -50,6 +50,11 @@ function SearchPage() {
     onAllowLocation
   } = useLocationContext();
 
+  useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+  }, []);
+  
   const handleAddToCart = async (item) => {
     if (!user) {
       navigate('/login')
@@ -206,7 +211,7 @@ function SearchPage() {
           <div key={result.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             {result.type === 'business' ? (
               // Business Card
-              <div 
+              <div
                 className="p-4 cursor-pointer"
                 onClick={() => {
                   const category = result.category?.toLowerCase() || 'restaurant';
@@ -255,7 +260,7 @@ function SearchPage() {
             ) : (
               // Product Card
               <div className="p-4">
-                <div 
+                <div
                   className="aspect-w-16 aspect-h-9 mb-4 cursor-pointer relative"
                   onClick={() => {
                     const category = result.restaurant.category?.toLowerCase() || 'restaurant';
@@ -304,7 +309,7 @@ function SearchPage() {
                     <span className="text-lg font-semibold">₹{result.price}</span>
                     <span className="text-sm text-gray-500">({result.foodType})</span>
                   </div>
-                  <div 
+                  <div
                     className="flex flex-col items-end cursor-pointer"
                     onClick={() => {
                       const category = result.restaurant.category?.toLowerCase() || 'restaurant';
@@ -320,19 +325,18 @@ function SearchPage() {
                 <button
                   onClick={() => isItemInCart(result.id) ? navigate('/cart') : handleAddToCart(result)}
                   disabled={!result.restaurant.online}
-                  className={`w-full mt-4 px-4 py-2 ${
-                    !result.restaurant.online
+                  className={`w-full mt-4 px-4 py-2 ${!result.restaurant.online
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : isItemInCart(result.id)
-                      ? 'bg-green-600 text-white'
-                      : 'border border-green-600 text-green-600'
-                  } rounded hover:bg-green-700 hover:text-white transition-colors`}
+                        ? 'bg-green-600 text-white'
+                        : 'border border-green-600 text-green-600'
+                    } rounded hover:bg-green-700 hover:text-white transition-colors`}
                 >
-                  {!result.restaurant.online 
-                    ? 'RESTAURANT CLOSED' 
-                    : isItemInCart(result.id) 
-                    ? 'GO TO CART' 
-                    : 'ADD TO CART'}
+                  {!result.restaurant.online
+                    ? 'RESTAURANT CLOSED'
+                    : isItemInCart(result.id)
+                      ? 'GO TO CART'
+                      : 'ADD TO CART'}
                 </button>
               </div>
             )}
@@ -379,8 +383,8 @@ function SearchPage() {
               placeholder="Search for businesses or products"
               className="w-full pl-12 pr-12 py-5 rounded-lg border border-gray-300 focus:border-black outline-none text-xl font-medium placeholder-gray-400 shadow-sm"
             />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={searchQuery ? handleClearSearch : handleSearch}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
             >
@@ -391,22 +395,20 @@ function SearchPage() {
             <button
               type="button"
               onClick={() => setSearchType('products')}
-              className={`px-4 py-2 rounded-lg ${
-                searchType === 'products'
+              className={`px-4 py-2 rounded-lg ${searchType === 'products'
                   ? 'bg-black text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Products
             </button>
             <button
               type="button"
               onClick={() => setSearchType('business')}
-              className={`px-4 py-2 rounded-lg ${
-                searchType === 'business'
+              className={`px-4 py-2 rounded-lg ${searchType === 'business'
                   ? 'bg-black text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Businesses
             </button>
@@ -420,8 +422,8 @@ function SearchPage() {
             <h2 className="text-2xl font-bold mb-6 ml-2">Popular Products</h2>
             <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
               {cuisines.map((cuisine) => (
-                <div 
-                  key={cuisine.name} 
+                <div
+                  key={cuisine.name}
                   className="flex flex-col items-center min-w-[90px] cursor-pointer"
                   onClick={() => {
                     setSearchQuery(cuisine.name);

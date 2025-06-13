@@ -55,7 +55,8 @@ const Footer = () => {
                                 <a 
 
                                     // onClick={handleRestaurantClick}
-                                    href={ORIGIN_URL}
+                                    href={RESTAURANT_URL}
+                                    target='_blank'
                                     className="text-gray-400 hover:text-white cursor-pointer"
                                 >
                                     Add your Business

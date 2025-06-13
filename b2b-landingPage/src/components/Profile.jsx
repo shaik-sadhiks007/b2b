@@ -65,14 +65,9 @@ const Profile = () => {
     const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
-        if (!contextUser) {
-            navigate('/login');
-            return;
-        }
         fetchUserData();
         fetchAddresses();
     }, [contextUser, navigate]);
-
 
     useEffect(() => {
         // Scroll to top when component mounts
@@ -84,8 +79,13 @@ const Profile = () => {
             const response = await axios.get(`${API_URL}/api/auth/profile`);
             setUser(response.data);
         } catch (error) {
-            setError('Failed to fetch user data');
             console.error('Error fetching user data:', error);
+            // If fetching user data fails, it might be an authentication issue
+            toast.error('Session expired or unauthorized. Please log in again.');
+            setContextUser(null);
+            setTimeout(() => {
+                navigate('/login');
+            }, 1000); // Give toast time to show
         } finally {
             setLoading(false);
         }
@@ -97,7 +97,8 @@ const Profile = () => {
             setAddresses(response.data);
         } catch (error) {
             console.error('Error fetching addresses:', error);
-            setError('Failed to fetch addresses');
+            // Do not redirect here, as fetchUserData already handles the main auth check
+            // setError('Failed to fetch addresses'); // Keep this for other errors if needed
         }
     };
 
@@ -277,7 +278,6 @@ const Profile = () => {
             console.error('Password update error:', error);
             if (error.code === 'auth/requires-recent-login') {
                 toast.error('Please login again to change your password');
-                localStorage.removeItem('token');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);

@@ -24,6 +24,6 @@ dist-ssr
 *.sw?
 
 # Firebase
-serviceAccountKey.json
+# serviceAccountKey.json
 
 

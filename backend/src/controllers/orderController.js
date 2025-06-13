@@ -433,3 +433,21 @@ exports.getAcceptedItemsSummary = async (req, res) => {
     }
 };  
 
+exports.getOrderDetails = async (req, res) => {
+    try {
+        const order = await Order.findOne({ 
+            _id: req.params.orderId,
+            user: req.user.id 
+        })
+        .populate("customerAddress");
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        res.status(200).json(order);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch order details", message: error.message });
+    }
+};  
+

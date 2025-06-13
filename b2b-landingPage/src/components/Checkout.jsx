@@ -99,6 +99,11 @@ const Checkout = () => {
     const { carts, clearCart } = useCart();
     const { user } = useContext(HotelContext);
 
+    useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
+
     // Form state
     const [formData, setFormData] = useState({
         fullName: '',

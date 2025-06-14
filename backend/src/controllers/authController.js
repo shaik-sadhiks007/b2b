@@ -8,6 +8,7 @@ const admin = require('firebase-admin');
 const Restaurant = require('../models/Restaurant');
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 
+
 // Initialize AWS Secrets Manager client
 const secretsClient = new SecretsManagerClient({
     region: "eu-north-1",
@@ -62,7 +63,8 @@ const setTokenCookie = (res, token) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        // sameSite: 'strict',
+        sameSite: 'none',
         maxAge: 1 * 24 * 60 * 60 * 1000
     });
 };
@@ -276,7 +278,7 @@ const getProfile = async (req, res) => {
         let user = await User.findById(req.user.id).select('-password');
         // Convert Mongoose document to plain JavaScript object
         user = user.toObject();
-        
+
         // Find restaurant and add its ID
         let restaurant = await Restaurant.findOne({ owner: user._id });
         if (restaurant) {

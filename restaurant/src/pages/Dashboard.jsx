@@ -107,6 +107,29 @@ const Dashboard = () => {
     }
   }, [categories, defaultCategory]);
 
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setItemData({
+      name: item.name,
+      description: item.description || "",
+      foodType: item.foodType || "Veg",
+      basePrice: item.basePrice || "",
+      photos: item.photos || [],
+      packagingCharges: item.packagingCharges || "",
+      totalPrice: item.totalPrice || "",
+      isVeg: item.isVeg !== undefined ? item.isVeg : true,
+      inStock: item.inStock !== undefined ? item.inStock : true,
+    });
+    setShowItemForm(true);
+  };
+
+  const removeImage = (index) => {
+    setItemData((prev) => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleStatusChange = (status) => {
     setIsOnline(status === "online");
   };
@@ -473,8 +496,8 @@ const Dashboard = () => {
                             style={{ width: "100px" }}
                           >
                             <img
-                              src={photo.url}
-                              alt={photo.name}
+                              src={photo}
+                              alt={`Item ${index}`}
                               className="img-thumbnail"
                               style={{ height: "100px", objectFit: "cover" }}
                             />
@@ -503,6 +526,20 @@ const Dashboard = () => {
                       <small className="text-muted ms-2">
                         Max 5 images (500KB each)
                       </small>
+                    </div>
+
+                    <div className="form-check form-switch mb-3">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="inStockSwitch"
+                        name="inStock"
+                        checked={itemData.inStock}
+                        onChange={handleItemInputChange}
+                      />
+                      <label className="form-check-label" htmlFor="inStockSwitch">
+                        Item is in stock
+                      </label>
                     </div>
 
                     <div className="modal-footer">
@@ -911,11 +948,15 @@ const Dashboard = () => {
                                           key={item._id}
                                           className="d-flex justify-content-between align-items-center p-3 my-2 bg-white rounded"
                                           onClick={() => handleEditItem(item)}
+                                          style={{ cursor: "pointer" }}
                                         >
                                           <div className="d-flex align-items-center">
                                             <span className="fs-5">
                                               {item.name}
                                             </span>
+                                            {item.inStock === false && (
+                                              <span className="badge bg-danger ms-2">Out of Stock</span>
+                                            )}
                                           </div>
                                           <div className="d-flex align-items-center gap-3">
                                             <button
@@ -924,7 +965,7 @@ const Dashboard = () => {
                                                 e.stopPropagation();
                                                 showInfoTooltip(
                                                   e,
-                                                  `click here to edit item details, click on trash bin to delete the item`
+                                                  `Click here to edit item details, click on trash bin to delete the item`
                                                 );
                                               }}
                                               title="Info"
@@ -933,14 +974,15 @@ const Dashboard = () => {
                                             </button>
                                             <button
                                               className="btn btn-outline-danger p-2"
-                                              onClick={(e) =>
+                                              onClick={(e) => {
+                                                e.stopPropagation();
                                                 handleDeleteItem(
                                                   category._id,
                                                   subcategory._id,
                                                   item._id,
                                                   e
-                                                )
-                                              }
+                                                );
+                                              }}
                                               title="Delete Item"
                                             >
                                               <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>

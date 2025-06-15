@@ -30,6 +30,7 @@ const Dashboard = () => {
     updateItem,
     deleteItem,
     addItemsBulk,
+    deleteItemsBulk,
   } = useContext(MenuContext);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const [expandedSubcategories, setExpandedSubcategories] = useState({});
   const [defaultCategory, setDefaultCategory] = useState(null);
   const [defaultSubcategory, setDefaultSubcategory] = useState(null);
+  const [selectedItems, setSelectedItems] = useState({});
 
   // Modal states for categories/subcategories
   const [showModal, setShowModal] = useState(false);
@@ -50,7 +52,6 @@ const Dashboard = () => {
     parentId: null,
     itemId: null,
   });
-  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [bulkItemsInput, setBulkItemsInput] = useState("");
   const [bulkTarget, setBulkTarget] = useState({
     categoryId: null,
@@ -95,7 +96,6 @@ const Dashboard = () => {
   }, [itemData.basePrice, itemData.packagingCharges]);
 
   useEffect(() => {
-    // Automatically set the first category and subcategory as defaults when categories load
     if (categories.length > 0 && !defaultCategory) {
       const firstCategory = categories[0];
       setDefaultCategory(firstCategory._id);
@@ -106,6 +106,13 @@ const Dashboard = () => {
       }
     }
   }, [categories, defaultCategory]);
+
+  const handleItemCheckboxChange = (itemId, isChecked) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: isChecked
+    }));
+  };
 
   const handleEditItem = (item) => {
     setEditingItem(item);
@@ -235,7 +242,6 @@ const Dashboard = () => {
   const handleBulkAddSubmit = async (e) => {
     e.preventDefault();
     
-    // Use selected values or fall back to defaults
     const categoryId = bulkTarget.categoryId || defaultCategory;
     const subcategoryId = bulkTarget.subcategoryId || defaultSubcategory;
 
@@ -244,7 +250,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Split by newlines or commas, trim, and filter out empty names
     const itemNames = bulkItemsInput
       .split(/\r?\n|,/)
       .map((name) => name.trim())
@@ -256,8 +261,28 @@ const Dashboard = () => {
     }
 
     await addItemsBulk(categoryId, subcategoryId, itemNames);
-    setShowBulkAddModal(false);
     setBulkItemsInput("");
+    //toast.success(`${itemNames.length} items added successfully`);
+  };
+
+  const handleDeleteSelectedItems = async (categoryId, subcategoryId) => {
+    const selectedItemIds = Object.keys(selectedItems).filter(
+      (itemId) => selectedItems[itemId]
+    );
+
+    if (selectedItemIds.length === 0) {
+      toast.warning("No items selected for deletion");
+      return;
+    }
+
+    try {
+      await deleteItemsBulk(categoryId, subcategoryId, selectedItemIds);
+      setSelectedItems({});
+      //toast.success(`${selectedItemIds.length} items deleted successfully`);
+    } catch (error) {
+      toast.error("Failed to delete items");
+      console.error("Error deleting items:", error);
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -320,10 +345,8 @@ const Dashboard = () => {
   };
 
   const handleDeleteItem = (categoryId, subcategoryId, itemId, e) => {
-    e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this item?")) {
-      deleteItem(categoryId, subcategoryId, itemId);
-    }
+    e.stopPropagation(); 
+    deleteItem(categoryId, subcategoryId, itemId);
   };
 
   const showInfoTooltip = (e, content) => {
@@ -346,7 +369,6 @@ const Dashboard = () => {
     return <div>Please login to access the dashboard</div>;
   }
 
-  // Helper function to get category/subcategory names
   const getCategoryName = (id) => categories.find(c => c._id === id)?.name || "Not selected";
   const getSubcategoryName = (catId, subId) => {
     if (!catId || !subId) return "Not selected";
@@ -358,7 +380,6 @@ const Dashboard = () => {
 
   return (
     <div className="container-fluid px-0">
-      {/* Info Tooltip */}
       {infoTooltip.show && (
         <div
           className="position-absolute bg-dark text-white p-2 rounded shadow-sm"
@@ -373,7 +394,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Item Form Modal */}
       {showItemForm && (
         <>
           <div className="modal-backdrop fade show"></div>
@@ -564,68 +584,7 @@ const Dashboard = () => {
           </div>
         </>
       )}
-      {showBulkAddModal && (
-        <>
-          <div className="modal-backdrop fade show"></div>
-          <div className="modal fade show" style={{ display: "block" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <form onSubmit={handleBulkAddSubmit}>
-                  <div className="modal-header">
-                    <h5 className="modal-title">Enter your items List</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setShowBulkAddModal(false)}
-                    ></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Category: {getCategoryName(bulkTarget.categoryId || defaultCategory)}
-                      </label>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Subcategory: {getSubcategoryName(
-                          bulkTarget.categoryId || defaultCategory,
-                          bulkTarget.subcategoryId || defaultSubcategory
-                        )}
-                      </label>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Enter item names (one per line or comma-separated)
-                      </label>
-                      <textarea
-                        className="form-control"
-                        rows={6}
-                        value={bulkItemsInput}
-                        onChange={(e) => setBulkItemsInput(e.target.value)}
-                        placeholder="e.g. Pappu&#10;Rasam&#10;Curd"
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowBulkAddModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Add Items
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
 
-      {/* Modal for Categories and Subcategories */}
       {showModal && (
         <>
           <div className="modal-backdrop fade show"></div>
@@ -693,9 +652,7 @@ const Dashboard = () => {
         <Navbar />
         <Sidebar />
 
-        {/* Main Content */}
         <div className="col-lg-10 ms-auto" style={{ marginTop: "60px" }}>
-          {/* Top Navigation */}
           <div className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm">
             <div className="d-flex gap-3">
               {tabs.map((tab, index) => (
@@ -717,9 +674,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Conditional Rendering based on active tab */}
           {activeTab === "menu-editor" ? (
-            // Menu Editor Content
             <div className="container-fluid px-3 my-3">
               {loading ? (
                 <div className="text-center py-5">
@@ -734,39 +689,100 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="row">
-                  {/* Categories Section */}
                   <div className="col-md-12">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                       <h4 className="mb-0 fw-bold fs-5 fs-sm-4 fs-md-3 fs-lg-2">
                         Categories ({categories.length})
                       </h4>
-                      <div className="d-flex gap-2">
-                        <button
-                          className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
-                          onClick={() => openModal("category", "add")}
-                        >
-                          <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                          <span className="d-none d-sm-inline">Add Category</span>
-                          <span className="d-inline d-sm-none"></span>
-                        </button>
-                        <button
-                          className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
-                          onClick={() => {
-                            setBulkTarget({
-                              categoryId: selectedCategory || defaultCategory,
-                              subcategoryId: selectedSubcategory?._id || defaultSubcategory,
-                            });
-                            setShowBulkAddModal(true);
-                          }}
-                        >
-                          <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                          <span className="d-none d-sm-inline">Add Menu List</span>
-                          <span className="d-inline d-sm-none">List</span>
-                        </button>
+                      <button
+                        className="btn btn-primary d-flex align-items-center justify-content-center px-3 px-sm-4 py-2 py-sm-3"
+                        onClick={() => openModal("category", "add")}
+                      >
+                        <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                        <span className="d-none d-sm-inline">Add Category</span>
+                        <span className="d-inline d-sm-none"></span>
+                      </button>
+                    </div>
+
+                    {/* Bulk Add Items Form */}
+                    <div className="card mb-4">
+                      <div className="card-body">
+                        <h5 className="card-title">Add List of Items</h5>
+                        <form onSubmit={handleBulkAddSubmit}>
+                          <div className="row">
+                            <div className="col-md-4">
+                              <div className="mb-3">
+                                <label className="form-label">Category</label>
+                                <select
+                                  className="form-select"
+                                  value={bulkTarget.categoryId || defaultCategory || ""}
+                                  onChange={(e) => setBulkTarget(prev => ({
+                                    ...prev,
+                                    categoryId: e.target.value,
+                                    subcategoryId: null
+                                  }))}
+                                >
+                                  <option value="">Select Category</option>
+                                  {categories.map(category => (
+                                    <option key={category._id} value={category._id}>
+                                      {category.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                            <div className="col-md-4">
+                              <div className="mb-3">
+                                <label className="form-label">Subcategory</label>
+                                <select
+                                  className="form-select"
+                                  value={bulkTarget.subcategoryId || defaultSubcategory || ""}
+                                  onChange={(e) => setBulkTarget(prev => ({
+                                    ...prev,
+                                    subcategoryId: e.target.value
+                                  }))}
+                                  disabled={!bulkTarget.categoryId && !defaultCategory}
+                                >
+                                  <option value="">Select Subcategory</option>
+                                  {categories
+                                    .find(c => c._id === (bulkTarget.categoryId || defaultCategory))
+                                    ?.subcategories.map(sub => (
+                                      <option key={sub._id} value={sub._id}>
+                                        {sub.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Enter item names (one per line or comma-separated)
+                            </label>
+                            <textarea
+                              className="form-control"
+                              rows={4}
+                              value={bulkItemsInput}
+                              onChange={(e) => setBulkItemsInput(e.target.value)}
+                              placeholder="e.g. Pappu&#10;Rasam&#10;Curd"
+                            />
+                            <small className="text-muted">
+                              You can add multiple items at once by separating them with new lines or commas
+                            </small>
+                              <div className="col-md-4 d-flex align-items-end">
+                              <button
+                                type="submit"
+                                className="btn btn-primary w-100"
+                                disabled={!bulkItemsInput.trim()}
+                              >
+                                Add Items
+                              </button>
+                            </div>
+                          </div>
+                        </form>
                       </div>
                     </div>
 
-                    {/* Accordion for Categories */}
                     <div className="accordion" id="categoriesAccordion">
                       {categories.map((category) => (
                         <div
@@ -872,6 +888,20 @@ const Dashboard = () => {
                                     }}
                                   >
                                     <div className="d-flex align-items-center">
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input me-2"
+                                        checked={subcategory.items.every(item => selectedItems[item._id])}
+                                        onChange={(e) => {
+                                          const isChecked = e.target.checked;
+                                          const newSelected = {...selectedItems};
+                                          subcategory.items.forEach(item => {
+                                            newSelected[item._id] = isChecked;
+                                          });
+                                          setSelectedItems(newSelected);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
                                       <span className="fw-medium fs-6 fs-sm-5 fs-md-4 fs-lg-3">
                                         {subcategory.name}
                                       </span>
@@ -943,15 +973,44 @@ const Dashboard = () => {
                                   </div>
                                   {expandedSubcategories[subcategory._id] && (
                                     <div className="ms-4 ps-3 border-start">
+                                      <div className="d-flex justify-content-between p-2 bg-light">
+                                        <div>
+                                          <span className="me-2">
+                                            {Object.values(selectedItems).filter(Boolean).length} selected
+                                          </span>
+                                          <button
+                                            className="btn btn-sm btn-outline-danger me-2"
+                                            disabled={!Object.values(selectedItems).some(Boolean)}
+                                            onClick={() => handleDeleteSelectedItems(category._id, subcategory._id)}
+                                          >
+                                            Delete Selected
+                                          </button>
+                                        </div>
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary"
+                                          onClick={() => setSelectedItems({})}
+                                        >
+                                          Clear Selection
+                                        </button>
+                                      </div>
                                       {subcategory.items.map((item) => (
                                         <div
                                           key={item._id}
                                           className="d-flex justify-content-between align-items-center p-3 my-2 bg-white rounded"
-                                          onClick={() => handleEditItem(item)}
                                           style={{ cursor: "pointer" }}
                                         >
                                           <div className="d-flex align-items-center">
-                                            <span className="fs-5">
+                                            <input
+                                              type="checkbox"
+                                              className="form-check-input me-3"
+                                              checked={!!selectedItems[item._id]}
+                                              onChange={(e) => {
+                                                e.stopPropagation();
+                                                handleItemCheckboxChange(item._id, e.target.checked);
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            />
+                                            <span className="fs-5" onClick={() => handleEditItem(item)}>
                                               {item.name}
                                             </span>
                                             {item.inStock === false && (

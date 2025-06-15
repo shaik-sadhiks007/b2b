@@ -183,12 +183,31 @@ export const MenuProvider = ({ children }) => {
             for (const name of itemNames) {
                 await addItem(categoryId, subcategoryId, { name, basePrice: "30", totalPrice: "30", isVeg: true, });
             }
-            toast.success('Items added successfully');
+            //toast.success('Items added successfully');
         } catch (error) {
             setError('Error adding items in bulk');
             toast.error('Failed to add items in bulk');
         }
     };
+
+      // Bulk delete items
+    const deleteItemsBulk = async (categoryId, subcategoryId, itemIds) => {
+        if (!Array.isArray(itemIds) || itemIds.length === 0) {
+            setError('No item IDs provided');
+            toast.error('No item IDs provided');
+            return;
+        }
+        try {
+            for (const itemId of itemIds) {
+                await deleteItem(categoryId, subcategoryId, itemId);
+            }
+            //toast.success('Items deleted successfully');
+        } catch (error) {
+            setError('Error deleting items in bulk');
+            toast.error('Failed to delete items in bulk');
+        }
+    };
+
 
     // Update item
     const updateItem = async (categoryId, subcategoryId, itemId, itemData) => {
@@ -313,7 +332,8 @@ export const MenuProvider = ({ children }) => {
         deleteItem,
         toggleCategoryExpansion,
         fetchMenu,
-        addItemsBulk
+        addItemsBulk,
+        deleteItemsBulk,
     };
 
     return (

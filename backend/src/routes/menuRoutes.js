@@ -138,6 +138,58 @@ router.post('/:categoryId/subcategories/:subcategoryId/items',
     }
 );
 
+// Bulk add items to a subcategory
+router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, async (req, res) => {
+    try {
+        const { items } = req.body; // expects { items: [...] }
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'No items provided' });
+        }
+        const category = await Menu.findOne({
+            _id: req.params.categoryId,
+            restaurantId: req.restaurant._id
+        });
+        if (!category) return res.status(404).json({ message: 'Category not found' });
+
+        const subcategory = category.subcategories.id(req.params.subcategoryId);
+        if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
+
+        subcategory.items.push(...items);
+        await category.save();
+
+        res.json({ message: 'Items added successfully', items: subcategory.items.slice(-items.length) });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, async (req, res) => {
+    try {
+        const { items } = req.body; // expects { items: [{ name, basePrice, totalPrice, isVeg }, ...] }
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'No items provided' });
+        }
+        const category = await Menu.findOne({
+            _id: req.params.categoryId,
+            restaurantId: req.restaurant._id
+        });
+        if (!category) return res.status(404).json({ message: 'Category not found' });
+
+        const subcategory = category.subcategories.id(req.params.subcategoryId);
+        if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
+
+        const newItems = items.map(item => ({
+            ...item
+        }));
+        subcategory.items.push(...newItems);
+        await category.save();
+
+        res.json({ message: 'Items added successfully', items: newItems });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Update a category
 router.put('/:id', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
@@ -232,6 +284,29 @@ router.delete('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMid
         await category.save();
 
         res.json({ message: 'Item deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Delete multiple items from a subcategory
+
+router.delete('/:categoryId/subcategories/:subcategoryId/items', authMiddleware, restaurantMiddleware, async (req, res) => {
+    try {
+        const { itemIds } = req.body; // expects { itemIds: [...] }
+        const category = await Menu.findOne({
+            _id: req.params.categoryId,
+            restaurantId: req.restaurant._id
+        });
+        if (!category) return res.status(404).json({ message: 'Category not found' });
+
+        const subcategory = category.subcategories.id(req.params.subcategoryId);
+        if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
+
+        subcategory.items = subcategory.items.filter(item => !itemIds.includes(item._id.toString()));
+        await category.save();
+
+        res.json({ message: 'Items deleted successfully', deleted: itemIds });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

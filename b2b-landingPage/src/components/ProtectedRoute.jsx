@@ -6,16 +6,21 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { HotelContext } from '../contextApi/HotelContextProvider';
 
 const ProtectedRoute = ({ children }) => {
-    const [showLoginPopup, setShowLoginPopup] = useState(true);
+    const [showLoginPopup, setShowLoginPopup] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useContext(HotelContext);
+    const { user, isInitialized } = useContext(HotelContext);
 
     useEffect(() => {
-        // Set loading to false after initial render
-        setIsLoading(false);
-    }, []);
+        // Only show login popup if user context is initialized and user is not logged in
+        if (isInitialized) {
+            setIsLoading(false);
+            if (!user) {
+                setShowLoginPopup(true);
+            }
+        }
+    }, [user, isInitialized]);
 
     const handleGuestContinue = () => {
         setShowLoginPopup(false);
@@ -28,7 +33,7 @@ const ProtectedRoute = ({ children }) => {
     }
 
     // Show loading state while checking authentication
-    if (isLoading) {
+    if (isLoading || !isInitialized) {
         return (
             <div className="min-h-screen bg-gray-50">
                 <div className="container mx-auto px-4 py-8 mt-16">

@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react"
-import { Search, Mic, Camera } from "lucide-react"
+import { useState } from "react"
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom"
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -26,6 +25,13 @@ import Whatsappbutton from './components/Whatsappbutton';
 import Contactus from './components/Contactus';
 import Footer from './components/Footer';
 import OrderDetails from './components/OrderDetails';
+import OrderStatus from './components/OrderStatus';
+import {
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+
 
 function AppContent() {
   const routerLocation = useRouterLocation();
@@ -57,7 +63,7 @@ function AppContent() {
       )}
       <Helpbutton />
       <Whatsappbutton />
-      
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -79,14 +85,24 @@ function AppContent() {
             <Orders />
           </ProtectedRoute>
         } />
-        <Route path="/orders/:orderId" element={<OrderDetails />} />
-        <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
+
+        <Route path="/orders/:orderId" element={
+          <ProtectedRoute>
+            <OrderDetails />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/ordersuccess/:orderId" element={
+          <ProtectedRoute>
+            <OrderSuccess />
+          </ProtectedRoute>
+        } />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contactus" element={<Contactus />} />
-
+        <Route path="/order-status/:orderId" element={<OrderStatus />} />
       </Routes>
       <Footer />
     </div>
@@ -94,27 +110,34 @@ function AppContent() {
 }
 
 function App() {
+
+  const queryClient = new QueryClient()
+
   return (
     <Router>
-      <HotelDataProvider>
-        <CartProvider>
-          <LocationProvider>
-            <AppContent />
-            <ToastContainer
-              position="top-right"
-              autoClose={2000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
-          </LocationProvider>
-        </CartProvider>
-      </HotelDataProvider>
+      <QueryClientProvider client={queryClient}>
+        <HotelDataProvider>
+          <CartProvider>
+            <LocationProvider>
+              <AppContent />
+              <ReactQueryDevtools initialIsOpen={false} />
+              <ToastContainer
+                position="top-right"
+                autoClose={2000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
+            </LocationProvider>
+          </CartProvider>
+        </HotelDataProvider>
+      </QueryClientProvider>
+
     </Router>
   )
 }

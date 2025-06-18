@@ -10,6 +10,7 @@ const Restaurant = require('../models/Restaurant');
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     try {
+       
         const serviceAccount = require('../../serviceAccountKey.json');
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
@@ -34,8 +35,8 @@ const setTokenCookie = (res, token) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-         sameSite: 'strict',
-        //sameSite: "lax", // Use 'lax' for cross-domain requests
+        // sameSite: 'Strict',
+        sameSite: 'Lax',
         maxAge: 1 * 24 * 60 * 60 * 1000
     });
 };

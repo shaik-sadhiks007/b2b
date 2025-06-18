@@ -14,6 +14,8 @@ export const menuItems = [
     { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
     { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
     { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
+    // { icon: "bi-cash-coin", label: "Summary", path: "/summary" },
+
     // { icon: "bi-gift", label: "Offers", path: "/offers" },
     // { icon: "bi-wallet2", label: "Payout", path: "/payout" },
     // { icon: "bi-cart4", label: "Hyperpure", path: "/hyperpure" },
@@ -33,7 +35,7 @@ const Sidebar = () => {
     const renderMenuItem = (item, index) => {
         const isActive = location.pathname === item.path;
         const isParentActive = item.children && (
-            location.pathname === item.path || 
+            location.pathname === item.path ||
             item.children.some(child => location.pathname === child.path)
         );
 
@@ -45,7 +47,7 @@ const Sidebar = () => {
                         className="text-decoration-none text-dark"
                         onClick={handleClose}
                     >
-                        <div 
+                        <div
                             className={`p-3 d-flex align-items-center rounded-3 
                                 ${isParentActive ? 'fw-bold bg-blue-50' : ''}`}
                             style={{ backgroundColor: isParentActive ? '' : '' }}
@@ -79,9 +81,8 @@ const Sidebar = () => {
                     className="text-decoration-none text-dark"
                     onClick={handleClose}
                 >
-                    <div className={`p-3 d-flex align-items-center rounded-3 mb-1 ${
-                        isActive ? 'bg-blue-50' : ''
-                    }`}>
+                    <div className={`p-3 d-flex align-items-center rounded-3 mb-1 ${isActive ? 'bg-blue-50' : ''
+                        }`}>
                         <i className={`bi ${item.icon} me-3`}></i>
                         <span className="text-nowrap">{item.label}</span>
                         {item.isNew && (

@@ -243,10 +243,9 @@ const Checkout = () => {
                 socket.emit('newOrder', response.data.order);
 
                 toast.success('Order placed successfully! Redirecting to order details...');
-                setTimeout(() => {
-                    navigate(`/ordersuccess/${response.data.order._id}`);
-                }, 500);
-
+                
+                // Navigate first, then clear cart
+                navigate(`/ordersuccess/${response.data.order._id}`);
                 await clearCart();
             }
         } catch (err) {

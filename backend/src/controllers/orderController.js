@@ -451,3 +451,177 @@ exports.getOrderDetails = async (req, res) => {
     }
 };  
 
+exports.getPublicOrderStatus = async (req, res) => {
+    try {
+        const order = await Order.findOne({ _id: req.params.orderId })
+            .populate("customerAddress")
+            .lean();
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // Return detailed order information but exclude sensitive user data
+        const publicOrderInfo = {
+            orderId: order._id,
+            status: order.status,
+            restaurantName: order.restaurantName,
+            createdAt: order.createdAt,
+            totalAmount: order.totalAmount,
+            orderType: order.orderType,
+            paymentMethod: order.paymentMethod,
+            items: order.items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                totalPrice: item.totalPrice,
+                isVeg: item.isVeg
+            })),
+            // customerAddress: order.customerAddress ? {
+            //     fullName: order.customerAddress.fullName,
+            //     street: order.customerAddress.street,
+            //     city: order.customerAddress.city,
+            //     state: order.customerAddress.state,
+            //     zip: order.customerAddress.zip,
+            //     country: order.customerAddress.country,
+            //     phone: order.customerAddress.phone
+            // } : null
+        };
+
+        res.status(200).json(publicOrderInfo);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch order status", message: error.message });
+    }
+};  
+
+exports.getOrdersSummary = async (req, res) => {
+    try {
+        const restaurantId = req.restaurant._id;
+
+        let { startDate, endDate, timeFrame } = req.query;
+
+        let queryStartDate;
+        let queryEndDate;
+
+        if (timeFrame) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0); // Normalize to start of day for accurate calculations
+
+            if (timeFrame === '1D') {
+                queryStartDate = new Date(now);
+                queryEndDate = new Date(now);
+                queryEndDate.setHours(23, 59, 59, 999);
+            } else if (timeFrame === '1W') {
+                // Get the first day of the current week (Monday)
+                const dayOfWeek = now.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
+                const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday being 0
+                queryStartDate = new Date(now.setDate(diffToMonday));
+                queryEndDate = new Date(queryStartDate);
+                queryEndDate.setDate(queryEndDate.getDate() + 6);
+                queryEndDate.setHours(23, 59, 59, 999);
+            } else if (timeFrame === '1M') {
+                queryStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            } else if (timeFrame === '3M') {
+                queryStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            } else if (timeFrame === '6M') {
+                queryStartDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            }
+        } else if (startDate && endDate) {
+            queryStartDate = new Date(startDate);
+            queryEndDate = new Date(endDate);
+            queryEndDate.setHours(23, 59, 59, 999); // Ensure end of day
+        } else {
+            // Default to current month if no timeframe or explicit dates
+            const now = new Date();
+            queryStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        }
+
+        const matchQuery = {
+            restaurantId: restaurantId,
+            createdAt: {
+                $gte: queryStartDate,
+                $lte: queryEndDate
+            }
+        };
+
+        const orders = await Order.find(matchQuery);
+
+        let totalItemsSold = 0;
+        let totalRevenue = 0;
+        const totalOrdersCount = orders.length;
+
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                totalItemsSold += item.quantity;
+            });
+            totalRevenue += order.totalAmount; // Assuming 'totalAmount' field exists in Order schema
+        });
+
+        // Aggregate for popular items
+        const popularItems = await Order.aggregate([
+            {
+                $match: matchQuery
+            },
+            {
+                $unwind: '$items'
+            },
+            {
+                $group: {
+                    _id: '$items.item',
+                    itemName: { $first: '$items.name' },
+                    totalSold: { $sum: '$items.quantity' }
+                }
+            },
+            {
+                $sort: { totalSold: -1 }
+            },
+            {
+                $limit: 5 // Get top 5 popular items, can be adjusted
+            }
+        ]);
+
+        // Aggregate for daily revenue data (for line chart)
+        const dailyRevenue = await Order.aggregate([
+            {
+                $match: matchQuery // Use the same date and restaurant ID filter
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: "%Y-%m-%d", // Group by day
+                            date: "$createdAt"
+                        }
+                    },
+                    totalDailyRevenue: { $sum: "$totalAmount" }
+                }
+            },
+            {
+                $sort: { "_id": 1 } // Sort by date
+            }
+        ]);
+
+        // Get recent orders (e.g., last 5 orders, sorted by creation date descending)
+        const recentOrders = await Order.find(matchQuery)
+                                        .sort({ createdAt: -1 })
+                                        .limit(5);
+
+        res.status(200).json({
+            totalOrdersCount,
+            totalRevenue,
+            totalItemsSold,
+            popularItems,
+            dailyRevenue,
+            recentOrders, // Add recent orders data
+            timeFrame: timeFrame || '1M' // Indicate the applied timeframe
+        });
+
+    } catch (error) {
+        console.error('Error fetching order summary:', error);
+        res.status(500).json({ error: 'Failed to fetch order summary', message: error.message });
+    }
+};  
+

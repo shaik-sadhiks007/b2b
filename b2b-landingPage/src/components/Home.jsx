@@ -12,6 +12,8 @@ import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { useLocationContext } from '../context/LocationContext'
 import logo from '../assets/b2bupdate.png'
+import { useRestaurantDetails } from '../hooks/useRestaurantDetails'
+import { useAllBusinesses } from '../hooks/useAllBusinesses'
 
 
 const categories = [
@@ -58,12 +60,14 @@ const Home = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
-    const [allBusinesses, setAllBusinesses] = useState([])
     const [filteredBusinesses, setFilteredBusinesses] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [hoveredRestaurantId, setHoveredRestaurantId] = useState(null)
     const navigate = useNavigate()
     const { location, setLocation, onAllowLocation: contextAllowLocation } = useLocationContext()
+
+    // Use the custom hooks
+    const { restaurant: hoveredRestaurant, menu: hoveredMenu } = useRestaurantDetails(hoveredRestaurantId)
+    const { data: allBusinesses, isLoading: isLoadingBusinesses, error: businessesError } = useAllBusinesses()
 
     // Add localStorage change listener
     useEffect(() => {
@@ -206,54 +210,29 @@ const Home = () => {
         navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
     };
 
-    // Fetch all businesses when location changes
-    useEffect(() => {
-        const fetchBusinesses = async () => {
-            try {
-                setLoading(true);
-                const savedLocation = localStorage.getItem('userLocation');
-                let url = `${API_URL}/api/restaurants/public/all`;
-
-                if (savedLocation) {
-                    const { coordinates } = JSON.parse(savedLocation);
-                    url += `?lat=${coordinates.lat}&lng=${coordinates.lng}`;
-                }
-
-                const response = await axios.get(url);
-                setAllBusinesses(response.data);
-                setFilteredBusinesses(response.data);
-            } catch (err) {
-                setError('Failed to fetch restaurants');
-                console.error('Error fetching restaurants:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBusinesses();
-    }, [localStorage.getItem('userLocation')]);
-
     // Filter businesses when category changes
     useEffect(() => {
-        if (selectedCategory === 'all') {
-            setFilteredBusinesses(allBusinesses);
-        } else {
-            const filtered = allBusinesses.filter(business => 
-                business.category?.toLowerCase() === selectedCategory.toLowerCase()
-            );
-            setFilteredBusinesses(filtered);
+        if (allBusinesses) {
+            if (selectedCategory === 'all') {
+                setFilteredBusinesses(allBusinesses);
+            } else {
+                const filtered = allBusinesses.filter(business =>
+                    business.category?.toLowerCase() === selectedCategory.toLowerCase()
+                );
+                setFilteredBusinesses(filtered);
+            }
         }
     }, [selectedCategory, allBusinesses]);
 
     const renderRestaurants = () => {
-        if (loading) {
+        if (isLoadingBusinesses) {
             return Array(6).fill(0).map((_, index) => (
                 <RestaurantCardSkeleton key={index} />
             ));
         }
 
-        if (error) {
-            return <ErrorCard message={error} />;
+        if (businessesError) {
+            return <ErrorCard message={businessesError.message} />;
         }
 
         if (filteredBusinesses.length === 0) {
@@ -270,6 +249,10 @@ const Home = () => {
                 key={restaurant._id}
                 className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow mt-10"
                 onClick={() => handleRestaurantClick(restaurant)}
+                onMouseEnter={() => setHoveredRestaurantId(restaurant._id)}
+                onMouseLeave={() => setHoveredRestaurantId(null)}
+                onTouchStart={() => setHoveredRestaurantId(restaurant._id)}
+                onTouchEnd={() => setHoveredRestaurantId(null)}
             >
                 <div className="relative h-48 w-full">
                     <img
@@ -339,10 +322,10 @@ const Home = () => {
                         B2B
                     </h1> */}
 
-                    <img 
-                        src= { logo } 
+                    <img
+                        src={logo}
                         loading="lazy"
-                        alt="logo" 
+                        alt="logo"
                         style={{
                             maxWidth: '100%',
                             width: '300px',
@@ -427,7 +410,7 @@ const Home = () => {
             />
 
             {/* Footer */}
-            
+
         </div>
     )
 }

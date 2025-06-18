@@ -7,6 +7,7 @@ export const HotelContext = createContext();
 
 const HotelDataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isInitialized, setIsInitialized] = useState(false);
     const navigate = useNavigate();
 
     // Configure axios defaults
@@ -21,6 +22,8 @@ const HotelDataProvider = ({ children }) => {
             } catch (error) {
                 console.warn("Not authenticated");
                 setUser(null);
+            } finally {
+                setIsInitialized(true);
             }
         };
 
@@ -86,6 +89,7 @@ const HotelDataProvider = ({ children }) => {
         <HotelContext.Provider value={{
             user,
             setUser,
+            isInitialized,
             emailPasswordLogin,
             googleLogin,
             guestLogin,

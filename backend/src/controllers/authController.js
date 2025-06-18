@@ -10,6 +10,7 @@ const Restaurant = require('../models/Restaurant');
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     try {
+       
         const serviceAccount = require('../../serviceAccountKey.json');
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)

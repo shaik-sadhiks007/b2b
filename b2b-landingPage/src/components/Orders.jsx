@@ -153,6 +153,14 @@ const Orders = () => {
         }
     };
 
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
     const formatAddress = (address) => {
         if (!address) return 'No address provided';
         return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
@@ -190,7 +198,7 @@ const Orders = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8 mt-4">Recent Orders</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-8 mt-4">Your Orders</h1>
                 
                 {orders.length === 0 ? (
                     <div className="text-center py-12">
@@ -209,7 +217,7 @@ const Orders = () => {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <h2 className="text-lg font-semibold text-gray-900">
-                                                    Order #{order._id.slice(-6)}
+                                                    Order #{order._id.slice(-6).toUpperCase()}
                                                 </h2>
                                                 <p className="text-sm text-gray-500">
                                                     {new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -227,9 +235,15 @@ const Orders = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="mt-2 flex justify-between items-center">
-                                            <p className="text-sm text-gray-600">{order.restaurantName}</p>
-                                            <p className="font-medium">₹{order.totalAmount}</p>
+                                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Restaurant</p>
+                                                <p className="text-gray-900">{order.restaurantName}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Total Amount</p>
+                                                <p className="font-medium text-gray-900">₹{order.totalAmount.toFixed(2)}</p>
+                                            </div>
                                         </div>
                                         {renderOrderItems(order.items)}
                                         {order.deliveryAddress && (
@@ -246,10 +260,10 @@ const Orders = () => {
                         {orders.length > 4 && !showAllOrders && (
                             <button
                                 onClick={() => setShowAllOrders(true)}
-                                className="w-full mt-6 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-800 py-4 border-t border-b border-gray-200"
+                                className="w-full mt-6 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-800 py-4 border-t border-b border-gray-200 transition-colors duration-200"
                             >
                                 <ChevronDown className="h-5 w-5" />
-                                View Full Order History ({orders.length - 4} more orders)
+                                Show all orders ({orders.length - 4} more)
                             </button>
                         )}
                     </>

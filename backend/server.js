@@ -61,12 +61,14 @@ io.on('connection', (socket) => {
 
     socket.on('newOrder', (orderData) => {
         console.log('New order received:', orderData);
-        io.emit('newOrder', orderData); // Changed from orderUpdate to newOrder
+        io.emit('newOrder', orderData);
     });
 
     socket.on('orderStatusUpdate', (orderData) => {
-        console.log('Order status update:', orderData);
-        io.emit('orderStatusUpdate', orderData); // Broadcast status updates
+        console.log('Order status update received:', orderData);
+        // Broadcast to all connected clients
+        io.emit('orderStatusUpdate', orderData);
+        console.log('Order status update broadcasted to all clients');
     });
 
     socket.on('disconnect', () => {

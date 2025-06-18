@@ -26,6 +26,7 @@ import Whatsappbutton from './components/Whatsappbutton';
 import Contactus from './components/Contactus';
 import Footer from './components/Footer';
 import OrderDetails from './components/OrderDetails';
+import OrderStatus from './components/OrderStatus';
 
 function AppContent() {
   const routerLocation = useRouterLocation();
@@ -57,7 +58,7 @@ function AppContent() {
       )}
       <Helpbutton />
       <Whatsappbutton />
-      
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -79,14 +80,24 @@ function AppContent() {
             <Orders />
           </ProtectedRoute>
         } />
-        <Route path="/orders/:orderId" element={<OrderDetails />} />
-        <Route path="/ordersuccess/:orderId" element={<OrderSuccess />} />
+
+        <Route path="/orders/:orderId" element={
+          <ProtectedRoute>
+            <OrderDetails />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/ordersuccess/:orderId" element={
+          <ProtectedRoute>
+            <OrderSuccess />
+          </ProtectedRoute>
+        } />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contactus" element={<Contactus />} />
-
+        <Route path="/order-status/:orderId" element={<OrderStatus />} />
       </Routes>
       <Footer />
     </div>

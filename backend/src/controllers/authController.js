@@ -6,46 +6,17 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const Restaurant = require('../models/Restaurant');
-const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
-
-
-// Initialize AWS Secrets Manager client
-const secretsClient = new SecretsManagerClient({
-    region: "eu-north-1",
-});
-
-// Function to get Firebase service account from AWS Secrets Manager
-const getFirebaseServiceAccount = async () => {
-    try {
-        const response = await secretsClient.send(
-            new GetSecretValueCommand({
-                SecretId: "firebase/serviceAccountKey",
-                VersionStage: "AWSCURRENT",
-            })
-        );
-        return JSON.parse(response.SecretString);
-    } catch (error) {
-        console.error('Error fetching Firebase service account from AWS Secrets Manager:', error);
-        throw new Error('Failed to fetch Firebase service account credentials');
-    }
-};
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     try {
-        getFirebaseServiceAccount()
-            .then(serviceAccount => {
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount)
-                });
-            })
-            .catch(error => {
-                console.error('Error initializing Firebase Admin:', error);
-                throw new Error('Firebase Admin initialization failed. Please check your AWS Secrets Manager configuration.');
-            });
+        const serviceAccount = require('../../serviceAccountKey.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
     } catch (error) {
-        console.error('Error in Firebase Admin initialization:', error);
-        throw new Error('Firebase Admin initialization failed');
+        console.error('Error initializing Firebase Admin:', error);
+        throw new Error('Firebase Admin initialization failed. Please check your service account credentials.');
     }
 }
 
@@ -63,8 +34,8 @@ const setTokenCookie = (res, token) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        // sameSite: 'strict',
-        sameSite: 'none',
+        // sameSite: 'Strict',
+        sameSite: 'Lax',
         maxAge: 1 * 24 * 60 * 60 * 1000
     });
 };
@@ -278,7 +249,7 @@ const getProfile = async (req, res) => {
         let user = await User.findById(req.user.id).select('-password');
         // Convert Mongoose document to plain JavaScript object
         user = user.toObject();
-
+        
         // Find restaurant and add its ID
         let restaurant = await Restaurant.findOne({ owner: user._id });
         if (restaurant) {

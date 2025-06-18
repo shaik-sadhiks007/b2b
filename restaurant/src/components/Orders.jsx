@@ -10,6 +10,19 @@ import io from 'socket.io-client';
 // Initialize socket connection
 const socket = io(API_URL, { withCredentials: true });
 
+// Add connection logging
+socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+});
+
 const statusTabs = [
     { id: 'ORDER_PLACED', label: 'New Orders', icon: 'bi-bell' },
     { id: 'ACCEPTED', label: 'Accepted', icon: 'bi-clock' },
@@ -57,16 +70,36 @@ const Orders = () => {
 
             // Listen for order status updates
             socket.on('orderStatusUpdate', (updatedOrder) => {
-                // console.log('Order status update received:', updatedOrder);
+                console.log('Order status update received in Orders component:', updatedOrder);
+                console.log('Current user restaurantId:', user?.restaurantId);
                 
-                if (updatedOrder.restaurantId === user.restaurantId) {
+                // Ensure we have valid data
+                if (!updatedOrder || !updatedOrder.restaurantId) {
+                    console.error('Invalid order data received:', updatedOrder);
+                    return;
+                }
+
+                if (updatedOrder.restaurantId === user?.restaurantId) {
+                    console.log('Updating orders for restaurant:', user.restaurantId);
                     setOrders(prevOrders => {
+                        // If the order is cancelled, remove it from all tabs
+                        if (updatedOrder.status === 'CANCELLED') {
+                            console.log('Removing cancelled order:', updatedOrder._id);
+                            const filteredOrders = prevOrders.filter(order => order._id !== updatedOrder._id);
+                            console.log('Orders after removal:', filteredOrders);
+                            return filteredOrders;
+                        }
+                        // For other status updates, update the order if it exists in current tab
                         const updatedOrders = prevOrders.map(order => 
                             order._id === updatedOrder._id ? updatedOrder : order
                         );
-                        return updatedOrders.filter(order => order.status === activeTab);
+                        const filteredOrders = updatedOrders.filter(order => order.status === activeTab);
+                        console.log('Updated orders:', filteredOrders);
+                        return filteredOrders;
                     });
                     fetchOrderCounts();
+                } else {
+                    console.log('Order update ignored - different restaurant. Received:', updatedOrder.restaurantId, 'Current:', user?.restaurantId);
                 }
             });
 
@@ -107,7 +140,18 @@ const Orders = () => {
     const handleStatusChange = async (orderId, status) => {
         try {
             const response = await axios.patch(`${API_URL}/api/orders/status/${orderId}`, { status });
-            socket.emit('orderStatusUpdate', response.data.order);
+            const updatedOrder = response.data.order;
+            // console.log('Order status updated:', updatedOrder);
+            
+            // Emit the order status update
+            socket.emit('orderStatusUpdate', updatedOrder, (error) => {
+                if (error) {
+                    console.error('Error emitting order status update:', error);
+                } else {
+                    // console.log('Order status update emitted successfully');
+                }
+            });
+
             toast.success('Order status updated');
             if (status !== activeTab) {
                 setOrders(prevOrders => {
@@ -126,6 +170,7 @@ const Orders = () => {
             }
             fetchOrderCounts();
         } catch (error) {
+            console.error('Failed to update order status:', error);
             toast.error('Failed to update order status');
         }
     };
@@ -220,10 +265,10 @@ const Orders = () => {
                     <>
                         <button 
                             className="btn btn-success w-100 mb-2" 
-                            onClick={() => handleStatusChange(order._id, 'ORDER_PICKED_UP')}
+                            onClick={() => handleStatusChange(order._id, order.orderType === 'DELIVERY' ? 'ORDER_DELIVERED' : 'ORDER_PICKED_UP')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
-                            Mark as Completed
+                            Mark as {order.orderType === 'DELIVERY' ? 'Delivered' : 'Picked Up'}
                         </button>
                         <button 
                             className="btn btn-outline-danger w-100" 

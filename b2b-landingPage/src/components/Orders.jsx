@@ -158,6 +158,22 @@ const Orders = () => {
         return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
     };
 
+    const renderOrderItems = (items) => {
+        return (
+            <div className="mt-3 space-y-2">
+                {items.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="text-gray-600">{item.quantity}x</span>
+                            <span className="text-gray-800">{item.name}</span>
+                        </div>
+                        <span className="text-gray-600">₹{item.totalPrice}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -215,6 +231,13 @@ const Orders = () => {
                                             <p className="text-sm text-gray-600">{order.restaurantName}</p>
                                             <p className="font-medium">₹{order.totalAmount}</p>
                                         </div>
+                                        {renderOrderItems(order.items)}
+                                        {order.deliveryAddress && (
+                                            <div className="mt-3 flex items-start gap-2 text-sm text-gray-600">
+                                                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                                <span className="line-clamp-2">{formatAddress(order.deliveryAddress)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

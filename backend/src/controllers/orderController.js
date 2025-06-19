@@ -14,6 +14,8 @@ exports.placeOrder = async (req, res) => {
             return res.status(400).json({ error: "Order must contain at least one item." });
         }
 
+        let totalOrders = [];
+
         // Check if all items are in stock
         for (const item of items) {
             // Find the menu item within categories and subcategories
@@ -23,6 +25,9 @@ exports.placeOrder = async (req, res) => {
             }
 
             let foundItem = null;
+            let foundMenuDoc = null;
+            let foundSubcategory = null;
+
             // Search through all menus
             for (const menuItem of menu) {
                 // Search through subcategories of each menu
@@ -30,6 +35,8 @@ exports.placeOrder = async (req, res) => {
                     const menuItemFound = subcategory.items.find(i => i._id.toString() === item.itemId);
                     if (menuItemFound) {
                         foundItem = menuItemFound;
+                        foundMenuDoc = menuItem;
+                        foundSubcategory = subcategory;
                         break;
                     }
                 }
@@ -41,6 +48,43 @@ exports.placeOrder = async (req, res) => {
             }
             if (!foundItem.inStock) {
                 return res.status(400).json({ error: `${item.name} is out of stock` });
+            }
+            if (foundItem.quantity < item.quantity) {
+                return res.status(400).json({ error: `Only ${foundItem.quantity} quantity available for ${item.name}` });
+            }
+
+            // Push details for later quantity update
+            totalOrders.push({
+                menuDoc: foundMenuDoc,
+                subcategory: foundSubcategory,
+                item: foundItem,
+                orderQuantity: item.quantity
+            });
+        }
+
+        // Reduce quantity for each ordered item
+        for (const order of totalOrders) {
+            // Find the menu document for this restaurant
+            const menuDocs = await MenuOfRestaurant.find({ restaurantId });
+            for (const menuDoc of menuDocs) {
+                let updated = false;
+                for (const subcategory of menuDoc.subcategories) {
+                    const menuItem = subcategory.items.find(i => i._id.toString() === order.item._id.toString());
+                    if (menuItem) {
+                        // Reduce the quantity
+                        menuItem.quantity = Math.max(0, menuItem.quantity - order.orderQuantity);
+                        // Optionally, set inStock to false if quantity is 0
+                        if (menuItem.quantity === 0) {
+                            menuItem.inStock = false;
+                        }
+                        updated = true;
+                        break;
+                    }
+                }
+                if (updated) {
+                    await menuDoc.save();
+                    break; // Stop after updating the correct menuDoc
+                }
             }
         }
 

@@ -117,7 +117,8 @@ router.post('/:categoryId/subcategories/:subcategoryId/items',
                 serviceType: req.body.serviceType || 'DINE_IN',
                 totalPrice: parseFloat(req.body.totalPrice) || parseFloat(req.body.basePrice),
                 packagingCharges: parseFloat(req.body.packagingCharges) || 0,
-                inStock: req.body.inStock !== undefined ? req.body.inStock : true
+                inStock: req.body.inStock !== undefined ? req.body.inStock : true,
+                quantity : req.body.quantity || 100
             };
 
             subcategory.items.push(newItem);
@@ -141,6 +142,7 @@ router.post('/:categoryId/subcategories/:subcategoryId/items',
 // Bulk add items to a subcategory
 router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, async (req, res) => {
     try {
+        console.log("hi from bulk")
         const { items } = req.body; // expects { items: [...] }
         if (!Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ message: 'No items provided' });
@@ -163,32 +165,32 @@ router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddlewa
     }
 });
 
-router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, async (req, res) => {
-    try {
-        const { items } = req.body; // expects { items: [{ name, basePrice, totalPrice, isVeg }, ...] }
-        if (!Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({ message: 'No items provided' });
-        }
-        const category = await Menu.findOne({
-            _id: req.params.categoryId,
-            restaurantId: req.restaurant._id
-        });
-        if (!category) return res.status(404).json({ message: 'Category not found' });
+// router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, async (req, res) => {
+//     try {
+//         const { items } = req.body; // expects { items: [{ name, basePrice, totalPrice, isVeg }, ...] }
+//         if (!Array.isArray(items) || items.length === 0) {
+//             return res.status(400).json({ message: 'No items provided' });
+//         }
+//         const category = await Menu.findOne({
+//             _id: req.params.categoryId,
+//             restaurantId: req.restaurant._id
+//         });
+//         if (!category) return res.status(404).json({ message: 'Category not found' });
 
-        const subcategory = category.subcategories.id(req.params.subcategoryId);
-        if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
+//         const subcategory = category.subcategories.id(req.params.subcategoryId);
+//         if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
 
-        const newItems = items.map(item => ({
-            ...item
-        }));
-        subcategory.items.push(...newItems);
-        await category.save();
+//         const newItems = items.map(item => ({
+//             ...item
+//         }));
+//         subcategory.items.push(...newItems);
+//         await category.save();
 
-        res.json({ message: 'Items added successfully', items: newItems });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+//         res.json({ message: 'Items added successfully', items: newItems });
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// });
 
 // Update a category
 router.put('/:id', authMiddleware, restaurantMiddleware, async (req, res) => {
@@ -394,6 +396,7 @@ router.put('/:categoryId/subcategories/:subcategoryId/items/:itemId',
             item.totalPrice = req.body.totalPrice ? parseFloat(req.body.totalPrice) : item.totalPrice;
             item.packagingCharges = req.body.packagingCharges ? parseFloat(req.body.packagingCharges) : item.packagingCharges;
             item.inStock = req.body.inStock !== undefined ? req.body.inStock : item.inStock;
+            item.quantity = req.body.quantity ? parseFloat(req.body.quantity) : item.quantity;
 
             const updatedCategory = await category.save();
             

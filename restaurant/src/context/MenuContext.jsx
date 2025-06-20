@@ -185,7 +185,8 @@ export const MenuProvider = ({ children }) => {
             name,
             basePrice: "30",
             totalPrice: "30",
-            isVeg: true
+            isVeg: true,
+            packagingCharges: "0"
         }));
   const response = await axios.post(
             `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/bulk`,

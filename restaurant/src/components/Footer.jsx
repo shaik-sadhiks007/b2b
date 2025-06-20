@@ -18,7 +18,7 @@ const Footer = () => {
                     <div className="col-md-4 mb-4">
                         <h6 className="text-uppercase text-white fw-bold mb-3">Quick Links</h6>
                         <ul className="list-unstyled">
-                            <li><a href="/aboutus" className="text-gray-400 hover:text-white">About Us</a></li>
+                            <li><a href="/aboutus" className="text-gray-400 hover:text-white">About b2b</a></li>
                             <li><a href="/contactus" className="text-gray-400 hover:text-white">Contact Us</a></li>
                         </ul>
                     </div>

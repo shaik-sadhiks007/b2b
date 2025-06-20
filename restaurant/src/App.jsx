@@ -25,6 +25,7 @@ import Contactus from './components/Contactus';
 import Helpbutton from './components/Helpbutton';
 import Whatsappbutton from './components/Whatsappbutton';
 import Summary from './components/Summary'
+import Features from './components/Features'
 function App() {
   return (
     <MobileMenuProvider>
@@ -52,6 +53,11 @@ function App() {
               <Route path='/orders/item-summary' element={
                 <PrivateRoute>
                   <ItemSummary />
+                </PrivateRoute>
+              } />
+              <Route path='/features' element={
+                <PrivateRoute>
+                  <Features />
                 </PrivateRoute>
               } />
               <Route path='/inventory' element={

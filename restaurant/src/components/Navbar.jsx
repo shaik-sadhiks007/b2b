@@ -45,7 +45,7 @@ const Navbar = () => {
                     {/* About Us and Contact Us links - now moved to the right */}
                     <div className="d-none d-md-flex gap-4">
                         <Link className="text-decoration-none text-dark fw-medium" to="/aboutus">
-                            About Us
+                            About B2B
                         </Link>
                         <Link className="text-decoration-none text-dark fw-medium" to="/contactus">
                             Contact Us

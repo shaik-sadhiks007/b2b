@@ -4,6 +4,7 @@ const MenuOfRestaurant = require("../models/Menu");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/Restaurant");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
+const moment = require('moment-timezone');
 
 exports.placeOrder = async (req, res) => {
     try {
@@ -14,6 +15,8 @@ exports.placeOrder = async (req, res) => {
             return res.status(400).json({ error: "Order must contain at least one item." });
         }
 
+        let totalOrders = [];
+
         // Check if all items are in stock
         for (const item of items) {
             // Find the menu item within categories and subcategories
@@ -23,6 +26,9 @@ exports.placeOrder = async (req, res) => {
             }
 
             let foundItem = null;
+            let foundMenuDoc = null;
+            let foundSubcategory = null;
+
             // Search through all menus
             for (const menuItem of menu) {
                 // Search through subcategories of each menu
@@ -30,6 +36,8 @@ exports.placeOrder = async (req, res) => {
                     const menuItemFound = subcategory.items.find(i => i._id.toString() === item.itemId);
                     if (menuItemFound) {
                         foundItem = menuItemFound;
+                        foundMenuDoc = menuItem;
+                        foundSubcategory = subcategory;
                         break;
                     }
                 }
@@ -41,6 +49,43 @@ exports.placeOrder = async (req, res) => {
             }
             if (!foundItem.inStock) {
                 return res.status(400).json({ error: `${item.name} is out of stock` });
+            }
+            if (foundItem.quantity < item.quantity) {
+                return res.status(400).json({ error: `Only ${foundItem.quantity} quantity available for ${item.name}` });
+            }
+
+            // Push details for later quantity update
+            totalOrders.push({
+                menuDoc: foundMenuDoc,
+                subcategory: foundSubcategory,
+                item: foundItem,
+                orderQuantity: item.quantity
+            });
+        }
+
+        // Reduce quantity for each ordered item
+        for (const order of totalOrders) {
+            // Find the menu document for this restaurant
+            const menuDocs = await MenuOfRestaurant.find({ restaurantId });
+            for (const menuDoc of menuDocs) {
+                let updated = false;
+                for (const subcategory of menuDoc.subcategories) {
+                    const menuItem = subcategory.items.find(i => i._id.toString() === order.item._id.toString());
+                    if (menuItem) {
+                        // Reduce the quantity
+                        menuItem.quantity = Math.max(0, menuItem.quantity - order.orderQuantity);
+                        // Optionally, set inStock to false if quantity is 0
+                        if (menuItem.quantity === 0) {
+                            menuItem.inStock = false;
+                        }
+                        updated = true;
+                        break;
+                    }
+                }
+                if (updated) {
+                    await menuDoc.save();
+                    break; // Stop after updating the correct menuDoc
+                }
             }
         }
 
@@ -210,7 +255,7 @@ exports.orderHistory = async (req, res) => {
 exports.orderHistoryByUser = async (req, res) => {
     try {
 
-        const orders = await Order.find({ user : req.user.id })
+        const orders = await Order.find({ user: req.user.id })
             .populate("customerAddress")
             .sort({ createdAt: -1 });
 
@@ -300,13 +345,13 @@ exports.instoreOrder = async (req, res) => {
         console.error('Error placing instore order:', error);
         res.status(500).json({ error: "Failed to place instore order" });
     }
-};  
+};
 
 exports.orderSuccess = async (req, res) => {
     try {
         const { orderId } = req.params;
         const order = await Order.findById(orderId);
-        if (!order) {   
+        if (!order) {
             return res.status(404).json({ error: "Order not found" });
         }
 
@@ -319,7 +364,7 @@ exports.orderSuccess = async (req, res) => {
 exports.postRestaurantOrderStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        const { orderId } = req.params; 
+        const { orderId } = req.params;
 
         const order = await Order.findById(orderId);
 
@@ -334,7 +379,7 @@ exports.postRestaurantOrderStatus = async (req, res) => {
 
         order.status = status;
         if (!order.orderType) order.orderType = 'PICKUP';
-        await order.save(); 
+        await order.save();
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
@@ -349,18 +394,18 @@ exports.getRestaurantOrderStatus = async (req, res) => {
         const pageSize = parseInt(req.query.pageSize) || 10;
         const skip = (page - 1) * pageSize;
 
-        const totalOrders = await Order.countDocuments({ 
+        const totalOrders = await Order.countDocuments({
             status,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         });
 
-        const orders = await Order.find({ 
+        const orders = await Order.find({
             status,
-            restaurantId: req.restaurant._id 
+            restaurantId: req.restaurant._id
         })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(pageSize);
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
 
         res.status(200).json({
             orders,
@@ -388,12 +433,12 @@ exports.getRestaurantOrderCounts = async (req, res) => {
                 return { status, count };
             })
         );
-        
+
         const countsObject = counts.reduce((acc, { status, count }) => {
             acc[status] = count;
             return acc;
         }, {});
-        
+
         res.status(200).json(countsObject);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
@@ -431,15 +476,15 @@ exports.getAcceptedItemsSummary = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch accepted items summary" });
     }
-};  
+};
 
 exports.getOrderDetails = async (req, res) => {
     try {
-        const order = await Order.findOne({ 
+        const order = await Order.findOne({
             _id: req.params.orderId,
-            user: req.user.id 
+            user: req.user.id
         })
-        .populate("customerAddress");
+            .populate("customerAddress");
 
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
@@ -449,7 +494,7 @@ exports.getOrderDetails = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order details", message: error.message });
     }
-};  
+};
 
 exports.getPublicOrderStatus = async (req, res) => {
     try {
@@ -491,7 +536,7 @@ exports.getPublicOrderStatus = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
-};  
+};
 
 exports.getOrdersSummary = async (req, res) => {
     try {
@@ -502,41 +547,37 @@ exports.getOrdersSummary = async (req, res) => {
         let queryStartDate;
         let queryEndDate;
 
+        // Set timezone to IST (Indian Standard Time)
+        const timezone = 'Asia/Kolkata';
+
         if (timeFrame) {
-            const now = new Date();
-            now.setHours(0, 0, 0, 0); // Normalize to start of day for accurate calculations
+            const now = moment().tz(timezone).startOf('day');
 
             if (timeFrame === '1D') {
-                queryStartDate = new Date(now);
-                queryEndDate = new Date(now);
-                queryEndDate.setHours(23, 59, 59, 999);
+                queryStartDate = now.toDate();
+                queryEndDate = now.endOf('day').toDate();
             } else if (timeFrame === '1W') {
                 // Get the first day of the current week (Monday)
-                const dayOfWeek = now.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
-                const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday being 0
-                queryStartDate = new Date(now.setDate(diffToMonday));
-                queryEndDate = new Date(queryStartDate);
-                queryEndDate.setDate(queryEndDate.getDate() + 6);
-                queryEndDate.setHours(23, 59, 59, 999);
+                queryStartDate = now.startOf('week').toDate();
+                queryEndDate = now.endOf('week').toDate();
             } else if (timeFrame === '1M') {
-                queryStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                queryStartDate = now.startOf('month').toDate();
+                queryEndDate = now.endOf('month').toDate();
             } else if (timeFrame === '3M') {
-                queryStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                queryStartDate = now.subtract(2, 'months').startOf('month').toDate();
+                queryEndDate = now.add(2, 'months').endOf('month').toDate();
             } else if (timeFrame === '6M') {
-                queryStartDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-                queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                queryStartDate = now.subtract(5, 'months').startOf('month').toDate();
+                queryEndDate = now.add(5, 'months').endOf('month').toDate();
             }
         } else if (startDate && endDate) {
-            queryStartDate = new Date(startDate);
-            queryEndDate = new Date(endDate);
-            queryEndDate.setHours(23, 59, 59, 999); // Ensure end of day
+            queryStartDate = moment.tz(startDate, timezone).startOf('day').toDate();
+            queryEndDate = moment.tz(endDate, timezone).endOf('day').toDate();
         } else {
             // Default to current month if no timeframe or explicit dates
-            const now = new Date();
-            queryStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            const now = moment().tz(timezone);
+            queryStartDate = now.startOf('month').toDate();
+            queryEndDate = now.endOf('month').toDate();
         }
 
         const matchQuery = {
@@ -606,8 +647,8 @@ exports.getOrdersSummary = async (req, res) => {
 
         // Get recent orders (e.g., last 5 orders, sorted by creation date descending)
         const recentOrders = await Order.find(matchQuery)
-                                        .sort({ createdAt: -1 })
-                                        .limit(5);
+            .sort({ createdAt: -1 })
+            .limit(5);
 
         res.status(200).json({
             totalOrdersCount,
@@ -623,5 +664,5 @@ exports.getOrdersSummary = async (req, res) => {
         console.error('Error fetching order summary:', error);
         res.status(500).json({ error: 'Failed to fetch order summary', message: error.message });
     }
-};  
+};
 

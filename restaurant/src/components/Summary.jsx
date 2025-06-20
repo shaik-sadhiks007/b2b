@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import {
   Chart as ChartJS,
@@ -15,6 +15,8 @@ import { Line, Doughnut } from 'react-chartjs-2';
 import { API_URL } from '../api/api';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import { AuthContext } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 ChartJS.register(
   CategoryScale,
@@ -33,12 +35,14 @@ const Summary = () => {
   const [error, setError] = useState(null);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState('1M'); // Default to 1 month
 
+  const { user } = useContext(AuthContext);
+
   useEffect(() => {
     const fetchSummaryData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${API_URL}/api/orders/summary?timeFrame=${selectedTimeFrame}`); // Adjust API endpoint as needed
+        const response = await axios.get(`${API_URL}/api/orders/summary?timeFrame=${selectedTimeFrame}`);
         setSummaryData(response.data);
       } catch (err) {
         console.error('Error fetching summary data:', err);
@@ -57,18 +61,44 @@ const Summary = () => {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 2
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const { totalOrdersCount, totalRevenue, totalItemsSold, dailyRevenue, popularItems, recentOrders } = summaryData || {};
 
+  // Calculate balance breakdown from actual revenue data
+  const calculateBalanceBreakdown = () => {
+    const revenue = totalRevenue || 0;
+    // Estimate expenses as 25% of revenue (typical restaurant expenses)
+    const expenses = revenue * 0.25;
+    // Estimate taxes as 5% of revenue (GST)
+    const taxes = revenue * 0.05;
+    // Net profit is revenue minus expenses and taxes
+    const netProfit = revenue - expenses - taxes;
+
+    return {
+      netProfit: Math.max(0, netProfit), // Ensure non-negative
+      expenses: Math.max(0, expenses),
+      taxes: Math.max(0, taxes)
+    };
+  };
+
+  const balanceData = calculateBalanceBreakdown();
+
   // Prepare data for the Report Line Chart
   const reportChartData = {
-    labels: dailyRevenue?.map(data => data._id), // Dates
+    labels: dailyRevenue?.map(data => {
+      // Format date for display
+      const date = new Date(data._id);
+      return date.toLocaleDateString('en-IN', {
+        month: 'short',
+        day: 'numeric'
+      });
+    }) || [],
     datasets: [
       {
         label: 'Daily Revenue',
-        data: dailyRevenue?.map(data => data.totalDailyRevenue),
+        data: dailyRevenue?.map(data => data.totalDailyRevenue) || [],
         fill: false,
         borderColor: 'rgb(255, 159, 64)', // Orange color from the image
         tension: 0.4,
@@ -88,6 +118,11 @@ const Summary = () => {
       tooltip: {
         mode: 'index',
         intersect: false,
+        callbacks: {
+          label: function (context) {
+            return `Revenue: ${formatCurrency(context.parsed.y)}`;
+          }
+        }
       },
     },
     scales: {
@@ -105,8 +140,49 @@ const Summary = () => {
         grid: {
           borderDash: [8, 4], // Dashed grid lines
         },
+        ticks: {
+          callback: function (value) {
+            return formatCurrency(value);
+          }
+        }
       },
     },
+  };
+
+  // Prepare data for the Balance Breakdown Doughnut Chart
+  const doughnutChartData = {
+    labels: ['Net Profit', 'Expenses', 'Taxes'],
+    datasets: [
+      {
+        data: [balanceData.netProfit, balanceData.expenses, balanceData.taxes],
+        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], // Green, Amber, Red
+        hoverOffset: 4,
+      },
+    ],
+  };
+
+  const doughnutChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            let label = context.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed !== null) {
+              label += formatCurrency(context.parsed);
+            }
+            return label;
+          }
+        }
+      }
+    }
   };
 
   return (
@@ -125,12 +201,11 @@ const Summary = () => {
             <div className="p-6 bg-gray-100 min-h-screen">
               {/* Welcome Back & Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                {/* Welcome Back Card - Placeholder */}
+                {/* Welcome Back Card */}
                 <div className="bg-white p-6 rounded-lg shadow flex items-center">
-                  <img src="https://via.placeholder.com/50" alt="User" className="rounded-full mr-4" />
                   <div>
                     <p className="text-gray-500">Welcome Back</p>
-                    <h2 className="text-xl font-semibold">Tommy Style</h2>
+                    <h2 className="text-xl font-semibold capitalize">{user?.username || 'User'}</h2>
                   </div>
                 </div>
 
@@ -138,87 +213,27 @@ const Summary = () => {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <p className="text-gray-500">Total Sales</p>
                   <h2 className="text-2xl font-bold">{formatCurrency(totalRevenue)}</h2>
-                  <p className="text-green-500 text-sm">+3.4%</p> {/* Placeholder, integrate real percentage later */}
+                  {/* <p className="text-green-500 text-sm">+3.4%</p>  */}
                 </div>
 
                 {/* Total Orders Card */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <p className="text-gray-500">Total Orders</p>
-                  <h2 className="text-2xl font-bold">{totalOrdersCount}</h2>
-                  <p className="text-green-500 text-sm">+12.8%</p> {/* Placeholder, integrate real percentage later */}
+                  <h2 className="text-2xl font-bold">{totalOrdersCount || 0}</h2>
+                  {/* <p className="text-green-500 text-sm">+12.8%</p>  */}
                 </div>
 
                 {/* Product View Card (Total Items Sold) */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <p className="text-gray-500">Product View</p>
-                  <h2 className="text-2xl font-bold">{totalItemsSold}</h2> {/* Changed from K to raw number, adjust as needed */}
-                  <p className="text-red-500 text-sm">-2.4%</p> {/* Placeholder, integrate real percentage later */}
+                  <h2 className="text-2xl font-bold">{totalItemsSold || 0}</h2>
+                  {/* <p className="text-red-500 text-sm">-2.4%</p> */}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                {/* Balance Breakdown (Donut Chart) - Placeholder */}
-                <div className="bg-white p-6 rounded-lg shadow lg:col-span-1">
-                  <h2 className="text-xl font-semibold mb-4">Balance Breakdown</h2>
-                  {/* Doughnut chart will go here */}
-                  <div className="flex justify-center items-center h-48">
-                    <Doughnut
-                      data={{
-                        labels: ['Net Profit', 'Expenses', 'Taxes'],
-                        datasets: [
-                          {
-                            data: [32340, 8068, 2560], // Hardcoded for now, will integrate real data
-                            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], // Green, Amber, Red
-                            hoverOffset: 4,
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                let label = context.label || '';
-                                if (label) {
-                                  label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                  label += `$${context.parsed}`;
-                                }
-                                return label;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-around mt-4 text-sm">
-                    <div className="text-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full inline-block mr-2"></div>
-                      <p className="text-gray-600">Net Profit</p>
-                      <p className="font-bold">$32,340</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full inline-block mr-2"></div>
-                      <p className="text-gray-600">Expenses</p>
-                      <p className="font-bold">$8,068</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full inline-block mr-2"></div>
-                      <p className="text-gray-600">Taxes</p>
-                      <p className="font-bold">$2,560</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Report Line Chart */}
-                <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
+              <div className="grid grid-cols-1 gap-6 mb-6">
+                {/* Report Line Chart - now full width */}
+                <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Report</h2>
                     <div className="space-x-2">
@@ -244,17 +259,40 @@ const Summary = () => {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Recent Orders</h2>
-                    <a href="#" className="text-orange-500 text-sm">See All</a>
+                    <Link to='/orders' className="text-orange-500 text-sm">See All</Link>
                   </div>
                   {
                     recentOrders && recentOrders.length > 0 ? (
                       recentOrders.map((order) => (
-                        <div key={order._id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                          <div className="flex items-center">
-                            <img src="https://via.placeholder.com/40" alt="Item" className="rounded-md mr-3" />
-                            <span>Order #{order._id.slice(-6)}</span>
+                        <div key={order._id} className="py-2 border-b border-gray-100 last:border-b-0">
+                          <div className="flex items-center mb-2">
+                            <span className="font-semibold mr-2">Order #{order._id.slice(-6)}</span>
+                            <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                           </div>
-                          <span className="font-semibold">{formatCurrency(order.totalAmount)}</span>
+                          <div className="flex flex-wrap gap-2 items-center mb-2">
+                            {order.items && order.items.length > 0 ? (
+                              order.items.map((item, idx) => (
+                                <div key={item._id || idx} className="flex items-center gap-2 bg-gray-50 rounded p-1">
+                                  {item.photos && item.photos.length > 0 ? (
+                                    <img
+                                      src={item.photos[0]}
+                                      alt={item.name}
+                                      className="w-10 h-10 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 flex items-center justify-center bg-gray-300 rounded">
+                                      <span className="text-white text-xs font-bold text-center px-2">{item.name}</span>
+                                    </div>
+                                  )}
+                                  <span className="text-gray-700 text-sm">{item.name} x{item.quantity}</span>
+                                </div>
+                              ))
+                            ) : null}
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold">{formatCurrency(order.totalAmount)}</span>
+                            <span className="text-xs text-gray-500">{order.status.replace(/_/g, ' ')}</span>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -267,7 +305,12 @@ const Summary = () => {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Popular Products</h2>
-                    <button className="text-gray-500 flex items-center text-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="lucide lucide-filter mr-1"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter</button>
+                    <button className="text-gray-500 flex items-center text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter mr-1">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                      </svg>
+                      Filter
+                    </button>
                   </div>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead>
@@ -285,17 +328,16 @@ const Summary = () => {
                           <tr key={index}>
                             <td className="px-2 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                {/* <img src={item.imageUrl} alt={item.itemName} className="w-8 h-8 rounded-md mr-2" /> */}
                                 <span>{item.itemName}</span>
                               </div>
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">{item.totalSold}</td>
-                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">N/A</td>{/* Category - Placeholder */}
-                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">N/A</td>{/* Brand - Placeholder */}
+                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">N/A</td>
+                            <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">N/A</td>
                             <td className="px-2 py-4 whitespace-nowrap">
                               <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                 In Stock
-                              </span>{/* Status - Placeholder */}
+                              </span>
                             </td>
                           </tr>
                         ))

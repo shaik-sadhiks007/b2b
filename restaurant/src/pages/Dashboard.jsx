@@ -71,6 +71,7 @@ const Dashboard = () => {
     totalPrice: "",
     isVeg: true,
     inStock: true,
+    quantity: 100,
   });
 
   const [infoTooltip, setInfoTooltip] = useState({
@@ -99,7 +100,7 @@ const Dashboard = () => {
     if (categories.length > 0 && !defaultCategory) {
       const firstCategory = categories[0];
       setDefaultCategory(firstCategory._id);
-      
+
       if (firstCategory.subcategories.length > 0) {
         const firstSubcategory = firstCategory.subcategories[0];
         setDefaultSubcategory(firstSubcategory._id);
@@ -126,6 +127,7 @@ const Dashboard = () => {
       totalPrice: item.totalPrice || "",
       isVeg: item.isVeg !== undefined ? item.isVeg : true,
       inStock: item.inStock !== undefined ? item.inStock : true,
+      quantity: item.quantity == null ? 0 : item.quantity,
     });
     setShowItemForm(true);
   };
@@ -235,15 +237,18 @@ const Dashboard = () => {
       totalPrice: "",
       isVeg: true,
       inStock: true,
+      quantity: 100,
     });
     setShowItemForm(true);
   };
 
   const handleBulkAddSubmit = async (e) => {
     e.preventDefault();
-    
-    const categoryId = bulkTarget.categoryId || defaultCategory;
-    const subcategoryId = bulkTarget.subcategoryId || defaultSubcategory;
+
+    const categoryId = bulkTarget.categoryId
+    const subcategoryId = bulkTarget.subcategoryId
+
+
 
     if (!categoryId || !subcategoryId) {
       toast.error("Please select a category and subcategory first");
@@ -325,8 +330,16 @@ const Dashboard = () => {
       return;
     }
 
+    // Validate quantity
+    const quantity = parseInt(itemData.quantity);
+    if (isNaN(quantity) || quantity < 1) {
+      toast.error("Please enter a valid quantity (minimum 1)");
+      return;
+    }
+
     const submissionData = {
       ...itemData,
+      quantity: quantity, // Ensure quantity is a number
     };
 
     if (editingItem) {
@@ -345,7 +358,7 @@ const Dashboard = () => {
   };
 
   const handleDeleteItem = (categoryId, subcategoryId, itemId, e) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     deleteItem(categoryId, subcategoryId, itemId);
   };
 
@@ -452,6 +465,19 @@ const Dashboard = () => {
                             <option value="Veg">Veg</option>
                             <option value="Non-Veg">Non-Veg</option>
                           </select>
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">Quantity*</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            name="quantity"
+                            value={itemData.quantity}
+                            onChange={handleItemInputChange}
+                            min="1"
+                            required
+                          />
                         </div>
                       </div>
 
@@ -594,12 +620,10 @@ const Dashboard = () => {
                 <div className="modal-header">
                   <h5 className="modal-title">
                     {modalMode === "add"
-                      ? `Add ${
-                          modalType === "category" ? "Category" : "Subcategory"
-                        }`
-                      : `Edit ${
-                          modalType === "category" ? "Category" : "Subcategory"
-                        }`}
+                      ? `Add ${modalType === "category" ? "Category" : "Subcategory"
+                      }`
+                      : `Edit ${modalType === "category" ? "Category" : "Subcategory"
+                      }`}
                   </h5>
                   <button
                     type="button"
@@ -620,9 +644,8 @@ const Dashboard = () => {
                       onChange={(e) =>
                         setModalData({ ...modalData, name: e.target.value })
                       }
-                      placeholder={`Enter ${
-                        modalType === "category" ? "category" : "subcategory"
-                      } name`}
+                      placeholder={`Enter ${modalType === "category" ? "category" : "subcategory"
+                        } name`}
                     />
                   </div>
                 </div>
@@ -661,11 +684,10 @@ const Dashboard = () => {
                   onClick={() =>
                     setActiveTab(tab.label.toLowerCase().replace(" ", "-"))
                   }
-                  className={`btn btn-link text-decoration-none d-flex align-items-center gap-2 ${
-                    activeTab === tab.label.toLowerCase().replace(" ", "-")
-                      ? "text-primary border-bottom border-2 border-primary"
-                      : "text-gray-600"
-                  }`}
+                  className={`btn btn-link text-decoration-none d-flex align-items-center gap-2 ${activeTab === tab.label.toLowerCase().replace(" ", "-")
+                    ? "text-primary border-bottom border-2 border-primary"
+                    : "text-gray-600"
+                    }`}
                 >
                   <i className={`bi ${tab.icon} fs-5`}></i>
                   <span className="fw-medium">{tab.label}</span>
@@ -769,7 +791,7 @@ const Dashboard = () => {
                             <small className="text-muted">
                               You can add multiple items at once by separating them with new lines or commas
                             </small>
-                              <div className="col-md-4 d-flex align-items-end">
+                            <div className="col-md-4 d-flex align-items-end">
                               <button
                                 type="submit"
                                 className="btn btn-primary w-100"
@@ -790,11 +812,10 @@ const Dashboard = () => {
                           className="accordion-item border rounded mb-3"
                         >
                           <div
-                            className={`accordion-header d-flex justify-content-between align-items-center p-3 ${
-                              selectedCategory === category._id
-                                ? "bg-light"
-                                : "bg-white"
-                            }`}
+                            className={`accordion-header d-flex justify-content-between align-items-center p-3 ${selectedCategory === category._id
+                              ? "bg-light"
+                              : "bg-white"
+                              }`}
                             onClick={() => {
                               toggleCategory(category._id);
                               handleCategorySelect(category._id);
@@ -859,11 +880,10 @@ const Dashboard = () => {
                                 <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                               </button>
                               <i
-                                className={`bi bi-chevron-${
-                                  expandedCategories[category._id]
-                                    ? "up"
-                                    : "down"
-                                } fs-5`}
+                                className={`bi bi-chevron-${expandedCategories[category._id]
+                                  ? "up"
+                                  : "down"
+                                  } fs-5`}
                               ></i>
                             </div>
                           </div>
@@ -872,12 +892,11 @@ const Dashboard = () => {
                               {category.subcategories.map((subcategory) => (
                                 <div key={subcategory._id} className="mb-3">
                                   <div
-                                    className={`d-flex justify-content-between align-items-center p-3 rounded ${
-                                      selectedSubcategory?._id ===
+                                    className={`d-flex justify-content-between align-items-center p-3 rounded ${selectedSubcategory?._id ===
                                       subcategory._id
-                                        ? "bg-info bg-opacity-10"
-                                        : "bg-white"
-                                    }`}
+                                      ? "bg-info bg-opacity-10"
+                                      : "bg-white"
+                                      }`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleSubcategory(subcategory._id);
@@ -894,7 +913,7 @@ const Dashboard = () => {
                                         checked={subcategory.items.every(item => selectedItems[item._id])}
                                         onChange={(e) => {
                                           const isChecked = e.target.checked;
-                                          const newSelected = {...selectedItems};
+                                          const newSelected = { ...selectedItems };
                                           subcategory.items.forEach(item => {
                                             newSelected[item._id] = isChecked;
                                           });
@@ -963,11 +982,10 @@ const Dashboard = () => {
                                         <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
                                       </button>
                                       <i
-                                        className={`bi bi-chevron-${
-                                          expandedSubcategories[subcategory._id]
-                                            ? "up"
-                                            : "down"
-                                        } fs-5`}
+                                        className={`bi bi-chevron-${expandedSubcategories[subcategory._id]
+                                          ? "up"
+                                          : "down"
+                                          } fs-5`}
                                       ></i>
                                     </div>
                                   </div>
@@ -1013,9 +1031,12 @@ const Dashboard = () => {
                                             <span className="fs-5" onClick={() => handleEditItem(item)}>
                                               {item.name}
                                             </span>
-                                            {item.inStock === false && (
-                                              <span className="badge bg-danger ms-2">Out of Stock</span>
-                                            )}
+                                            <div className="d-flex align-items-center gap-2 ms-2">
+                                              <span className="badge bg-info">Qty: {item.quantity == null ? 'not given' : item.quantity}</span>
+                                              {item.inStock === false && (
+                                                <span className="badge bg-danger">Out of Stock</span>
+                                              )}
+                                            </div>
                                           </div>
                                           <div className="d-flex align-items-center gap-3">
                                             <button

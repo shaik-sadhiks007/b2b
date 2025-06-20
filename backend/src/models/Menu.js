@@ -20,12 +20,12 @@ const menuItemSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        
+
     },
     isVeg: {
         type: Boolean,
         required: true,
-    default: true,
+        default: true,
     },
     photos: [{
         type: String
@@ -44,6 +44,10 @@ const menuItemSchema = new mongoose.Schema({
     inStock: {
         type: Boolean,
         default: true
+    },
+    quantity: {
+        type: Number,
+        default: 100
     }
 });
 

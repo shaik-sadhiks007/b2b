@@ -139,7 +139,7 @@ export const MenuProvider = ({ children }) => {
             );
 
             // Update local state after successful addition
-            setCategories(prevCategories => 
+            setCategories(prevCategories =>
                 prevCategories.map(category => {
                     if (category._id === categoryId) {
                         return {
@@ -167,96 +167,96 @@ export const MenuProvider = ({ children }) => {
                 }));
             }
 
-           toast.success('Item added successfully');
+            toast.success('Item added successfully');
         } catch (error) {
             setError('Error adding item');
             toast.error('Failed to add item');
         }
     };
-     const addItemsBulk = async (categoryId, subcategoryId, itemNames) => {
-       if (!Array.isArray(itemNames) || itemNames.length === 0) {
-        setError('No item names provided');
-        toast.error('No item names provided');
-        return;
-    }
-    try {
-        // Prepare item objects
-        const items = itemNames.map(name => ({
-            name,
-            basePrice: "30",
-            totalPrice: "30",
-            isVeg: true,
-            packagingCharges: "0"
-        }));
-  const response = await axios.post(
-            `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/bulk`,
-            { items }
-        );
+    const addItemsBulk = async (categoryId, subcategoryId, itemNames) => {
+        if (!Array.isArray(itemNames) || itemNames.length === 0) {
+            setError('No item names provided');
+            toast.error('No item names provided');
+            return;
+        }
+        try {
+            // Prepare item objects
+            const items = itemNames.map(name => ({
+                name,
+                basePrice: "30",
+                packagingCharges : '0',
+                totalPrice: "30",
+                isVeg: true
+            }));
+            const response = await axios.post(
+                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/bulk`,
+                { items }
+            );
 
-        // Update local state after successful addition
-        setCategories(prevCategories =>
-            prevCategories.map(category => {
-                if (category._id === categoryId) {
-                    return {
-                        ...category,
-                        subcategories: category.subcategories.map(subcategory => {
-                            if (subcategory._id === subcategoryId) {
-                                return {
-                                    ...subcategory,
-                                    items: [...subcategory.items, ...response.data.items]
-                                };
-                            }
-                            return subcategory;
-                        })
-                    };
-                }
-                return category;
-            })
-        );
-     toast.success('Items added successfully');
-    } catch (error) {
-        setError('Error adding items in bulk');
-        toast.error('Failed to add items in bulk');
-    }
+            // Update local state after successful addition
+            setCategories(prevCategories =>
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: [...subcategory.items, ...response.data.items]
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+            toast.success('Items added successfully');
+        } catch (error) {
+            setError('Error adding items in bulk');
+            toast.error('Failed to add items in bulk');
+        }
     };
 
-      // Bulk delete items
+    // Bulk delete items
     const deleteItemsBulk = async (categoryId, subcategoryId, itemIds) => {
-       if (!Array.isArray(itemIds) || itemIds.length === 0) {
-        setError('No item IDs provided');
-        toast.error('No item IDs provided');
-        return;
-    }
-     try {
-        await axios.delete(
-            `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
-            { data: { itemIds } }
-        );
-             // Update local state after successful deletion
-        setCategories(prevCategories =>
-            prevCategories.map(category => {
-                if (category._id === categoryId) {
-                    return {
-                        ...category,
-                        subcategories: category.subcategories.map(subcategory => {
-                            if (subcategory._id === subcategoryId) {
-                                return {
-                                    ...subcategory,
-                                    items: subcategory.items.filter(item => !itemIds.includes(item._id))
-                                };
-                            }
-                            return subcategory;
-                        })
-                    };
-                }
-                return category;
-            })
-        );
-        toast.success('Items deleted successfully');
-    } catch (error) {
-        setError('Error deleting items in bulk');
-        toast.error('Failed to delete items in bulk');
-    }
+        if (!Array.isArray(itemIds) || itemIds.length === 0) {
+            setError('No item IDs provided');
+            toast.error('No item IDs provided');
+            return;
+        }
+        try {
+            await axios.delete(
+                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
+                { data: { itemIds } }
+            );
+            // Update local state after successful deletion
+            setCategories(prevCategories =>
+                prevCategories.map(category => {
+                    if (category._id === categoryId) {
+                        return {
+                            ...category,
+                            subcategories: category.subcategories.map(subcategory => {
+                                if (subcategory._id === subcategoryId) {
+                                    return {
+                                        ...subcategory,
+                                        items: subcategory.items.filter(item => !itemIds.includes(item._id))
+                                    };
+                                }
+                                return subcategory;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            );
+            toast.success('Items deleted successfully');
+        } catch (error) {
+            setError('Error deleting items in bulk');
+            toast.error('Failed to delete items in bulk');
+        }
 
     };
 
@@ -318,9 +318,9 @@ export const MenuProvider = ({ children }) => {
         }
         try {
             await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`);
-            
+
             // Update local state after successful deletion
-            setCategories(prevCategories => 
+            setCategories(prevCategories =>
                 prevCategories.map(category => {
                     if (category._id === categoryId) {
                         return {

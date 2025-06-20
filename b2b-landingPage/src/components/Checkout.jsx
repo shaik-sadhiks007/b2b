@@ -225,7 +225,8 @@ const Checkout = () => {
                 paymentMethod: "COD",
                 orderType,
                 restaurantId: cartData.restaurantId._id,
-                restaurantName: cartData.restaurantName
+                restaurantName: cartData.restaurantName,
+                quantity : cartData.quantity
             };
 
             // Only include address data for delivery orders

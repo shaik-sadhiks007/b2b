@@ -26,6 +26,7 @@ import Contactus from './components/Contactus';
 import Footer from './components/Footer';
 import OrderDetails from './components/OrderDetails';
 import OrderStatus from './components/OrderStatus';
+import Features from './components/Features';
 import {
   QueryClient,
   QueryClientProvider,
@@ -102,6 +103,7 @@ function AppContent() {
         <Route path="/guest-login" element={<GuestLogin />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contactus" element={<Contactus />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
       </Routes>
       <Footer />

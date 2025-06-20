@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/b2bupdate.png';
 import Footer from "../components/Footer";
 import { ORIGIN_URL,API_URL } from "../api/api";
+import lp from '../assets/lp.png';
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -188,7 +189,7 @@ const LandingPage = () => {
                         position: 'relative',
                         height: '100vh',
                         width: '100%',
-                        backgroundImage: `url(${banner})`,
+                        backgroundImage: `url(${lp})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat'
@@ -247,7 +248,7 @@ const LandingPage = () => {
                                 <p className="text-muted mb-4">Please keep these documents and details ready for a smooth sign-up</p>
 
                                 <div className="mb-2">
-                                    {['PAN card', 'FSSAI certificate', 'GST number - if applicable', 'Profile filling', 'Menu details'].map((item, index) => (
+                                    {['PAN card', 'FSSAI certificate', 'GST number - if applicable', 'Profile filling', 'Menu details/product details'].map((item, index) => (
                                         <div key={index} className="d-flex align-items-center mb-2">
                                             <span className="bg-success rounded-circle px-2 py-1 me-2 text-white">
                                                 <i className="bi bi-check"></i>
@@ -467,14 +468,14 @@ const LandingPage = () => {
 // FAQ data
 const faqs = [
     {
-        question: "What are the documents and details required to start deliveries through B2B?",
+        question: "How can I register my store on the platform?",
         answer:
-            "You'll need your PAN card, FSSAI , GST number (if applicable), menu details to get started with B2B.",
+            "You can register by clicking on the “Register your business” button, filling in your store details, uploading required documents, and submitting the form for approval.",
     },
     {
-        question: "How long will it take for a Business to go live on B2B after submitting the documents?",
+        question: "What documents are required to register my store?",
         answer:
-            "Once all required documents are submitted and verified, your Business can typically go live.",
+            "You typically need to provide a valid business license, GST certificate (if applicable), ID proof (Aadhaar/PAN), and any other relevant documents based on your business type.",
     },
     {
         question: "What is the one-time onboarding fee? Do I have to pay it all the time of registration?",
@@ -487,9 +488,29 @@ const faqs = [
             "You can reach out to our dedicated merchant support team at merchant@b2b.com or through the partner app. We also provide 24/7 support for urgent issues.",
     },
     {
-        question: "How much commission will be charged by B2B?",
+        question: " Do I need a physical store to register?",
         answer:
-            "Commission rates vary based on your Business type, location, and other factors. New partners enjoy 0% commission for the first month. After that, standard rates apply which will be discussed during onboarding.",
+            "While having a physical store is preferred, we also allow home-based businesses or online sellers.",
+    },
+    {
+        question: " What types of stores can register?",
+        answer:
+            "The platform supports various categories such as grocery, fashion, electronics, services, and more. Your store must fall under one of the listed categories.",
+    },
+     {
+        question: " What types of stores can register?",
+        answer:
+            "The platform supports various categories such as grocery, fashion, electronics, services, and more. Your store must fall under one of the listed categories.",
+    },
+    {
+        question: "Can I edit my store details after registration?",
+        answer:
+            "Yes, you can update your store name, address, contact info, and inventory anytime through your dashboard.",
+    },
+     {
+        question: "Can I edit my menu details everyday?",
+        answer:
+            "Yes, you can update your menu details, add new items, delete them, edit them anytime you want",
     },
 ];
 

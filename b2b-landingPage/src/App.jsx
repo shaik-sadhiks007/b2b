@@ -122,7 +122,7 @@ function App() {
           <CartProvider>
             <LocationProvider>
               <AppContent />
-              <ReactQueryDevtools initialIsOpen={false} />
+              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
               <ToastContainer
                 position="top-right"
                 autoClose={2000}

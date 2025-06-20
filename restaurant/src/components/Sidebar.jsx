@@ -14,7 +14,7 @@ export const menuItems = [
     { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
     { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
     { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
-    { icon: "bi-cash-coin", label: "Summary", path: "/summary" },
+    { icon: "bi-bar-chart", label: "Dashboard", path: "/summary" },
 
     // { icon: "bi-gift", label: "Offers", path: "/offers" },
     // { icon: "bi-wallet2", label: "Payout", path: "/payout" },

@@ -79,7 +79,11 @@ io.on('connection', (socket) => {
 // Define allowed origins
 const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:5173',
-    process.env.SECOND_FRONTEND_URL || 'http://localhost:5174'
+    process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
+    'http://www.shopatb2b.com',
+    'https://www.shopatb2b.com',
+    'http://shopatb2b.com',
+    'https://shopatb2b.com'
 ];
 
 // CORS configuration

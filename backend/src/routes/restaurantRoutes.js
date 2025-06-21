@@ -66,7 +66,7 @@ router.post('/', authMiddleware, upload.single('profileImage'), async (req, res)
 
         // Create new restaurant with the exact structure from frontend
         const restaurant = new Restaurant({
-            owner: req.user._id,
+            owner: req.user.id,
             restaurantName,
             serviceType,
             ownerName,
@@ -129,7 +129,7 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
     try {
         const restaurant = await Restaurant.findOne({
             _id: req.params.id,
-            owner: req.user._id
+            owner: req.user.id
         });
 
         if (!restaurant) {
@@ -257,7 +257,7 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
 // Get all restaurants for the current user
 router.get('/my-restaurants', authMiddleware, async (req, res) => {
     try {
-        const restaurants = await Restaurant.find({ owner: req.user._id });
+        const restaurants = await Restaurant.find({ owner: req.user.id });
         res.json(restaurants);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching restaurants', error: error.message });
@@ -412,7 +412,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const restaurant = await Restaurant.findOne({
             _id: req.params.id,
-            owner: req.user._id
+            owner: req.user.id
         });
 
         if (!restaurant) {
@@ -441,7 +441,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const restaurant = await Restaurant.findOneAndDelete({
             _id: req.params.id,
-            owner: req.user._id
+            owner: req.user.id
         });
 
         if (!restaurant) {

@@ -12,11 +12,16 @@ const menuItemSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        default: "Uncategorized"
+        default: "Uncategorized",
+        unique: true,
+        lowercase: true,
+        trim: true
     },
     subcategory: {
         type: String,
-        default: "General"
+        default: "General",
+        lowercase: true,
+        trim: true
     },
     foodType: {
         type: String,

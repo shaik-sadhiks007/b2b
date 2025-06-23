@@ -6,7 +6,7 @@ const businessSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    buninessName: {
+    restaurantName: {
         type: String,
         required: true
     },

@@ -10,7 +10,7 @@ const createBusiness = async (req, res) => {
     try {
         const formDataObj = JSON.parse(req.body.formData || '{}');
         const {
-            buninessName,
+            restaurantName,
             serviceType,
             ownerName,
             contact,
@@ -28,7 +28,7 @@ const createBusiness = async (req, res) => {
         }
         const business = new Business({
             owner: req.user.id,
-            buninessName,
+            restaurantName,
             serviceType,
             ownerName,
             contact: {
@@ -283,7 +283,7 @@ const getAllPublicBusinesses = async (req, res) => {
             ];
         }
         const businesses = await Business.find(query)
-            .select('buninessName serviceType images.profileImage description rating location category operatingHours')
+            .select('restaurantName serviceType images.profileImage description rating location category operatingHours')
             .lean();
         const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -314,7 +314,7 @@ const getAllPublicBusinesses = async (req, res) => {
             }
             return {
                 _id: business._id,
-                name: business.buninessName,
+                name: business.restaurantName,
                 imageUrl: business.images?.profileImage || null,
                 description: business.description || '',
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
@@ -350,7 +350,7 @@ const getPublicBusinessById = async (req, res) => {
         const business = await Business.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('buninessName images.profileImage description rating location menu operatingHours serviceType');
+        }).select('restaurantName images.profileImage description rating location menu operatingHours serviceType');
         if (!business) {
             return res.status(404).json({ message: 'Business not found' });
         }
@@ -382,7 +382,7 @@ const getPublicBusinessById = async (req, res) => {
         }
         const formattedBusiness = {
             _id: business._id,
-            name: business.buninessName,
+            name: business.restaurantName,
             imageUrl: business.images?.profileImage || null,
             description: business.description || '',
             distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,

@@ -53,7 +53,7 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
 ]), updateBusinessStep);
 
 // Get all businesses for the current user
-router.get('/my-businesses', authMiddleware, getMyBusinesses);
+router.get('/', authMiddleware, getMyBusinesses);
 
 // Get business profile
 router.get('/profile', authMiddleware, businessMiddleware, getBusinessProfile);

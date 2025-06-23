@@ -1,0 +1,199 @@
+{
+  "menu": [
+    {
+      "category": "Uncategorized",
+      "subcategories": [
+        {
+          "subcategory": "General",
+          "items": [
+            {
+              "_id": "1",
+              "name": "Chicken Biryani",
+              "price": 180,
+              "description": "Aromatic basmati rice cooked with marinated chicken and spices.",
+              "image": "https://example.com/images/chicken-biryani.jpg"
+            },
+            {
+              "_id": "2",
+              "name": "Spring Rolls",
+              "price": 90,
+              "description": "Crispy rolls stuffed with vegetables and noodles.",
+              "image": "https://example.com/images/spring-rolls.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Main Course",
+      "subcategories": [
+        {
+          "subcategory": "General",
+          "items": [
+            {
+              "_id": "3",
+              "name": "Paneer Butter Masala",
+              "price": 150,
+              "description": "Cottage cheese in a creamy tomato-based gravy.",
+              "image": "https://example.com/images/paneer-butter-masala.jpg"
+            }
+          ]
+        },
+        {
+          "subcategory": "Rice",
+          "items": [
+            {
+              "_id": "4",
+              "name": "Veg Fried Rice",
+              "price": 100,
+              "description": "Fried rice tossed with mixed vegetables and soy sauce.",
+              "image": "https://example.com/images/veg-fried-rice.jpg"
+            }
+          ]
+        },
+        {
+          "subcategory": "Curry",
+          "items": [
+            {
+              "_id": "5",
+              "name": "Egg Curry",
+              "price": 120,
+              "description": "Boiled eggs simmered in spicy tomato gravy.",
+              "image": "https://example.com/images/egg-curry.jpg"
+            }
+          ]
+        },
+        {
+          "subcategory": "Seafood",
+          "items": [
+            {
+              "_id": "6",
+              "name": "Fish Curry",
+              "price": 220,
+              "description": "Fish cooked in coconut-based curry with Indian spices.",
+              "image": "https://example.com/images/fish-curry.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Breakfast",
+      "subcategories": [
+        {
+          "subcategory": "South Indian",
+          "items": [
+            {
+              "_id": "7",
+              "name": "Masala Dosa",
+              "price": 80,
+              "description": "Crispy rice pancake filled with spiced potato filling.",
+              "image": "https://example.com/images/masala-dosa.jpg"
+            }
+          ]
+        },
+        {
+          "subcategory": "North Indian",
+          "items": [
+            {
+              "_id": "8",
+              "name": "Chole Bhature",
+              "price": 90,
+              "description": "Spiced chickpeas served with deep-fried bhature.",
+              "image": "https://example.com/images/chole-bhature.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Beverages",
+      "subcategories": [
+        {
+          "subcategory": "Cold",
+          "items": [
+            {
+              "_id": "9",
+              "name": "Cold Coffee",
+              "price": 60,
+              "description": "Chilled coffee with a hint of chocolate.",
+              "image": "https://example.com/images/cold-coffee.jpg"
+            },
+            {
+              "_id": "10",
+              "name": "Lassi",
+              "price": 50,
+              "description": "Sweetened yogurt drink topped with cardamom.",
+              "image": "https://example.com/images/lassi.jpg"
+            },
+            {
+              "_id": "11",
+              "name": "Mango Shake",
+              "price": 70,
+              "description": "Refreshing mango milkshake topped with dry fruits.",
+              "image": "https://example.com/images/mango-shake.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Desserts",
+      "subcategories": [
+        {
+          "subcategory": "General",
+          "items": [
+            {
+              "_id": "12",
+              "name": "Gulab Jamun",
+              "price": 40,
+              "description": "Soft milk-solid balls soaked in rose-flavored syrup.",
+              "image": "https://example.com/images/gulab-jamun.jpg"
+            },
+            {
+              "_id": "13",
+              "name": "Rasmalai",
+              "price": 50,
+              "description": "Soft cheese balls soaked in saffron milk.",
+              "image": "https://example.com/images/rasmalai.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Starters",
+      "subcategories": [
+        {
+          "subcategory": "Tandoor",
+          "items": [
+            {
+              "_id": "14",
+              "name": "Tandoori Chicken",
+              "price": 200,
+              "description": "Chicken marinated in yogurt and spices, roasted in a clay oven.",
+              "image": "https://example.com/images/tandoori-chicken.jpg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Breads",
+      "subcategories": [
+        {
+          "subcategory": "General",
+          "items": [
+            {
+              "_id": "15",
+              "name": "Butter Naan",
+              "price": 25,
+              "description": "Soft flatbread brushed with butter.",
+              "image": "https://example.com/images/butter-naan.jpg"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

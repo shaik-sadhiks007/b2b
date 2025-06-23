@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
-const restaurantSchema = new mongoose.Schema({
+const businessSchema = new mongoose.Schema({
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    restaurantName: {
+    buninessName: {
         type: String,
         required: true
     },
@@ -15,8 +15,8 @@ const restaurantSchema = new mongoose.Schema({
     },
     serviceType: {
         type: String,
-        enum: ['DELIVERY', 'PICKUP', 'BOTH'],
-        default: 'DELIVERY'
+        enum: ['delivery', 'pickup', 'both'],
+        default: 'delivery'
     },
     ownerName: {
         type: String,
@@ -100,9 +100,9 @@ const restaurantSchema = new mongoose.Schema({
 });
 
 // Index for location-based queries
-restaurantSchema.index({ location: '2dsphere' });
+businessSchema.index({ location: '2dsphere' });
 
 // Check if the model exists before creating it
-const Restaurant = mongoose.models.Restaurant || mongoose.model('Restaurant', restaurantSchema);
+const Business = mongoose.models.Business || mongoose.model('Business', businessSchema);
 
-module.exports = Restaurant; 
+module.exports = Business; 

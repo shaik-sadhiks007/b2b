@@ -1,32 +1,67 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const menuSchema = new mongoose.Schema({
-  date: { type: String, unique: true, required: true }, 
-  morning: [
-    {
-      menuName: { type: String, required: true },
-      image: { type: String }, 
-      price: { type: Number, required: true },
-      quantity: { type: Number, default: 1, min: 1 }
+const menuItemSchema = new mongoose.Schema({
+    businessId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Business',
+        required: true
     },
-  ],
-  afternoon: [
-    {
-      menuName: { type: String, required: true },
-      image: { type: String },
-      price: { type: Number, required: true },
-      quantity: { type: Number, default: 1, min: 1 }
+    name: {
+        type: String,
+        required: true
     },
-  ],
-  evening: [
-    {
-      menuName: { type: String, required: true },
-      image: { type: String },
-      price: { type: Number, required: true },
-      quantity: { type: Number, default: 1, min: 1 }
+    category: {
+        type: String,
+        default: "Uncategorized"
     },
-  ],
+    subcategory: {
+        type: String,
+        default: "General"
+    },
+    foodType: {
+        type: String,
+        enum: ['veg', 'nonveg', 'egg'],
+        default: 'veg',
+    },
+    // customisable: {
+    //     type: Boolean,
+    //     default: false
+    // },
+    // basePrice: {
+    //     type: String,
+    //     required: true
+    // },
+    description: {
+        type: String,
+    },
+    photos: {
+        type: String
+    },
+    // serviceType: {
+    //     type: String,
+    //     enum: ['Delivery', 'Dine-in', 'Both'],
+    // },
+    totalPrice: {
+        type: Number,
+        required: true
+    },
+    // packagingCharges: {
+    //     type: String,
+    // },
+    inStock: {
+        type: Boolean,
+        default: true
+    },
+    quantity: {
+        type: Number,
+        default: 100
+    }
 });
 
-const Menu = mongoose.model("Menu", menuSchema);
-module.exports = Menu;
+// Compound index
+menuItemSchema.index({ category: 1, subcategory: 1 });
+
+// Check if the model exists before creating it
+const Menu = mongoose.models.Menu || mongoose.model('Menu', menuItemSchema);
+
+module.exports = Menu; 

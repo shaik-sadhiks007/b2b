@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Restaurant = require('../models/Restaurant.js');
-const Menu = require('../models/Menu.js');
+const Restaurant = require('../models/businessModel.js');
+const Menu = require('../models/menuModel.js');
 const moment = require('moment-timezone');
 const geolib = require('geolib');
 

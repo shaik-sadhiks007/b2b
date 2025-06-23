@@ -5,7 +5,7 @@ const Order = require('../models/orderModel');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/businessModel');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {

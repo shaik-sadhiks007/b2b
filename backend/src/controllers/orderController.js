@@ -1,8 +1,8 @@
 const Order = require("../models/orderModel");
 const User = require("../models/userModel");
-const MenuOfRestaurant = require("../models/Menu");
+const MenuOfRestaurant = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
-const Restaurant = require("../models/Restaurant");
+const Restaurant = require("../models/businessModel");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
 const moment = require('moment-timezone');
 

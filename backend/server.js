@@ -84,8 +84,8 @@ const allowedOrigins = [
     'https://www.shopatb2b.com',
     'http://shopatb2b.com',
     'https://shopatb2b.com',
-    // 'http://business.shopatb2b.com/',
-    // 'https://business.shopatb2b.com/',
+    'http://business.shopatb2b.com',
+    'https://business.shopatb2b.com',
     'http://www.business.shopatb2b.com',
     'https://www.business.shopatb2b.com',
 ];

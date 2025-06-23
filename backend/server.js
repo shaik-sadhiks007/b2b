@@ -45,14 +45,22 @@ const server = http.createServer(app);
 
 // Initialize Socket.IO
 const io = new Server(server, {
-    cors: {
-        origin: [
-            process.env.FRONTEND_URL || 'http://localhost:5173',
-            process.env.SECOND_FRONTEND_URL || 'http://localhost:5174'
-        ],
-        methods: ["GET", "POST"],
-        credentials: true
-    }
+  cors: {
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
+      'http://www.shopatb2b.com',
+      'https://www.shopatb2b.com',
+      'http://shopatb2b.com',
+      'https://shopatb2b.com',
+      'http://business.shopatb2b.com',
+      'https://business.shopatb2b.com',
+      'http://www.business.shopatb2b.com',
+      'https://www.business.shopatb2b.com'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
 });
 
 // Socket.IO connection handling

@@ -1,32 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import menuData from "./data.json"; // Make sure this import is at the top
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import MenuItemModal from './MenuItemModal';
+import { MenuContext } from '../context/MenuContext';
 
 function MenuEditor() {
-    const [selectedCategory, setSelectedCategory] = useState(menuData.menu[0]?.category || "");
+    const {
+        menuItems, // now an array of { category, subcategories: [{ subcategory, items: [...] }] }
+        loading,
+        addMenuItem,
+        updateMenuItem,
+        deleteMenuItem,
+    } = useContext(MenuContext);
+
+    // State for selected category and subcategory (by name)
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedSubcategory, setSelectedSubcategory] = useState('');
     const [searchTerm, setSearchTerm] = useState("");
     const [showOutOfStock, setShowOutOfStock] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalData, setModalData] = useState({ category: '', subcategory: '', item: null });
 
-    const filteredCategories = menuData.menu;
-    const currentCategory = filteredCategories.find(cat => cat.category === selectedCategory);
+    // Set default selected category and subcategory on load
+    React.useEffect(() => {
+        if (menuItems.length > 0 && !selectedCategory) {
+            setSelectedCategory(menuItems[0].category);
+            if (menuItems[0].subcategories.length > 0) {
+                setSelectedSubcategory(menuItems[0].subcategories[0].subcategory);
+            }
+        }
+    }, [menuItems, selectedCategory]);
 
-    // icons for edit and delete
-    const EditIcon = () => (
-        <Pencil width={18} height={18} />
-    );
-    const DeleteIcon = () => (
-        <Trash2 width={18} height={18} />
-    );
+    // When selectedCategory changes, reset selectedSubcategory
+    React.useEffect(() => {
+        const catObj = menuItems.find(cat => cat.category === selectedCategory);
+        if (catObj && catObj.subcategories.length > 0) {
+            setSelectedSubcategory(catObj.subcategories[0].subcategory);
+        } else {
+            setSelectedSubcategory('');
+        }
+    }, [selectedCategory, menuItems]);
 
-    // Handle modal submit
-    const handleAddMenuItem = (formData) => {
-        console.log('New menu item:', formData);
+    // Handle modal submit for add/edit
+    const handleModalSubmit = (formData) => {
+        if (modalData.item) {
+            updateMenuItem(modalData.item._id, formData);
+        } else {
+            addMenuItem({ ...formData });
+        }
         setModalOpen(false);
+        setModalData({ category: '', subcategory: '', item: null });
     };
+
+    // Handle opening modal for add/edit
+    const handleOpenModal = (category = '', subcategory = '', item = null) => {
+        setModalData({ category, subcategory, item });
+        setModalOpen(true);
+    };
+
+    // Get current category and subcategories
+    const currentCategoryObj = menuItems.find(cat => cat.category === selectedCategory);
+    const subcategories = currentCategoryObj ? currentCategoryObj.subcategories : [];
+    const currentSubcategoryObj = subcategories.find(sub => sub.subcategory === selectedSubcategory);
+    const items = currentSubcategoryObj ? currentSubcategoryObj.items : [];
+
+    if (loading) return <div className="p-4">Loading menu...</div>;
 
     return (
         <div className="container-fluid px-0">
@@ -66,7 +105,7 @@ function MenuEditor() {
                                 onChange={e => setShowOutOfStock(e.target.checked)}
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <label htmlFor="out-of-stock" className="text-sm text-gray-600">
+                            <label htmlFor="out-of-stock" className="ms-1 text-sm text-gray-600">
                                 Show Out of stock
                             </label>
                         </div>
@@ -78,9 +117,10 @@ function MenuEditor() {
                             <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium transition-colors">
                                 Import Excel
                             </button>
+                            {/* Add New Item */}
                             <button
                                 className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
-                                onClick={() => setModalOpen(true)}
+                                onClick={() => handleOpenModal('', '', null)}
                             >
                                 Add New Item
                             </button>
@@ -94,69 +134,135 @@ function MenuEditor() {
                                 <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
                             </h2>
                             <div className="space-y-3">
-                                {filteredCategories.map((category, index) => (
+                                {menuItems.map((categoryObj) => (
                                     <div
-                                        key={category.category}
-                                        className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${selectedCategory === category.category ? "font-bold text-orange-500" : ""}`}
-                                        onClick={() => setSelectedCategory(category.category)}
+                                        key={categoryObj.category}
+                                        className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${selectedCategory === categoryObj.category ? "font-bold text-orange-500" : ""}`}
+                                        onClick={() => setSelectedCategory(categoryObj.category)}
                                     >
-                                        <span>{category.category}</span>
-                                        <span>
-                                            <button className="p-1" title="Edit Category"><EditIcon /></button>
-                                            <button className="p-1" title="Delete Category"><DeleteIcon /></button>
-                                        </span>
+                                        <span>{categoryObj.category}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         {/* Main Menu Area */}
-                        <div className="flex-1 p-6 overflow-y-auto h-screen">
-                            <div className="space-y-8">
-                                {currentCategory?.subcategories.map((subcategory) => (
-                                    <div key={subcategory.subcategory}>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-800">{subcategory.subcategory}</h3>
-                                            <span>
-                                                <button className="p-1" title="Edit Subcategory"><EditIcon /></button>
-                                                <button className="p-1" title="Delete Subcategory"><DeleteIcon /></button>
-                                            </span>
+                        <div className="flex-1 p-6 pt-3 overflow-y-auto h-screen">
+                            {/* Subcategory Tabs */}
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-lg font-semibold">Subcategories</span>
+                                <button
+                                    className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
+                                    onClick={() => handleOpenModal(selectedCategory, '', null)}
+                                >
+                                    <Plus size={20} />
+                                    Add Subcategory
+                                </button>
+                            </div>
+                            <div className="flex flex-column gap-4">
+                                {subcategories.map((subcat) => (
+                                    <div>
+                                        <div
+                                            key={subcat.subcategory}
+                                            className={`flex items-center justify-between gap-4 px-0 py-2 rounded-md bg-white w-full cursor-pointer'}`}
+                                        >
+                                            <span className="fs-3 text-gray-800 font-bold">{subcat.subcategory == 'general' ? '' : subcat.subcategory}</span>
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    className="text-gray-600 hover:text-gray-800"
+                                                    onClick={e => { e.stopPropagation(); /* handle subcategory edit here */ }}
+                                                    title="Edit Subcategory"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button
+                                                    className="text-gray-600 hover:text-gray-800"
+                                                    onClick={e => { e.stopPropagation(); handleOpenModal(selectedCategory, subcat.subcategory, null); }}
+                                                    title="Add Item"
+                                                >
+                                                    <Plus size={25} />
+                                                </button>
+                                                <button
+                                                    className="text-red-600 hover:text-red-800"
+                                                    onClick={e => { e.stopPropagation(); /* handle subcategory delete here */ }}
+                                                    title="Delete Subcategory"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="space-y-3">
-                                            {subcategory.items
-                                                .filter(item =>
-                                                    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-                                                    && (!showOutOfStock || !item.available === false)
-                                                )
-                                                .map((item, index) => (
-                                                    <div key={item._id || index} className="flex items-center justify-between py-3 border-b border-gray-100">
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        {/* Menu List Container */}
+                                        <div className="space-y-8">
+                                            <div className="bg-white border border-gray-300 rounded-lg shadow-sm p-4 space-y-4">
+                                                {subcat.items
+                                                    .filter(item =>
+                                                        item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                                        (!showOutOfStock || item.inStock === false)
+                                                    )
+                                                    .map((item, index) => (
+                                                        <div
+                                                            key={item._id || index}
+                                                            className="flex items-center justify-between rounded-md bg-white"
+                                                        >
                                                             <div>
                                                                 <div className="font-medium text-gray-800">{item.name}</div>
-                                                                <div className="text-sm text-gray-600">₹{item.price}</div>
+                                                                <div className="text-sm text-gray-600">₹{item.price || item.totalPrice}</div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-4">
+                                                                {/* InStock Toggle */}
+                                                                <label className="flex items-center cursor-pointer">
+                                                                    <div className="relative">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={item.inStock}
+                                                                            onChange={() => updateMenuItem(item._id, { ...item, inStock: !item.inStock })}
+                                                                            className="sr-only"
+                                                                        />
+                                                                        <div className={`block w-10 h-6 rounded-full ${item.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                                        <div
+                                                                            className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock ? 'translate-x-4' : ''
+                                                                                }`}
+                                                                        ></div>
+                                                                    </div>
+                                                                </label>
+                                                                {/* Edit/Delete */}
+                                                                <button
+                                                                    className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                                    onClick={() => handleOpenModal(selectedCategory, selectedSubcategory, item)}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                                    onClick={() => deleteMenuItem(item._id)}
+                                                                >
+                                                                    Delete
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center space-x-3">
-                                                            <button className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors">
-                                                                Edit
-                                                            </button>
-                                                            <button className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors">
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+
                         </div>
                     </div>
-                    {/* Add Menu Item Offcanvas Modal */}
-                    <MenuItemModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddMenuItem} />
+                    {/* Add/Edit Menu Item Offcanvas Modal */}
+                    <MenuItemModal
+                        open={modalOpen}
+                        onClose={() => {
+                            setModalOpen(false);
+                            setModalData({ category: '', subcategory: '', item: null });
+                        }}
+                        onSubmit={handleModalSubmit}
+                        preSelectedCategory={modalData.category}
+                        preSelectedSubcategory={modalData.subcategory}
+                        item={modalData.item}
+                    />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

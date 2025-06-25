@@ -186,7 +186,7 @@ const getMyBusinesses = async (req, res) => {
 // Get business profile
 const getBusinessProfile = async (req, res) => {
     try {
-        const business = await Business.findById(req.business._id);
+        const business = await Business.findById(req.restaurant._id);
         if (!business) {
             return res.status(404).json({ message: 'Business not found' });
         }
@@ -253,7 +253,7 @@ const updateBusinessProfile = async (req, res) => {
             }
         });
         const business = await Business.findByIdAndUpdate(
-            req.business._id,
+            req.restaurant._id,
             { $set: updateData },
             {
                 new: true,
@@ -347,10 +347,11 @@ const getAllPublicBusinesses = async (req, res) => {
 // Get a specific business's public details
 const getPublicBusinessById = async (req, res) => {
     try {
+
         const business = await Business.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('restaurantName images.profileImage description rating location menu operatingHours serviceType');
+        }).select('restaurantName images.profileImage description location operatingHours serviceType');
         if (!business) {
             return res.status(404).json({ message: 'Business not found' });
         }

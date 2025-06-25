@@ -9,12 +9,9 @@ const addToCart = async (req, res) => {
         items = [],
     } = req.body;
 
-    const userEmail = req.user.email;
+    const userId = req.user.id;
 
     try {
-        const user = await User.findOne({ email: userEmail });
-        if (!user) return res.status(404).json({ message: "User not found" });
-        const userId = user._id;
 
         // Check if user has a cart for a different restaurant
         const existingCart = await Cart.findOne({ userId });
@@ -59,12 +56,10 @@ const addToCart = async (req, res) => {
 
 // Get all cart items for a user
 const getCartItems = async (req, res) => {
-    const userEmail = req.user.email;
 
     try {
-        const user = await User.findOne({ email: userEmail });
-        if (!user) return res.status(404).json({ message: "User not found" });
-        const userId = user._id;
+       
+        const userId = req.user.id;
 
         const carts = await Cart.find({ userId })
             .populate({

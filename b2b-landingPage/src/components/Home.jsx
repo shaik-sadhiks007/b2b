@@ -262,7 +262,7 @@ const Home = () => {
                         className={`w-full h-full object-cover ${!restaurant.online ? 'grayscale' : ''}`}
                     />
                     <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
+                        {restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
                     </span>
                 </div>
                 <div className="p-4">

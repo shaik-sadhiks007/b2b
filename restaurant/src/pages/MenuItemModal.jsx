@@ -7,19 +7,42 @@ const defaultForm = {
     subcategory: '',
     foodType: 'veg',
     description: '',
-    photos: '',
+    photos: '', // will store base64 or url
     totalPrice: '',
     inStock: true,
     quantity: 100,
 };
 
-const MenuItemModal = ({ open, onClose, onSubmit }) => {
-    const [form, setForm] = useState(defaultForm);
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preSelectedSubcategory = '', item }) => {
+    const [form, setForm] = useState(
+        item != null
+            ? { ...item }
+            : {
+                ...defaultForm,
+                category: preSelectedCategory,
+                subcategory: preSelectedSubcategory,
+            }
+    );
+
+    console.log("item",item)
+    console.log('form',form)
     const [error, setError] = useState('');
+    const [imagePreview, setImagePreview] = useState(null);
 
     useEffect(() => {
-        if (!open) setForm(defaultForm);
-    }, [open]);
+        if (item != null) {
+            setForm({ ...item });
+        } else {
+            setForm({
+                ...defaultForm,
+                category: preSelectedCategory,
+                subcategory: preSelectedSubcategory,
+            });
+        }
+    }, [item, preSelectedCategory, preSelectedSubcategory]);
 
     if (!open) return null;
 
@@ -31,6 +54,25 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
         }));
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+            toast.error('Only JPG, PNG, WEBP, and GIF images are allowed.');
+            return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+            toast.error('Image size must be less than 5MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setForm((prev) => ({ ...prev, photos: reader.result }));
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!form.name || !form.totalPrice) {
@@ -40,6 +82,7 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
         setError('');
         onSubmit(form);
         setForm(defaultForm);
+        setImagePreview(null);
     };
 
     // Close when clicking outside the offcanvas
@@ -86,6 +129,7 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 rounded px-3 py-2"
                                 placeholder="Optional"
+                                readOnly={!!preSelectedCategory}
                             />
                         </div>
                         <div className="flex-1">
@@ -97,6 +141,7 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 rounded px-3 py-2"
                                 placeholder="Optional"
+                                readOnly={!!preSelectedSubcategory}
                             />
                         </div>
                     </div>
@@ -123,14 +168,16 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">Photo URL</label>
+                        <label className="block text-sm font-medium mb-1">Photo Upload (JPG, PNG, WEBP, GIF, &lt;5MB)</label>
                         <input
-                            type="text"
-                            name="photos"
-                            value={form.photos}
-                            onChange={handleChange}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            onChange={handleImageChange}
                             className="w-full border border-gray-300 rounded px-3 py-2"
                         />
+                        {imagePreview && (
+                            <img src={imagePreview} alt="Preview" className="mt-2 h-24 rounded object-cover" />
+                        )}
                     </div>
                     <div className="flex gap-2">
                         <div className="flex-1">
@@ -155,15 +202,17 @@ const MenuItemModal = ({ open, onClose, onSubmit }) => {
                             />
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="form-check form-switch">
                         <input
+                            className="form-check-input"
                             type="checkbox"
-                            name="inStock"
+                            id="inStockSwitch"
                             checked={form.inStock}
-                            onChange={handleChange}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                            onChange={(e) => setForm((prev) => ({ ...prev, inStock: e.target.checked }))}
                         />
-                        <label className="text-sm">In Stock</label>
+                        <label className="form-check-label" htmlFor="inStockSwitch">
+                            {form.inStock ? "In Stock" : "Out of Stock"}
+                        </label>
                     </div>
                     <div className="flex gap-2 justify-end">
                         <button

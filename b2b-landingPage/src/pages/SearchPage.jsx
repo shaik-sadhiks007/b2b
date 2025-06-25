@@ -39,22 +39,13 @@ function SearchPage() {
     addToCart,
     clearCart
   } = useCart();
-  const {
-    location,
-    setLocation,
-    suggestions,
-    showSuggestions,
-    setShowSuggestions,
-    fetchLocationSuggestions,
-    onLocationSelect,
-    onAllowLocation
-  } = useLocationContext();
+
 
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
   }, []);
-  
+
   const handleAddToCart = async (item) => {
     if (!user) {
       navigate('/login')
@@ -76,10 +67,8 @@ function SearchPage() {
           itemId: item.id,
           name: item.name,
           quantity: 1,
-          basePrice: Number(item.price),
-          packagingCharges: 0,
           totalPrice: Number(item.price),
-          isVeg: item.isVeg
+          foodType: item.foodType
         }]
       }
     } else {
@@ -87,10 +76,8 @@ function SearchPage() {
         itemId: item.id,
         name: item.name,
         quantity: 1,
-        basePrice: Number(item.price),
-        packagingCharges: 0,
         totalPrice: Number(item.price),
-        isVeg: item.isVeg
+        foodType: item.foodType
       }]
     }
 
@@ -233,7 +220,7 @@ function SearchPage() {
                     </div>
                   )}
                   <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    {result.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : result.serviceType}
+                    {result.serviceType === 'both' ? 'PICKUP & DELIVERY' : result.serviceType}
                   </span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{result.name}</h3>
@@ -281,12 +268,12 @@ function SearchPage() {
                     </div>
                   )}
                   <span className="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    {result.restaurant.serviceType === 'BOTH' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
+                    {result.restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{result.name}</h3>
-                  {result.isVeg && (
+                  {result.foodType == 'veg' && (
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                       Veg
                     </span>
@@ -326,10 +313,10 @@ function SearchPage() {
                   onClick={() => isItemInCart(result.id) ? navigate('/cart') : handleAddToCart(result)}
                   disabled={!result.restaurant.online}
                   className={`w-full mt-4 px-4 py-2 ${!result.restaurant.online
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : isItemInCart(result.id)
-                        ? 'bg-green-600 text-white'
-                        : 'border border-green-600 text-green-600'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : isItemInCart(result.id)
+                      ? 'bg-green-600 text-white'
+                      : 'border border-green-600 text-green-600'
                     } rounded hover:bg-green-700 hover:text-white transition-colors`}
                 >
                   {!result.restaurant.online
@@ -396,8 +383,8 @@ function SearchPage() {
               type="button"
               onClick={() => setSearchType('products')}
               className={`px-4 py-2 rounded-lg ${searchType === 'products'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               Products
@@ -406,8 +393,8 @@ function SearchPage() {
               type="button"
               onClick={() => setSearchType('business')}
               className={`px-4 py-2 rounded-lg ${searchType === 'business'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               Businesses

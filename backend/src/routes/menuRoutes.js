@@ -1,61 +1,38 @@
 const express = require('express');
 const {
-    getMenu,
-    createCategory,
-    addSubcategory,
-    addItemToSubcategory,
-    bulkAddItemsToSubcategory,
-    updateCategory,
-    deleteCategory,
-    deleteSubcategory,
-    deleteItemFromSubcategory,
-    deleteMultipleItemsFromSubcategory,
-    updateSubcategory,
-    updateItemInSubcategory,
-    getPublicMenu
+    getAllMenuItems,
+    getMenuItem,
+    createMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    getAllMenuItemsOfPublic,
+    getAllMenuItemsInstore
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 
 const router = express.Router();
 
-// Get all menu items for a specific restaurant
-router.get('/', authMiddleware, restaurantMiddleware, getMenu);
 
-// Create a new category
-router.post('/', authMiddleware, restaurantMiddleware, createCategory);
+router.get('/public/:id', getAllMenuItemsOfPublic);
 
-// Add subcategory to a category
-router.post('/:categoryId/subcategories', authMiddleware, restaurantMiddleware, addSubcategory);
+router.get('/instore', authMiddleware, restaurantMiddleware, getAllMenuItemsInstore);
 
-// Add item to a subcategory
-router.post('/:categoryId/subcategories/:subcategoryId/items', authMiddleware, restaurantMiddleware, addItemToSubcategory);
 
-// Bulk add items to a subcategory
-router.post('/:categoryId/subcategories/:subcategoryId/items/bulk', authMiddleware, restaurantMiddleware, bulkAddItemsToSubcategory);
+// Get a single menu item
+router.get('/:id', authMiddleware, restaurantMiddleware, getMenuItem);
 
-// Update a category
-router.put('/:id', authMiddleware, restaurantMiddleware, updateCategory);
 
-// Delete a category
-router.delete('/:id', authMiddleware, restaurantMiddleware, deleteCategory);
+// Get all menu items for a business/restaurant
+router.get('/', authMiddleware, restaurantMiddleware, getAllMenuItems);
 
-// Delete a subcategory
-router.delete('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaurantMiddleware, deleteSubcategory);
+// Create a new menu item
+router.post('/', authMiddleware, restaurantMiddleware, createMenuItem);
 
-// Delete an item from a subcategory
-router.delete('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMiddleware, restaurantMiddleware, deleteItemFromSubcategory);
+// Update a menu item
+router.put('/:id', authMiddleware, restaurantMiddleware, updateMenuItem);
 
-// Delete multiple items from a subcategory
-router.delete('/:categoryId/subcategories/:subcategoryId/items', authMiddleware, restaurantMiddleware, deleteMultipleItemsFromSubcategory);
-
-// Update a subcategory
-router.put('/:categoryId/subcategories/:subcategoryId', authMiddleware, restaurantMiddleware, updateSubcategory);
-
-// Update an item in a subcategory
-router.put('/:categoryId/subcategories/:subcategoryId/items/:itemId', authMiddleware, restaurantMiddleware, updateItemInSubcategory);
-
-// Get menu items for a specific restaurant (public route - no auth required)
-router.get('/public/:restaurantId', getPublicMenu);
+// Delete a menu item
+router.delete('/:id', authMiddleware, restaurantMiddleware, deleteMenuItem);
 
 module.exports = router;

@@ -12,14 +12,13 @@ const menuItemSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        default: "Uncategorized",
-        unique: true,
+        default: "uncategorized",
         lowercase: true,
         trim: true
     },
     subcategory: {
         type: String,
-        default: "General",
+        default: "general",
         lowercase: true,
         trim: true
     },

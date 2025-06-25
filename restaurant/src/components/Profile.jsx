@@ -576,9 +576,9 @@ const Profile = () => {
                                                             required
                                                         >
                                                             <option value="">Select Service Type</option>
-                                                            <option value="BOTH">BOTH</option>
-                                                            <option value="DELIVERY">Delivery</option>
-                                                            <option value="PICKUP">Pickup</option>
+                                                            <option value="both">Both</option>
+                                                            <option value="delivery">Delivery</option>
+                                                            <option value="pickup">Pickup</option>
                                                         </select>
                                                     </div>
                                                     <div className="col-12">

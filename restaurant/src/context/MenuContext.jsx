@@ -35,7 +35,53 @@ export const MenuProvider = ({ children }) => {
     const addMenuItem = async (itemData) => {
         try {
             const response = await axios.post(`${API_URL}/api/menu`, itemData);
-            setMenuItems(prev => [...prev, response.data]);
+            const newItem = response.data;
+            
+            setMenuItems(prev => {
+                // Find if category exists
+                const categoryIndex = prev.findIndex(cat => cat.category === newItem.category);
+                
+                if (categoryIndex !== -1) {
+                    // Category exists, find if subcategory exists
+                    const category = prev[categoryIndex];
+                    const subcategoryIndex = category.subcategories.findIndex(sub => sub.subcategory === newItem.subcategory);
+                    
+                    if (subcategoryIndex !== -1) {
+                        // Subcategory exists, add item to existing subcategory
+                        const updatedMenuItems = [...prev];
+                        updatedMenuItems[categoryIndex] = {
+                            ...category,
+                            subcategories: [...category.subcategories]
+                        };
+                        updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                            ...category.subcategories[subcategoryIndex],
+                            items: [...category.subcategories[subcategoryIndex].items, newItem]
+                        };
+                        return updatedMenuItems;
+                    } else {
+                        // Subcategory doesn't exist, create new subcategory
+                        const updatedMenuItems = [...prev];
+                        updatedMenuItems[categoryIndex] = {
+                            ...category,
+                            subcategories: [...category.subcategories, {
+                                subcategory: newItem.subcategory,
+                                items: [newItem]
+                            }]
+                        };
+                        return updatedMenuItems;
+                    }
+                } else {
+                    // Category doesn't exist, create new category with subcategory
+                    return [...prev, {
+                        category: newItem.category,
+                        subcategories: [{
+                            subcategory: newItem.subcategory,
+                            items: [newItem]
+                        }]
+                    }];
+                }
+            });
+            
             toast.success('Menu item added successfully');
         } catch (error) {
             setError('Error adding menu item');
@@ -47,9 +93,35 @@ export const MenuProvider = ({ children }) => {
     const updateMenuItem = async (itemId, itemData) => {
         try {
             const response = await axios.put(`${API_URL}/api/menu/${itemId}`, itemData);
-            setMenuItems(prev =>
-                prev.map(item => (item._id === itemId ? response.data : item))
-            );
+            const updatedItem = response.data;
+            
+            setMenuItems(prev => {
+                // Find the item in the structured data
+                for (let categoryIndex = 0; categoryIndex < prev.length; categoryIndex++) {
+                    const category = prev[categoryIndex];
+                    for (let subcategoryIndex = 0; subcategoryIndex < category.subcategories.length; subcategoryIndex++) {
+                        const subcategory = category.subcategories[subcategoryIndex];
+                        const itemIndex = subcategory.items.findIndex(item => item._id === itemId);
+                        
+                        if (itemIndex !== -1) {
+                            // Found the item, update it
+                            const updatedMenuItems = [...prev];
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...subcategory,
+                                items: [...subcategory.items]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex].items[itemIndex] = updatedItem;
+                            return updatedMenuItems;
+                        }
+                    }
+                }
+                return prev; // Item not found
+            });
+            
             toast.success('Menu item updated successfully');
         } catch (error) {
             setError('Error updating menu item');
@@ -61,7 +133,44 @@ export const MenuProvider = ({ children }) => {
     const deleteMenuItem = async (itemId) => {
         try {
             await axios.delete(`${API_URL}/api/menu/${itemId}`);
-            setMenuItems(prev => prev.filter(item => item._id !== itemId));
+            
+            setMenuItems(prev => {
+                // Find the item in the structured data
+                for (let categoryIndex = 0; categoryIndex < prev.length; categoryIndex++) {
+                    const category = prev[categoryIndex];
+                    for (let subcategoryIndex = 0; subcategoryIndex < category.subcategories.length; subcategoryIndex++) {
+                        const subcategory = category.subcategories[subcategoryIndex];
+                        const itemIndex = subcategory.items.findIndex(item => item._id === itemId);
+                        
+                        if (itemIndex !== -1) {
+                            // Found the item, remove it
+                            const updatedMenuItems = [...prev];
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...subcategory,
+                                items: subcategory.items.filter((_, index) => index !== itemIndex)
+                            };
+                            
+                            // If subcategory is now empty, remove it
+                            if (updatedMenuItems[categoryIndex].subcategories[subcategoryIndex].items.length === 0) {
+                                updatedMenuItems[categoryIndex].subcategories = updatedMenuItems[categoryIndex].subcategories.filter((_, index) => index !== subcategoryIndex);
+                            }
+                            
+                            // If category is now empty, remove it
+                            if (updatedMenuItems[categoryIndex].subcategories.length === 0) {
+                                return updatedMenuItems.filter((_, index) => index !== categoryIndex);
+                            }
+                            
+                            return updatedMenuItems;
+                        }
+                    }
+                }
+                return prev; // Item not found
+            });
+            
             toast.success('Menu item deleted successfully');
         } catch (error) {
             setError('Error deleting menu item');
@@ -69,20 +178,115 @@ export const MenuProvider = ({ children }) => {
         }
     };
 
+    // Add multiple menu items in bulk
+    const bulkAddMenuItems = async (itemsData) => {
+        try {
+            // Use the new bulk endpoint instead of multiple individual calls
+            const response = await axios.post(`${API_URL}/api/menu/bulk`, {
+                items: itemsData
+            });
+            
+            const newItems = response.data;
+            
+            setMenuItems(prev => {
+                const updatedMenuItems = [...prev];
+                
+                newItems.forEach(newItem => {
+                    // Find if category exists
+                    const categoryIndex = updatedMenuItems.findIndex(cat => cat.category === newItem.category);
+                    
+                    if (categoryIndex !== -1) {
+                        // Category exists, find if subcategory exists
+                        const category = updatedMenuItems[categoryIndex];
+                        const subcategoryIndex = category.subcategories.findIndex(sub => sub.subcategory === newItem.subcategory);
+                        
+                        if (subcategoryIndex !== -1) {
+                            // Subcategory exists, add item to existing subcategory
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...category.subcategories[subcategoryIndex],
+                                items: [...category.subcategories[subcategoryIndex].items, newItem]
+                            };
+                        } else {
+                            // Subcategory doesn't exist, create new subcategory
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories, {
+                                    subcategory: newItem.subcategory,
+                                    items: [newItem]
+                                }]
+                            };
+                        }
+                    } else {
+                        // Category doesn't exist, create new category with subcategory
+                        updatedMenuItems.push({
+                            category: newItem.category,
+                            subcategories: [{
+                                subcategory: newItem.subcategory,
+                                items: [newItem]
+                            }]
+                        });
+                    }
+                });
+                
+                return updatedMenuItems;
+            });
+            
+            toast.success(`Successfully added ${newItems.length} menu items`);
+        } catch (error) {
+            setError('Error adding menu items in bulk');
+            toast.error('Failed to add menu items in bulk');
+            throw error;
+        }
+    };
+
+    // Delete multiple menu items in bulk
+    const bulkDeleteMenuItems = async (itemIds) => {
+        try {
+            const response = await axios.delete(`${API_URL}/api/menu/bulk`, {
+                data: { itemIds }
+            });
+            
+            const { deletedCount } = response.data;
+            
+            setMenuItems(prev => {
+                const updatedMenuItems = [...prev];
+                
+                // Remove deleted items from the state
+                updatedMenuItems.forEach(category => {
+                    category.subcategories.forEach(subcategory => {
+                        subcategory.items = subcategory.items.filter(item => !itemIds.includes(item._id));
+                    });
+                });
+                
+                // Remove empty subcategories and categories
+                const cleanedMenuItems = updatedMenuItems.map(category => ({
+                    ...category,
+                    subcategories: category.subcategories.filter(sub => sub.items.length > 0)
+                })).filter(category => category.subcategories.length > 0);
+                
+                return cleanedMenuItems;
+            });
+            
+            toast.success(`Successfully deleted ${deletedCount} menu items`);
+        } catch (error) {
+            setError('Error deleting menu items in bulk');
+            toast.error('Failed to delete menu items in bulk');
+            throw error;
+        }
+    };
+
     // Helpers to get unique categories and subcategories
     const getCategories = () => {
-        return [...new Set(menuItems.map(item => item.category).filter(Boolean))];
+        return menuItems.map(category => category.category);
     };
 
     const getSubcategories = (category) => {
-        return [
-            ...new Set(
-                menuItems
-                    .filter(item => item.category === category)
-                    .map(item => item.subcategory)
-                    .filter(Boolean)
-            ),
-        ];
+        const categoryObj = menuItems.find(cat => cat.category === category);
+        return categoryObj ? categoryObj.subcategories.map(sub => sub.subcategory) : [];
     };
 
     const value = {
@@ -95,6 +299,8 @@ export const MenuProvider = ({ children }) => {
         deleteMenuItem,
         getCategories,
         getSubcategories,
+        bulkAddMenuItems,
+        bulkDeleteMenuItems,
     };
 
     return (

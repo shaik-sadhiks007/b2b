@@ -119,6 +119,35 @@ const createMenuItem = async (req, res) => {
     }
 };
 
+// Create multiple menu items in bulk
+const bulkCreateMenuItems = async (req, res) => {
+    try {
+        const { items } = req.body;
+        
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'Items array is required and must not be empty' });
+        }
+
+        const menuItemsToCreate = items.map(item => {
+            const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
+            const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
+            
+            return new Menu({
+                ...item,
+                category,
+                subcategory,
+                businessId: req.restaurant._id
+            });
+        });
+
+        const savedItems = await Menu.insertMany(menuItemsToCreate);
+        res.status(201).json(savedItems);
+    } catch (error) {
+        console.error('Bulk create error:', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
 // Update a menu item
 const updateMenuItem = async (req, res) => {
     try {
@@ -145,7 +174,33 @@ const deleteMenuItem = async (req, res) => {
     }
 };
 
+// Delete multiple menu items in bulk
+const bulkDeleteMenuItems = async (req, res) => {
+    try {
+        const { itemIds } = req.body;
+        
+        if (!Array.isArray(itemIds) || itemIds.length === 0) {
+            return res.status(400).json({ message: 'Item IDs array is required and must not be empty' });
+        }
 
+        const result = await Menu.deleteMany({ 
+            _id: { $in: itemIds }, 
+            businessId: req.restaurant._id 
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'No menu items found to delete' });
+        }
+
+        res.json({ 
+            message: `${result.deletedCount} menu items deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     getAllMenuItemsOfPublic,
@@ -154,6 +209,7 @@ module.exports = {
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
-    getAllMenuItemsInstore
-
+    getAllMenuItemsInstore,
+    bulkCreateMenuItems,
+    bulkDeleteMenuItems
 };

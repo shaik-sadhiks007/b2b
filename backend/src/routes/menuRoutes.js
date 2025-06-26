@@ -6,7 +6,9 @@ const {
     updateMenuItem,
     deleteMenuItem,
     getAllMenuItemsOfPublic,
-    getAllMenuItemsInstore
+    getAllMenuItemsInstore,
+    bulkCreateMenuItems,
+    bulkDeleteMenuItems
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
@@ -28,6 +30,12 @@ router.get('/', authMiddleware, restaurantMiddleware, getAllMenuItems);
 
 // Create a new menu item
 router.post('/', authMiddleware, restaurantMiddleware, createMenuItem);
+
+// Create multiple menu items in bulk
+router.post('/bulk', authMiddleware, restaurantMiddleware, bulkCreateMenuItems);
+
+// Delete multiple menu items in bulk
+router.delete('/bulk', authMiddleware, restaurantMiddleware, bulkDeleteMenuItems);
 
 // Update a menu item
 router.put('/:id', authMiddleware, restaurantMiddleware, updateMenuItem);

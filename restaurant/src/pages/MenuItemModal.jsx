@@ -10,7 +10,7 @@ const defaultForm = {
     photos: '', // will store base64 or url
     totalPrice: '',
     inStock: true,
-    quantity: 100,
+    quantity: 1,
 };
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -26,9 +26,6 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
                 subcategory: preSelectedSubcategory,
             }
     );
-
-    console.log("item",item)
-    console.log('form',form)
     const [error, setError] = useState('');
     const [imagePreview, setImagePreview] = useState(null);
 

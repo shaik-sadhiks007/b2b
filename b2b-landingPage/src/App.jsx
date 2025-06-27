@@ -37,6 +37,10 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
+  
+  // Check if current path is hotel details page (pattern: /:category/:id)
+  const isHotelDetails = routerLocation.pathname.split('/').length === 3
+                        
 
   // Centralized state for location and suggestions
   const [location, setLocation] = useState("");
@@ -62,8 +66,8 @@ function AppContent() {
           onLoginClick={onLoginClick}
         />
       )}
-      <Helpbutton />
-      <Whatsappbutton />
+      {!isHotelDetails && <Helpbutton />}
+      {!isHotelDetails && <Whatsappbutton />}
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -122,7 +126,7 @@ function App() {
           <CartProvider>
             <LocationProvider>
               <AppContent />
-              <ReactQueryDevtools initialIsOpen={false} />
+              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
               <ToastContainer
                 position="top-right"
                 autoClose={2000}

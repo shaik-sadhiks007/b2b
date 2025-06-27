@@ -78,7 +78,7 @@ function App() {
               } />
               <Route path='/dashboard' element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <MenuEditor />
                 </PrivateRoute>
               } />
               <Route path='/instore-orders' element={

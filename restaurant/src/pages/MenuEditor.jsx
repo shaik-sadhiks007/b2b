@@ -4,8 +4,21 @@ import Sidebar from '../components/Sidebar';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import MenuItemModal from './MenuItemModal';
 import BulkAddModal from './BulkAddModal';
+import ImportExcelModal from './ImportExcelModal';
 import { MenuContext } from '../context/MenuContext';
 import ConfirmModal from '../reusable/ConfirmModal';
+
+// Veg/NonVeg icons for menu items
+const VegIcon = () => (
+  <div className="w-4 h-4 border-2 border-green-600 flex items-center justify-center">
+    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+  </div>
+);
+const NonVegIcon = () => (
+  <div className="w-4 h-4 border-2 border-red-600 flex items-center justify-center">
+    <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+  </div>
+);
 
 function MenuEditor() {
     const {
@@ -16,6 +29,9 @@ function MenuEditor() {
         deleteMenuItem,
         bulkAddMenuItems,
         bulkDeleteMenuItems,
+        renameCategory,
+        renameSubcategory,
+        deleteCategory,
     } = useContext(MenuContext);
 
     // State for selected category and subcategory (by name)
@@ -26,6 +42,7 @@ function MenuEditor() {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalData, setModalData] = useState({ category: '', subcategory: '', item: null });
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
+    const [importExcelModalOpen, setImportExcelModalOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     
@@ -33,6 +50,15 @@ function MenuEditor() {
     const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState({});
     const [selectedSubcategories, setSelectedSubcategories] = useState({});
+
+    // Add state for category/subcategory edit modal
+    const [editCategoryModalOpen, setEditCategoryModalOpen] = useState(false);
+    const [editSubcategoryModalOpen, setEditSubcategoryModalOpen] = useState(false);
+    const [categoryToEdit, setCategoryToEdit] = useState(null);
+    const [subcategoryToEdit, setSubcategoryToEdit] = useState(null);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newSubcategoryName, setNewSubcategoryName] = useState('');
+    const [categoryToDelete, setCategoryToDelete] = useState(null);
 
     // Set default selected category and subcategory on load
     React.useEffect(() => {
@@ -154,6 +180,24 @@ function MenuEditor() {
     const currentCategoryObj = menuItems.find(cat => cat.category === selectedCategory);
     const subcategories = currentCategoryObj ? currentCategoryObj.subcategories : [];
 
+    // Handler for opening category edit modal
+    const handleEditCategory = (category) => {
+        setCategoryToEdit(category);
+        setNewCategoryName(category);
+        setEditCategoryModalOpen(true);
+    };
+    // Handler for opening subcategory edit modal
+    const handleEditSubcategory = (subcategory) => {
+        setSubcategoryToEdit(subcategory);
+        setNewSubcategoryName(subcategory);
+        setEditSubcategoryModalOpen(true);
+    };
+    // Handler for opening category delete confirm
+    const handleDeleteCategory = (category) => {
+        setCategoryToDelete(category);
+        setDeleteConfirmOpen(true);
+    };
+
     if (loading) return <div className="p-4">Loading menu...</div>;
 
     return (
@@ -164,18 +208,74 @@ function MenuEditor() {
             </div>
             <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
                 <div className="p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <style>{`
+                        @media (max-width: 640px) {
+                            .menu-mobile-flex {
+                                flex-direction: column !important;
+                                height: auto !important;
+                            }
+                            .menu-mobile-sidebar {
+                                width: 100% !important;
+                                border-right: none !important;
+                                border-bottom: 1px solid #e5e7eb !important;
+                                padding: 0 !important;
+                                height: auto !important;
+                                background: none !important;
+                            }
+                            .menu-mobile-main {
+                                width: 100% !important;
+                                padding: 1rem 0.5rem !important;
+                                height: auto !important;
+                            }
+                            .menu-mobile-action {
+                                width: 100% !important;
+                                flex-direction: column !important;
+                                gap: 0.5rem !important;
+                            }
+                            .menu-mobile-action button {
+                                width: 100% !important;
+                            }
+                            .menu-mobile-search {
+                                width: 100% !important;
+                            }
+                            .mobile-category-list {
+                                display: flex !important;
+                                flex-wrap: wrap !important;
+                                gap: 0.5rem !important;
+                                padding: 1rem 0.5rem !important;
+                                border-bottom: 1px solid #e5e7eb !important;
+                                background: #fff !important;
+                            }
+                            .mobile-category-btn {
+                                flex: 1 1 40%;
+                                background: #f3f4f6;
+                                border-radius: 9999px;
+                                padding: 0.5rem 1rem;
+                                border: none;
+                                font-size: 1rem;
+                                color: #374151;
+                                font-weight: 500;
+                                text-align: center;
+                                transition: background 0.2s, color 0.2s;
+                            }
+                            .mobile-category-btn.selected {
+                                background: #f59e42;
+                                color: #fff;
+                            }
+                        }
+                    `}</style>
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6 menu-mobile-action">
                         {/* Search Input */}
-                        <div className="relative">
+                        <div className="relative menu-mobile-search">
                             <input
                                 type="text"
                                 placeholder="Search for items..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 w-80 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="pl-10 pr-10 py-2 w-80 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent menu-mobile-search"
                             />
                             <svg
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={2}
@@ -184,6 +284,19 @@ function MenuEditor() {
                                 <circle cx={11} cy={11} r={8} />
                                 <line x1={21} y1={21} x2={16.65} y2={16.65} />
                             </svg>
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    onClick={() => setSearchTerm("")}
+                                    tabIndex={-1}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                         {/* Show Out of Stock Checkbox */}
                         <div className="flex items-center space-x-2">
@@ -199,14 +312,17 @@ function MenuEditor() {
                             </label>
                         </div>
                         {/* Action Buttons */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 menu-mobile-action">
                             <button 
                                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
                                 onClick={() => setBulkModalOpen(true)}
                             >
                                 Bulk Data
                             </button>
-                            <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium transition-colors">
+                            <button 
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                                onClick={() => setImportExcelModalOpen(true)}
+                            >
                                 Import Excel
                             </button>
                             {/* Add New Item */}
@@ -218,14 +334,15 @@ function MenuEditor() {
                             </button>
                         </div>
                     </div>
-                    <div className="flex h-screen">
+                    <div className="flex h-screen menu-mobile-flex">
                         {/* Categories Sidebar */}
-                        <div className="w-64 bg-white p-6 border-r border-gray-200 flex-shrink-0 h-screen">
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                        <div className="w-64 bg-white p-6 border-r border-gray-200 flex-shrink-0 h-screen menu-mobile-sidebar">
+                            {/* Desktop/Tablet: Sidebar, Mobile: Horizontal lines */}
+                            <h2 className="text-lg font-semibold text-gray-800 mb-4 block sm:block hidden">
                                 Categories.
                                 <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
                             </h2>
-                            <div className="space-y-3">
+                            <div className="space-y-3 block sm:block hidden">
                                 {menuItems.map((categoryObj) => (
                                     <div
                                         key={categoryObj.category}
@@ -233,23 +350,68 @@ function MenuEditor() {
                                         onClick={() => setSelectedCategory(categoryObj.category)}
                                     >
                                         <span>{categoryObj.category}</span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                className="text-gray-600 hover:text-gray-800 p-1"
+                                                onClick={e => { e.stopPropagation(); handleEditCategory(categoryObj.category); }}
+                                                title="Edit Category"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                className="text-red-600 hover:text-red-800 p-1"
+                                                onClick={e => { e.stopPropagation(); handleDeleteCategory(categoryObj.category); }}
+                                                title="Delete Category"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Mobile: Categories as group of lines */}
+                            <div className="mobile-category-list sm:hidden">
+                                {menuItems.map((categoryObj) => (
+                                    <div key={categoryObj.category} className="flex items-center gap-2 w-full">
+                                        <button
+                                            className={`mobile-category-btn${selectedCategory === categoryObj.category ? ' selected' : ''}`}
+                                            onClick={() => setSelectedCategory(categoryObj.category)}
+                                        >
+                                            {categoryObj.category}
+                                        </button>
+                                        <button
+                                            className="text-gray-600 hover:text-gray-800 p-1"
+                                            onClick={e => { e.stopPropagation(); handleEditCategory(categoryObj.category); }}
+                                            title="Edit Category"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button
+                                            className="text-red-600 hover:text-red-800 p-1"
+                                            onClick={e => { e.stopPropagation(); handleDeleteCategory(categoryObj.category); }}
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         {/* Main Menu Area */}
-                        <div className="flex-1 p-6 pt-3 overflow-y-auto h-screen">
+                        <div className="flex-1 p-6 pt-3 overflow-y-auto h-screen menu-mobile-main">
                             {/* Subcategory Tabs */}
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="text-lg font-semibold">Subcategories</span>
-                                <button
-                                    className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
-                                    onClick={() => handleOpenModal(selectedCategory, '', null)}
-                                >
-                                    <Plus size={20} />
-                                    Add Subcategory
-                                </button>
-                            </div>
+                            {!(subcategories.length === 1 && subcategories[0].subcategory === 'general') && (
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-lg font-semibold">Subcategories</span>
+                                    <button
+                                        className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
+                                        onClick={() => handleOpenModal(selectedCategory, '', null)}
+                                    >
+                                        <Plus size={20} />
+                                        Add Subcategory
+                                    </button>
+                                </div>
+                            )}
                             <div className="flex flex-column gap-4">
                                 {/* Bulk Delete Controls */}
                                 {bulkDeleteMode && (
@@ -289,10 +451,19 @@ function MenuEditor() {
                                     </div>
                                 )}
                                 
-                                {subcategories.map((subcat) => (
+                                {/* Filter subcategories based on search and out-of-stock */}
+                                {(searchTerm || showOutOfStock
+                                    ? subcategories.filter(subcat =>
+                                        subcat.items.some(item =>
+                                            item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                            (!showOutOfStock || item.inStock === false)
+                                        )
+                                    )
+                                    : subcategories
+                                ).map((subcat) => (
                                     <div key={subcat.subcategory}>
                                         <div
-                                            className={`flex items-center justify-between gap-4 px-4 py-3 rounded-md border ${
+                                            className={`flex items-center justify-between gap-4 px-3 py-3 rounded-md border ${
                                                 bulkDeleteMode 
                                                     ? selectedSubcategories[subcat.subcategory] 
                                                         ? 'border-red-300 bg-red-50' 
@@ -316,17 +487,15 @@ function MenuEditor() {
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-4">
-
                                                 {(subcat.subcategory != 'general') && (
                                                     <button
                                                         className="text-gray-600 hover:text-gray-800"
-                                                        onClick={e => { e.stopPropagation(); /* handle subcategory edit here */ }}
+                                                        onClick={e => { e.stopPropagation(); handleEditSubcategory(subcat.subcategory); }}
                                                         title="Edit Subcategory"
                                                     >
                                                         <Pencil size={18} />
                                                     </button>
                                                 )}
-
                                                 <button
                                                     className="text-gray-600 hover:text-gray-800"
                                                     onClick={e => { e.stopPropagation(); handleOpenModal(selectedCategory, subcat.subcategory, null); }}
@@ -337,7 +506,7 @@ function MenuEditor() {
                                                 <button
                                                     className="text-red-600 hover:text-red-800"
                                                     onClick={e => { e.stopPropagation(); handleSubcategoryDeleteClick(subcat); }}
-                                                    title="Delete Subcategory"
+                                                    title="Delete Items"
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
@@ -345,7 +514,7 @@ function MenuEditor() {
                                         </div>
                                         {/* Menu List Container */}
                                         <div className="space-y-8">
-                                            <div className="bg-white border border-gray-300 rounded-lg shadow-sm p-4 space-y-4">
+                                            <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
                                                 {subcat.items
                                                     .filter(item =>
                                                         item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -370,6 +539,10 @@ function MenuEditor() {
                                                                         className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
                                                                     />
                                                                 )}
+                                                                {/* Veg/Non-Veg Icon */}
+                                                                <span title={item.foodType === 'veg' ? 'Veg' : 'Non-Veg'} className="inline-block align-middle">
+                                                                    {item.foodType === 'veg' ? <VegIcon /> : <NonVegIcon />}
+                                                                </span>
                                                                 <div>
                                                                     <div className="font-medium text-gray-800">{item.name}</div>
                                                                     <div className="text-sm text-gray-600">₹{item.price || item.totalPrice}</div>
@@ -387,29 +560,50 @@ function MenuEditor() {
                                                                         />
                                                                         <div className={`block w-10 h-6 rounded-full ${item.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                                                         <div
-                                                                            className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock ? 'translate-x-4' : ''
-                                                                                }`}
+                                                                            className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock ? 'translate-x-4' : ''}`}
                                                                         ></div>
                                                                     </div>
                                                                 </label>
                                                                 {/* Edit/Delete - Hide in bulk delete mode */}
+                                                                {/* Mobile: show only icons, Desktop: show text */}
                                                                 {!bulkDeleteMode && (
                                                                     <>
-                                                                        <button
-                                                                            className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                                            onClick={() => handleOpenModal(selectedCategory, selectedSubcategory, item)}
-                                                                        >
-                                                                            Edit
-                                                                        </button>
-                                                                        <button
-                                                                            className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                                            onClick={() => {
-                                                                                setItemToDelete(item);
-                                                                                setDeleteConfirmOpen(true);
-                                                                            }}
-                                                                        >
-                                                                            Delete
-                                                                        </button>
+                                                                        <span className="hidden sm:inline">
+                                                                            <button
+                                                                                className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                                                onClick={() => handleOpenModal(selectedCategory, selectedSubcategory, item)}
+                                                                            >
+                                                                                Edit
+                                                                            </button>
+                                                                            <button
+                                                                                className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                                                onClick={() => {
+                                                                                    setItemToDelete(item);
+                                                                                    setDeleteConfirmOpen(true);
+                                                                                }}
+                                                                            >
+                                                                                Delete
+                                                                            </button>
+                                                                        </span>
+                                                                        <span className="sm:hidden flex gap-2">
+                                                                            <button
+                                                                                className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
+                                                                                onClick={() => handleOpenModal(selectedCategory, selectedSubcategory, item)}
+                                                                                title="Edit"
+                                                                            >
+                                                                                <Pencil size={18} />
+                                                                            </button>
+                                                                            <button
+                                                                                className="text-red-600 hover:text-red-800 p-2 rounded-full"
+                                                                                onClick={() => {
+                                                                                    setItemToDelete(item);
+                                                                                    setDeleteConfirmOpen(true);
+                                                                                }}
+                                                                                title="Delete"
+                                                                            >
+                                                                                <Trash2 size={18} />
+                                                                            </button>
+                                                                        </span>
                                                                     </>
                                                                 )}
                                                             </div>
@@ -445,6 +639,13 @@ function MenuEditor() {
                         preSelectedSubcategory={selectedSubcategory}
                     />
 
+                    {/* Import Excel Modal */}
+                    <ImportExcelModal
+                        open={importExcelModalOpen}
+                        onClose={() => setImportExcelModalOpen(false)}
+                        onImport={handleBulkAdd}
+                    />
+
                     {/* Delete Confirmation Modal */}
                     <ConfirmModal
                         isOpen={deleteConfirmOpen}
@@ -469,6 +670,88 @@ function MenuEditor() {
                                 ? `Are you sure you want to delete ${itemToDelete.itemIds.length} selected items?`
                                 : "Are you sure you want to delete this item?"
                         }
+                    />
+
+                    {/* Edit Category Modal */}
+                    {editCategoryModalOpen && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-xs">
+                                <h2 className="text-lg font-semibold mb-4">Rename Category</h2>
+                                <input
+                                    type="text"
+                                    value={newCategoryName}
+                                    onChange={e => setNewCategoryName(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+                                    placeholder="Enter new category name"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                        onClick={() => setEditCategoryModalOpen(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                        onClick={async () => {
+                                            await renameCategory(categoryToEdit, newCategoryName);
+                                            setEditCategoryModalOpen(false);
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Subcategory Modal */}
+                    {editSubcategoryModalOpen && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-xs">
+                                <h2 className="text-lg font-semibold mb-4">Rename Subcategory</h2>
+                                <input
+                                    type="text"
+                                    value={newSubcategoryName}
+                                    onChange={e => setNewSubcategoryName(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+                                    placeholder="Enter new subcategory name"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                        onClick={() => setEditSubcategoryModalOpen(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                        onClick={async () => {
+                                            await renameSubcategory(selectedCategory, subcategoryToEdit, newSubcategoryName);
+                                            setEditSubcategoryModalOpen(false);
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Confirm Delete Category Modal */}
+                    <ConfirmModal
+                        isOpen={!!categoryToDelete}
+                        onClose={() => {
+                            setCategoryToDelete(null);
+                            setDeleteConfirmOpen(false);
+                        }}
+                        onConfirm={async () => {
+                            await deleteCategory(categoryToDelete);
+                            setCategoryToDelete(null);
+                            setDeleteConfirmOpen(false);
+                        }}
+                        title="Confirm Delete"
+                        message={`Are you sure you want to delete all items in the category '${categoryToDelete}'? This action cannot be undone.`}
                     />
                 </div>
             </div>

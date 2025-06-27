@@ -202,6 +202,40 @@ const bulkDeleteMenuItems = async (req, res) => {
     }
 };
 
+// Rename a category
+const renameCategory = async (req, res) => {
+    try {
+        const { oldCategory, newCategory } = req.body;
+        if (!oldCategory || !newCategory) {
+            return res.status(400).json({ message: 'Both oldCategory and newCategory are required' });
+        }
+        const result = await Menu.updateMany(
+            { businessId: req.restaurant._id, category: oldCategory },
+            { $set: { category: newCategory } }
+        );
+        res.json({ message: `Category renamed from '${oldCategory}' to '${newCategory}'`, modifiedCount: result.modifiedCount });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Rename a subcategory
+const renameSubcategory = async (req, res) => {
+    try {
+        const { category, oldSubcategory, newSubcategory } = req.body;
+        if (!category || !oldSubcategory || !newSubcategory) {
+            return res.status(400).json({ message: 'category, oldSubcategory, and newSubcategory are required' });
+        }
+        const result = await Menu.updateMany(
+            { businessId: req.restaurant._id, category, subcategory: oldSubcategory },
+            { $set: { subcategory: newSubcategory } }
+        );
+        res.json({ message: `Subcategory renamed from '${oldSubcategory}' to '${newSubcategory}' in category '${category}'`, modifiedCount: result.modifiedCount });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAllMenuItemsOfPublic,
     getAllMenuItems,
@@ -211,5 +245,7 @@ module.exports = {
     deleteMenuItem,
     getAllMenuItemsInstore,
     bulkCreateMenuItems,
-    bulkDeleteMenuItems
+    bulkDeleteMenuItems,
+    renameCategory,
+    renameSubcategory,
 };

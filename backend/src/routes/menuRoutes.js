@@ -43,4 +43,9 @@ router.put('/:id', authMiddleware, restaurantMiddleware, updateMenuItem);
 // Delete a menu item
 router.delete('/:id', authMiddleware, restaurantMiddleware, deleteMenuItem);
 
+// Rename a category
+router.put('/category/rename', authMiddleware, restaurantMiddleware, require('../controllers/menuController').renameCategory);
+// Rename a subcategory
+router.put('/subcategory/rename', authMiddleware, restaurantMiddleware, require('../controllers/menuController').renameSubcategory);
+
 module.exports = router;

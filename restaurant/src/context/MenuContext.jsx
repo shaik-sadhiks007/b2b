@@ -289,6 +289,48 @@ export const MenuProvider = ({ children }) => {
         return categoryObj ? categoryObj.subcategories.map(sub => sub.subcategory) : [];
     };
 
+    // Rename a category
+    const renameCategory = async (oldCategory, newCategory) => {
+        try {
+            await axios.put(`${API_URL}/api/menu/category/rename`, { oldCategory, newCategory });
+            await fetchMenu();
+            toast.success('Category renamed successfully');
+        } catch (error) {
+            setError('Error renaming category');
+            toast.error('Failed to rename category');
+            throw error;
+        }
+    };
+
+    // Rename a subcategory
+    const renameSubcategory = async (category, oldSubcategory, newSubcategory) => {
+        try {
+            await axios.put(`${API_URL}/api/menu/subcategory/rename`, { category, oldSubcategory, newSubcategory });
+            await fetchMenu();
+            toast.success('Subcategory renamed successfully');
+        } catch (error) {
+            setError('Error renaming subcategory');
+            toast.error('Failed to rename subcategory');
+            throw error;
+        }
+    };
+
+    // Delete all items in a category
+    const deleteCategory = async (category) => {
+        try {
+            const categoryObj = menuItems.find(cat => cat.category === category);
+            if (!categoryObj) return;
+            const itemIds = categoryObj.subcategories.flatMap(sub => sub.items.map(item => item._id));
+            if (itemIds.length === 0) return;
+            await bulkDeleteMenuItems(itemIds);
+            toast.success('Category deleted successfully');
+        } catch (error) {
+            setError('Error deleting category');
+            toast.error('Failed to delete category');
+            throw error;
+        }
+    };
+
     const value = {
         menuItems,
         loading,
@@ -301,6 +343,9 @@ export const MenuProvider = ({ children }) => {
         getSubcategories,
         bulkAddMenuItems,
         bulkDeleteMenuItems,
+        renameCategory,
+        renameSubcategory,
+        deleteCategory,
     };
 
     return (

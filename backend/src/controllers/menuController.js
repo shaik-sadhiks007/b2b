@@ -106,8 +106,21 @@ const createMenuItem = async (req, res) => {
         console.log(req.body, 'body')
         const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
         const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
+        
+        // Handle photo upload if photo is provided
+        let photoUrl = null;
+        if (req.body.photos) {
+            // Upload single photo to Cloudinary
+            photoUrl = await uploadMultipleBase64Images([req.body.photos]);
+            
+            // Get the first (and only) uploaded photo URL
+            photoUrl = photoUrl.length > 0 ? photoUrl[0] : null;
+        }
+        
+        // Create menu item with uploaded photo URL
         const newItem = new Menu({
             ...req.body,
+            photos: photoUrl,
             category,
             subcategory,
             businessId: req.restaurant._id
@@ -115,6 +128,7 @@ const createMenuItem = async (req, res) => {
         const savedItem = await newItem.save();
         res.status(201).json(savedItem);
     } catch (error) {
+        console.error('Error creating menu item:', error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -128,17 +142,30 @@ const bulkCreateMenuItems = async (req, res) => {
             return res.status(400).json({ message: 'Items array is required and must not be empty' });
         }
 
-        const menuItemsToCreate = items.map(item => {
+        const menuItemsToCreate = [];
+        
+        // Process each item and handle photo uploads
+        for (const item of items) {
             const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
             const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
             
-            return new Menu({
+            let photoUrl = null;
+            if (item.photos) {
+                // Upload single photo to Cloudinary
+                const photoUrls = await uploadMultipleBase64Images([item.photos]);
+                
+                // Get the first (and only) uploaded photo URL
+                photoUrl = photoUrls.length > 0 ? photoUrls[0] : null;
+            }
+            
+            menuItemsToCreate.push(new Menu({
                 ...item,
+                photos: photoUrl,
                 category,
                 subcategory,
                 businessId: req.restaurant._id
-            });
-        });
+            }));
+        }
 
         const savedItems = await Menu.insertMany(menuItemsToCreate);
         res.status(201).json(savedItems);
@@ -151,14 +178,26 @@ const bulkCreateMenuItems = async (req, res) => {
 // Update a menu item
 const updateMenuItem = async (req, res) => {
     try {
+        // Handle photo upload if photo is provided in the update
+        let updateData = { ...req.body };
+        
+        if (req.body.photos) {
+            // Upload single photo to Cloudinary
+            const photoUrls = await uploadMultipleBase64Images([req.body.photos]);
+            
+            // Get the first (and only) uploaded photo URL
+            updateData.photos = photoUrls.length > 0 ? photoUrls[0] : null;
+        }
+        
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, businessId: req.restaurant._id },
-            req.body,
+            updateData,
             { new: true }
         );
         if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
         res.json(updatedItem);
     } catch (error) {
+        console.error('Error updating menu item:', error);
         res.status(400).json({ message: error.message });
     }
 };

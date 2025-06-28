@@ -143,7 +143,7 @@ const HotelDetails = () => {
             quantity: 1,
             totalPrice: Number(item.totalPrice),
             foodType: item.foodType,
-            photos: item.photos || []
+            photos: [item.photos] || []
         }];
 
         const result = await addToCart(

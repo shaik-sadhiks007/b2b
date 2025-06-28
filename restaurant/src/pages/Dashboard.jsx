@@ -245,8 +245,8 @@ const Dashboard = () => {
   const handleBulkAddSubmit = async (e) => {
     e.preventDefault();
 
-    const categoryId = bulkTarget.categoryId
-    const subcategoryId = bulkTarget.subcategoryId
+    const categoryId = bulkTarget.categoryId || setDefaultCategory
+    const subcategoryId = bulkTarget.subcategoryId  || setDefaultSubcategory;
 
 
 

@@ -191,7 +191,7 @@ const CartPage = () => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-sm truncate">{item.name}</div>
-                                                    <div className="text-gray-600 text-xs mt-1">₹{item.basePrice}</div>
+                                                    <div className="text-gray-600 text-xs mt-1">₹{item.totalPrice}</div>
                                                 </div>
                                                 <div className="flex items-center border rounded-full px-2 py-1 bg-white shadow-sm ml-2">
                                                     <button
@@ -230,13 +230,13 @@ const CartPage = () => {
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`w-3 h-3 border ${item.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center`}>
-                                                            <span className={`w-1.5 h-1.5 ${item.isVeg ? 'bg-green-600' : 'bg-red-600'} rounded-full`}></span>
+                                                        <span className={`w-3 h-3 border ${item.foodType == 'veg' ? 'border-green-600' : 'border-red-600'} flex items-center justify-center`}>
+                                                            <span className={`w-1.5 h-1.5 ${item.foodType == 'veg' ? 'bg-green-600' : 'bg-red-600'} rounded-full`}></span>
                                                         </span>
                                                         <h3 className="font-medium">{item.name}</h3>
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        ₹{item.basePrice} + ₹{item.packagingCharges} packaging
+                                                        ₹{item.totalPrice} 
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3">

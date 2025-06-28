@@ -26,24 +26,11 @@ const InStoreBilling = () => {
 
     const fetchMenuItems = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/menu`);
-            // Always flatten menu items for the provided structure
-            let items = [];
-            const data = response.data.menu ? response.data.menu : response.data;
-            if (Array.isArray(data)) {
-                items = data.flatMap(cat =>
-                    (cat.subcategories || []).flatMap(sub =>
-                        (sub.items || []).map(item => ({
-                            ...item,
-                            price: parseFloat(item.totalPrice),
-                            category: cat.name,
-                            subcategory: sub.name
-                        }))
-                    )
-                );
-            }
+            const response = await axios.get(`${API_URL}/api/menu/instore`);
+            // The API now returns a flat array in response.data.menu
+            let items = response.data.menu || [];
             // Only keep items that have a name and price
-            items = items.filter(item => item.name && !isNaN(item.price));
+            items = items.filter(item => item.name && !isNaN(item.totalPrice));
             setMenuItems(items);
             setLoading(false);
         } catch (error) {
@@ -87,11 +74,11 @@ const InStoreBilling = () => {
                     itemId: item._id,
                     name: item.name,
                     quantity: item.quantity,
-                    totalPrice: item.price,
-                    photos: item.photos || [],
-                    isVeg: item.isVeg
+                    totalPrice: item.totalPrice, // use totalPrice
+                    photos: item.photos ? [item.photos] : [], // keep as array for compatibility
+                    foodType: item.foodType
                 })),
-                totalAmount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+                totalAmount: cart.reduce((sum, item) => sum + item.totalPrice * item.quantity, 0),
                 paymentMethod,
                 customerName,
                 customerPhone
@@ -160,8 +147,8 @@ const InStoreBilling = () => {
                                                 {filteredMenu.map(item => (
                                                     <tr key={item._id}>
                                                         <td>
-                                                            {item.photos && item.photos.length > 0 ? (
-                                                                <img src={item.photos[0]} alt={item.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
+                                                            {item.photos ? (
+                                                                <img src={item.photos} alt={item.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
                                                             ) : (
                                                                 <div style={{ width: 48, height: 48, background: '#eee', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
                                                                     <i className="bi bi-image" style={{ fontSize: 24 }}></i>
@@ -169,10 +156,10 @@ const InStoreBilling = () => {
                                                             )}
                                                         </td>
                                                         <td>{item.name}</td>
-                                                        <td>{item.category}</td>
-                                                        <td>{item.subcategory}</td>
-                                                        <td>{item.isVeg ? <span className="badge bg-success">Veg</span> : <span className="badge bg-danger">Non-Veg</span>}</td>
-                                                        <td>₹{item.price}</td>
+                                                        <td>{['uncategorized', '', null, undefined].includes((item.category || '').toLowerCase()) ? '' : item.category}</td>
+                                                        <td>{['general', '', null, undefined].includes((item.subcategory || '').toLowerCase()) ? '' : item.subcategory}</td>
+                                                        <td>{item.foodType === 'veg' ? <span className="badge bg-success">Veg</span> : <span className="badge bg-danger">Non-Veg</span>}</td>
+                                                        <td>₹{item.totalPrice}</td>
                                                         <td>
                                                             <button className="btn btn-primary btn-sm" onClick={() => handleAddToCart(item)}>
                                                                 Add
@@ -204,7 +191,7 @@ const InStoreBilling = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="font-semibold">₹{item.price * item.quantity}</div>
+                                                    <div className="font-semibold">₹{item.totalPrice * item.quantity}</div>
                                                     <button className="btn btn-link text-danger p-0" onClick={() => handleRemoveFromCart(item._id)}>
                                                         <i className="bi bi-trash"></i>
                                                     </button>
@@ -213,7 +200,7 @@ const InStoreBilling = () => {
                                         ))}
                                         <div className="flex justify-between font-bold text-lg pt-2">
                                             <span>Total</span>
-                                            <span>₹{cart.reduce((sum, item) => sum + item.price * item.quantity, 0)}</span>
+                                            <span>₹{cart.reduce((sum, item) => sum + item.totalPrice * item.quantity, 0)}</span>
                                         </div>
                                         <button className="btn btn-success w-100" onClick={handleProceed}>
                                             Proceed

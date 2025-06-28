@@ -33,10 +33,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const menuRoutes = require('./src/routes/menuRoutes');
 const cartRoutes = require('./src/routes/cartRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
-const addressRoutes = require('./src/routes/addressRoutes');
-const menuTemplateRoutes = require('./src/routes/menuTemplateRoutes');
-const restaurantRoutes = require('./src/routes/restaurantRoutes');
-const uploadRoutes = require('./src/routes/uploadRoutes');
+const buninessRoutes = require('./src/routes/businessRoutes');
 const customerAddressRoutes = require('./src/routes/customerAddressRoutes');
 const searchRoutes = require('./src/routes/searchRoutes');
 
@@ -45,22 +42,22 @@ const server = http.createServer(app);
 
 // Initialize Socket.IO
 const io = new Server(server, {
-  cors: {
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
-      process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
-      'http://www.shopatb2b.com',
-      'https://www.shopatb2b.com',
-      'http://shopatb2b.com',
-      'https://shopatb2b.com',
-      'http://business.shopatb2b.com',
-      'https://business.shopatb2b.com',
-      'http://www.business.shopatb2b.com',
-      'https://www.business.shopatb2b.com'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+    cors: {
+        origin: [
+            process.env.FRONTEND_URL || 'http://localhost:5173',
+            process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
+            'http://www.shopatb2b.com',
+            'https://www.shopatb2b.com',
+            'http://shopatb2b.com',
+            'https://shopatb2b.com',
+            'http://business.shopatb2b.com',
+            'https://business.shopatb2b.com',
+            'http://www.business.shopatb2b.com',
+            'https://www.business.shopatb2b.com',
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
 });
 
 // Socket.IO connection handling
@@ -102,7 +99,7 @@ const allowedOrigins = [
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        
+
         if (allowedOrigins.indexOf(origin) === -1) {
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
             return callback(new Error(msg), false);
@@ -126,11 +123,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/address', addressRoutes);
 app.use('/api/customer-address', customerAddressRoutes);
-app.use('/api/menu-templates', menuTemplateRoutes);
-app.use('/api/restaurants', restaurantRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/restaurants', buninessRoutes);
 app.use('/api/search', searchRoutes);
 
 // MongoDB connection

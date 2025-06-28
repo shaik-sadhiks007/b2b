@@ -1,6 +1,6 @@
 import { Search, Mic, Camera, ShoppingBag, Home, User, LogOut, ShoppingCart, CreditCard, Package, UserCircle, X } from "lucide-react"
 import LocationSuggestions from "./LocationSuggestions"
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useRef } from "react"
 import { HotelContext } from "../contextApi/HotelContextProvider"
 import { useNavigate, Link } from "react-router-dom"
 import { useLocationContext } from "../context/LocationContext"
@@ -26,6 +26,7 @@ function Navbar({ alwaysVisible }) {
     onAllowLocation,
     onLoginClick
   } = useLocationContext();
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     // Load saved location from localStorage
@@ -55,6 +56,19 @@ function Navbar({ alwaysVisible }) {
       fetchCart();
     }
   }, [fetchCart, user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowLoginOptions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -244,7 +258,10 @@ function Navbar({ alwaysVisible }) {
 
               {/* Login options dropdown */}
               {showLoginOptions && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
+                >
                   {user ? (
                     <>
                       <div className="px-4 py-2 text-sm text-gray-500 border-b">

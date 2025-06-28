@@ -5,7 +5,7 @@ const Order = require('../models/orderModel');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/businessModel');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -34,10 +34,9 @@ const generateToken = (user) => {
 const setTokenCookie = (res, token) => {
     res.cookie('token', token, {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
         // sameSite: 'Strict',
         sameSite: 'Lax',
-        domain: '.shopatb2b.com',
         maxAge: 1 * 24 * 60 * 60 * 1000
     });
 };

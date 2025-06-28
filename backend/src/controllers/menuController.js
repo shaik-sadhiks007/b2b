@@ -1,243 +1,290 @@
 const Menu = require('../models/menuModel');
+const { cloudinary, uploadMultipleBase64Images } = require('../config/cloudinary');
 
-// Get today's menu
-exports.getTodayMenu = async (req, res) => {
+// Get all menu items for a business
+const getAllMenuItems = async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        const menu = await Menu.findOne({ date: today });
-
-        if (!menu) {
-            return res.status(404).json({ message: "No menu found for today." });
-        }
-
-        res.status(200).json(menu);
-    } catch (error) {
-        res.status(500).json({ message: "Server error" });
-    }
-};
-
-// Get all menus
-exports.getAllMenus = async (req, res) => {
-    try {
-        const menus = await Menu.find().sort({ date: -1 });
-        res.json(menus);
-    } catch (error) {
-        console.error("Error fetching menus:", error);
-        res.status(500).json({ error: "Failed to fetch menus" });
-    }
-};
-
-// Get menu by date
-exports.getMenuByDate = async (req, res) => {
-    try {
-        const { date } = req.params;
-        const menu = await Menu.findOne({ date });
-        if (!menu) {
-            return res.status(404).json({ error: "Menu not found" });
-        }
-        res.json(menu);
-    } catch (error) {
-        console.error("Error fetching menu:", error);
-        res.status(500).json({ error: "Failed to fetch menu" });
-    }
-};
-
-// Create new menu
-exports.createMenu = async (req, res) => {
-    try {
-        const { date, morning, afternoon, evening } = req.body;
-
-        // Validate required fields
-        if (!date) {
-            return res.status(400).json({ error: "Date is required" });
-        }
-
-        // Check if menu already exists for the date
-        const existingMenu = await Menu.findOne({ date });
-        if (existingMenu) {
-            return res.status(400).json({ error: "Menu already exists for this date" });
-        }
-
-        // Create new menu with quantities
-        const menu = new Menu({
-            date,
-            morning: Array.isArray(morning) ? morning.map(item => ({
-                menuName: item.menuName,
-                image: item.image || "",
-                price: item.price,
-                quantity: item.quantity || 1
-            })) : [],
-            afternoon: Array.isArray(afternoon) ? afternoon.map(item => ({
-                menuName: item.menuName,
-                image: item.image || "",
-                price: item.price,
-                quantity: item.quantity || 1
-            })) : [],
-            evening: Array.isArray(evening) ? evening.map(item => ({
-                menuName: item.menuName,
-                image: item.image || "",
-                price: item.price,
-                quantity: item.quantity || 1
-            })) : []
+        const menuItems = await Menu.find({ businessId: req.restaurant._id });
+        // Group by category and subcategory
+        const grouped = {};
+        menuItems.forEach(item => {
+            const category = item.category || 'uncategorized';
+            const subcategory = item.subcategory || 'general';
+            if (!grouped[category]) grouped[category] = {};
+            if (!grouped[category][subcategory]) grouped[category][subcategory] = [];
+            grouped[category][subcategory].push(item);
         });
-
-        // Validate that at least one meal time has items
-        if (menu.morning.length === 0 && menu.afternoon.length === 0 && menu.evening.length === 0) {
-            return res.status(400).json({ error: "At least one meal time must have menu items" });
+        // Convert to desired array structure, with 'Uncategorized' first
+        const entries = Object.entries(grouped);
+        const uncategorizedIndex = entries.findIndex(([category]) => category === 'uncategorized');
+        let orderedEntries = entries;
+        if (uncategorizedIndex !== -1) {
+            // Move 'Uncategorized' to the front
+            const [uncategorized] = entries.splice(uncategorizedIndex, 1);
+            orderedEntries = [uncategorized, ...entries];
         }
-
-        await menu.save();
-        res.status(201).json(menu);
+        const result = orderedEntries.map(([category, subcats]) => ({
+            category,
+            subcategories: Object.entries(subcats).map(([subcategory, items]) => ({
+                subcategory,
+                items
+            }))
+        }));
+        res.json(result);
     } catch (error) {
-        console.error("Error creating menu:", error);
-        res.status(500).json({ error: "Failed to create menu" });
+        res.status(500).json({ message: error.message });
     }
 };
 
-// Update menu
-exports.updateMenu = async (req, res) => {
+
+const getAllMenuItemsOfPublic = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { date, morning } = req.body;
-
-        // Validate required fields
-        if (!date) {
-            return res.status(400).json({ error: "Date is required" });
-        }
-
-        // Find the menu by ID
-        const menu = await Menu.findById(id);
-        if (!menu) {
-            return res.status(404).json({ error: "Menu not found" });
-        }
-
-        // Check if another menu exists for the same date (excluding current menu)
-        const existingMenu = await Menu.findOne({ 
-            date, 
-            _id: { $ne: id } 
+        const menuItems = await Menu.find({ businessId: req.params.id });
+        // Group by category and subcategory
+        const grouped = {};
+        menuItems.forEach(item => {
+            const category = item.category || 'uncategorized';
+            const subcategory = item.subcategory || 'general';
+            if (!grouped[category]) grouped[category] = {};
+            if (!grouped[category][subcategory]) grouped[category][subcategory] = [];
+            grouped[category][subcategory].push(item);
         });
-        if (existingMenu) {
-            return res.status(400).json({ error: "Menu already exists for this date" });
+        // Convert to desired array structure, with 'Uncategorized' first
+        const entries = Object.entries(grouped);
+        const uncategorizedIndex = entries.findIndex(([category]) => category === 'uncategorized');
+        let orderedEntries = entries;
+        if (uncategorizedIndex !== -1) {
+            // Move 'Uncategorized' to the front
+            const [uncategorized] = entries.splice(uncategorizedIndex, 1);
+            orderedEntries = [uncategorized, ...entries];
+        }
+        const result = orderedEntries.map(([category, subcats]) => ({
+            category,
+            subcategories: Object.entries(subcats).map(([subcategory, items]) => ({
+                subcategory,
+                items
+            }))
+        }));
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getAllMenuItemsInstore = async (req, res) => {
+
+    try {
+        const businessId = req.restaurant._id;
+        if (!businessId) {
+            return res.status(400).json({ message: 'Business ID is required' });
+        }
+        const menuItems = await Menu.find({ businessId });
+        res.json({ menu: menuItems });
+    } catch (error) {
+        console.error('Error fetching menu items:', error);
+        res.status(500).json({ message: 'Error fetching menu items', error: error.message });
+    }
+
+}
+
+
+// Get a single menu item
+const getMenuItem = async (req, res) => {
+    try {
+        const item = await Menu.findOne({ _id: req.params.id, businessId: req.restaurant._id });
+        if (!item) return res.status(404).json({ message: 'Menu item not found' });
+        res.json(item);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Create a new menu item
+const createMenuItem = async (req, res) => {
+    try {
+        // Use default values if category or subcategory are empty or missing
+        console.log(req.body, 'body')
+        const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
+        const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
+        
+        // Handle photo upload if photo is provided
+        let photoUrl = null;
+        if (req.body.photos) {
+            // Upload single photo to Cloudinary
+            photoUrl = await uploadMultipleBase64Images([req.body.photos]);
+            
+            // Get the first (and only) uploaded photo URL
+            photoUrl = photoUrl.length > 0 ? photoUrl[0] : null;
+        }
+        
+        // Create menu item with uploaded photo URL
+        const newItem = new Menu({
+            ...req.body,
+            photos: photoUrl,
+            category,
+            subcategory,
+            businessId: req.restaurant._id
+        });
+        const savedItem = await newItem.save();
+        res.status(201).json(savedItem);
+    } catch (error) {
+        console.error('Error creating menu item:', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Create multiple menu items in bulk
+const bulkCreateMenuItems = async (req, res) => {
+    try {
+        const { items } = req.body;
+        
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'Items array is required and must not be empty' });
         }
 
-        // Validate morning array
-        if (!Array.isArray(morning)) {
-            return res.status(400).json({ error: "Morning menu must be an array" });
-        }
-
-        // Validate that morning array is not empty
-        if (morning.length === 0) {
-            return res.status(400).json({ error: "At least one menu item is required" });
-        }
-
-        // Update menu with quantities and validate each item
-        menu.date = date;
-        menu.morning = morning.map(item => {
-            if (!item.menuName || !item.price) {
-                throw new Error("Menu name and price are required for each item");
+        const menuItemsToCreate = [];
+        
+        // Process each item and handle photo uploads
+        for (const item of items) {
+            const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
+            const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
+            
+            let photoUrl = null;
+            if (item.photos) {
+                // Upload single photo to Cloudinary
+                const photoUrls = await uploadMultipleBase64Images([item.photos]);
+                
+                // Get the first (and only) uploaded photo URL
+                photoUrl = photoUrls.length > 0 ? photoUrls[0] : null;
             }
-            return {
-                menuName: item.menuName,
-                image: item.image || "",
-                price: item.price,
-                quantity: item.quantity || 1
-            };
-        });
-
-        await menu.save();
-        res.status(200).json({ 
-            message: "Menu updated successfully",
-            menu 
-        });
-    } catch (error) {
-        console.error("Error updating menu:", error);
-        if (error.message === "Menu name and price are required for each item") {
-            return res.status(400).json({ error: error.message });
+            
+            menuItemsToCreate.push(new Menu({
+                ...item,
+                photos: photoUrl,
+                category,
+                subcategory,
+                businessId: req.restaurant._id
+            }));
         }
-        res.status(500).json({ error: "Failed to update menu" });
+
+        const savedItems = await Menu.insertMany(menuItemsToCreate);
+        res.status(201).json(savedItems);
+    } catch (error) {
+        console.error('Bulk create error:', error);
+        res.status(400).json({ message: error.message });
     }
 };
 
-// Update menu by date
-exports.updateMenuByDate = async (req, res) => {
+// Update a menu item
+const updateMenuItem = async (req, res) => {
     try {
-        const { date } = req.params;
-        const { morning, afternoon, evening } = req.body;
-
-        // Validate required fields
-        if (!date) {
-            return res.status(400).json({ error: "Date is required" });
+        // Handle photo upload if photo is provided in the update
+        let updateData = { ...req.body };
+        
+        if (req.body.photos) {
+            // Upload single photo to Cloudinary
+            const photoUrls = await uploadMultipleBase64Images([req.body.photos]);
+            
+            // Get the first (and only) uploaded photo URL
+            updateData.photos = photoUrls.length > 0 ? photoUrls[0] : null;
         }
-
-        // Find the menu by date
-        const menu = await Menu.findOne({ date });
-        if (!menu) {
-            return res.status(404).json({ error: "Menu not found" });
-        }
-
-        // Validate morning array
-        if (!Array.isArray(morning)) {
-            return res.status(400).json({ error: "Morning menu must be an array" });
-        }
-
-        // Validate that morning array is not empty
-        if (morning.length === 0) {
-            return res.status(400).json({ error: "At least one menu item is required" });
-        }
-
-        // Update menu with quantities and validate each item
-        menu.morning = morning.map(item => {
-            if (!item.menuName || !item.price) {
-                throw new Error("Menu name and price are required for each item");
-            }
-            return {
-                menuName: item.menuName,
-                image: item.image || "",
-                price: item.price,
-                quantity: item.quantity || 1
-            };
-        });
-
-        // Update afternoon and evening arrays
-        menu.afternoon = Array.isArray(afternoon) ? afternoon.map(item => ({
-            menuName: item.menuName,
-            image: item.image || "",
-            price: item.price,
-            quantity: item.quantity || 1
-        })) : [];
-
-        menu.evening = Array.isArray(evening) ? evening.map(item => ({
-            menuName: item.menuName,
-            image: item.image || "",
-            price: item.price,
-            quantity: item.quantity || 1
-        })) : [];
-
-        await menu.save();
-        res.status(200).json({ 
-            message: "Menu updated successfully",
-            menu 
-        });
+        
+        const updatedItem = await Menu.findOneAndUpdate(
+            { _id: req.params.id, businessId: req.restaurant._id },
+            updateData,
+            { new: true }
+        );
+        if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
+        res.json(updatedItem);
     } catch (error) {
-        console.error("Error updating menu:", error);
-        if (error.message === "Menu name and price are required for each item") {
-            return res.status(400).json({ error: error.message });
-        }
-        res.status(500).json({ error: "Failed to update menu" });
+        console.error('Error updating menu item:', error);
+        res.status(400).json({ message: error.message });
     }
 };
 
-// Delete menu
-exports.deleteMenu = async (req, res) => {
+// Delete a menu item
+const deleteMenuItem = async (req, res) => {
     try {
-        const { date } = req.params;
-        const menu = await Menu.findOneAndDelete({ date });
-        if (!menu) {
-            return res.status(404).json({ error: "Menu not found" });
-        }
-        res.json({ message: "Menu deleted successfully" });
+        const deleted = await Menu.findOneAndDelete({ _id: req.params.id, businessId: req.restaurant._id });
+        if (!deleted) return res.status(404).json({ message: 'Menu item not found' });
+        res.json({ message: 'Menu item deleted' });
     } catch (error) {
-        console.error("Error deleting menu:", error);
-        res.status(500).json({ error: "Failed to delete menu" });
+        res.status(500).json({ message: error.message });
     }
+};
+
+// Delete multiple menu items in bulk
+const bulkDeleteMenuItems = async (req, res) => {
+    try {
+        const { itemIds } = req.body;
+        
+        if (!Array.isArray(itemIds) || itemIds.length === 0) {
+            return res.status(400).json({ message: 'Item IDs array is required and must not be empty' });
+        }
+
+        const result = await Menu.deleteMany({ 
+            _id: { $in: itemIds }, 
+            businessId: req.restaurant._id 
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'No menu items found to delete' });
+        }
+
+        res.json({ 
+            message: `${result.deletedCount} menu items deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Rename a category
+const renameCategory = async (req, res) => {
+    try {
+        const { oldCategory, newCategory } = req.body;
+        if (!oldCategory || !newCategory) {
+            return res.status(400).json({ message: 'Both oldCategory and newCategory are required' });
+        }
+        const result = await Menu.updateMany(
+            { businessId: req.restaurant._id, category: oldCategory },
+            { $set: { category: newCategory } }
+        );
+        res.json({ message: `Category renamed from '${oldCategory}' to '${newCategory}'`, modifiedCount: result.modifiedCount });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Rename a subcategory
+const renameSubcategory = async (req, res) => {
+    try {
+        const { category, oldSubcategory, newSubcategory } = req.body;
+        if (!category || !oldSubcategory || !newSubcategory) {
+            return res.status(400).json({ message: 'category, oldSubcategory, and newSubcategory are required' });
+        }
+        const result = await Menu.updateMany(
+            { businessId: req.restaurant._id, category, subcategory: oldSubcategory },
+            { $set: { subcategory: newSubcategory } }
+        );
+        res.json({ message: `Subcategory renamed from '${oldSubcategory}' to '${newSubcategory}' in category '${category}'`, modifiedCount: result.modifiedCount });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    getAllMenuItemsOfPublic,
+    getAllMenuItems,
+    getMenuItem,
+    createMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    getAllMenuItemsInstore,
+    bulkCreateMenuItems,
+    bulkDeleteMenuItems,
+    renameCategory,
+    renameSubcategory,
 };

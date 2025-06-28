@@ -1,49 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
-const authMiddleware = require('../middleware/authMiddleware');
-const restaurantMiddleware = require('../middleware/restaurantMiddleware');
-const Restaurant = require('../models/Restaurant');
+const Business = require('../models/businessModel');
 const geolib = require('geolib');
 const { uploadBase64ToCloudinary } = require('../config/cloudinary');
 const moment = require('moment-timezone');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({
-    storage: storage,
-    limits: {
-        fieldSize: 10 * 1024 * 1024, // 10MB limit for field size
-        fileSize: 5 * 1024 * 1024,   // 5MB limit for file size
-        fields: 10                    // max number of fields
-    }
-});
-
-
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Create new restaurant (Step 1)
-router.post('/', authMiddleware, upload.single('profileImage'), async (req, res) => {
+// Create new business (Step 1)
+const createBusiness = async (req, res) => {
     try {
-        // Parse the formData JSON string
         const formDataObj = JSON.parse(req.body.formData || '{}');
-
-        // Extract data directly from the parsed formData without restructuring
         const {
             restaurantName,
             serviceType,
@@ -56,21 +21,16 @@ router.post('/', authMiddleware, upload.single('profileImage'), async (req, res)
             operatingHours,
             description
         } = formDataObj;
-
-        // Upload profile image to Cloudinary if provided
         let profileImageUrl = null;
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             profileImageUrl = result.secure_url;
         }
-
-        // Create new restaurant with the exact structure from frontend
-        const restaurant = new Restaurant({
+        const business = new Business({
             owner: req.user.id,
             restaurantName,
             serviceType,
             ownerName,
-
             contact: {
                 primaryPhone: contact?.primaryPhone || '',
                 whatsappNumber: contact?.whatsappNumber || '',
@@ -82,12 +42,6 @@ router.post('/', authMiddleware, upload.single('profileImage'), async (req, res)
             sameAsOwnerPhone,
             whatsappUpdates,
             description,
-            // images: {
-            //     profileImage: profileImageUrl,
-            //     panCardImage: '',
-            //     gstImage: '',
-            //     fssaiImage: ''
-            // },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
                 defaultCloseTime: operatingHours?.defaultCloseTime || '',
@@ -110,67 +64,45 @@ router.post('/', authMiddleware, upload.single('profileImage'), async (req, res)
             currentStep: 1,
             status: 'draft'
         });
-
-        await restaurant.save();
-        res.status(201).json(restaurant);
+        await business.save();
+        res.status(201).json(business);
     } catch (error) {
-        console.error('Error creating restaurant:', error);
-        res.status(500).json({ message: 'Error creating restaurant', error: error.message });
+        console.error('Error creating business:', error);
+        res.status(500).json({ message: 'Error creating business', error: error.message });
     }
-});
+};
 
-// Update restaurant step
-router.put('/:id/step/:step', authMiddleware, upload.fields([
-    { name: 'profileImage', maxCount: 1 },
-    { name: 'panCardImage', maxCount: 1 },
-    { name: 'gstImage', maxCount: 1 },
-    { name: 'fssaiImage', maxCount: 1 }
-]), async (req, res) => {
+// Update business step
+const updateBusinessStep = async (req, res) => {
     try {
-        const restaurant = await Restaurant.findOne({
+        const business = await Business.findOne({
             _id: req.params.id,
             owner: req.user.id
         });
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
+        if (!business) {
+            return res.status(404).json({ message: 'Business not found' });
         }
-
         const step = parseInt(req.params.step);
-
-        // Parse the formData JSON string and use it directly without restructuring
         const formDataObj = JSON.parse(req.body.formData || '{}');
         const updateData = { ...formDataObj };
-
-        // Special handling for contact information
         if (updateData.contact) {
-            // Ensure contact object exists
             if (!updateData.contact) {
                 updateData.contact = {};
             }
-
-            // Set contact fields from direct properties if they exist
             if (updateData.ownerEmail && !updateData.contact.email) {
                 updateData.contact.email = updateData.ownerEmail;
             }
-
             if (updateData.contact?.primaryPhone && !updateData.contact.primaryPhone) {
                 updateData.contact.primaryPhone = updateData.contact?.primaryPhone;
             }
-
             if (updateData.contact?.whatsappNumber && !updateData.contact.whatsappNumber) {
                 updateData.contact.whatsappNumber = updateData.contact?.whatsappNumber;
             }
         }
-
-        // Handle file uploads for step 3
         if (step === 3) {
-            // Initialize images object if it doesn't exist
             if (!updateData.images) {
                 updateData.images = {};
             }
-
-            // Handle profile image (required)
             if (req.files?.profileImage?.[0]) {
                 try {
                     const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
@@ -187,7 +119,6 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
                             updateData.images.profileImage = imageUrl;
                         }
                     } else if (formDataObj.images.profileImage.includes('cloudinary')) {
-                        // If it's already a Cloudinary URL, use it directly
                         updateData.images.profileImage = formDataObj.images.profileImage;
                     }
                 } catch (error) {
@@ -195,8 +126,6 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
-
-            // Handle optional images
             const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
@@ -215,7 +144,6 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
                                 updateData.images[imageType] = imageUrl;
                             }
                         } else if (formDataObj.images[imageType].includes('cloudinary')) {
-                            // If it's already a Cloudinary URL, use it directly
                             updateData.images[imageType] = formDataObj.images[imageType];
                         }
                     } catch (error) {
@@ -224,84 +152,59 @@ router.put('/:id/step/:step', authMiddleware, upload.fields([
                     }
                 }
             }
-
-            // Validate required profile image
             if (!updateData.images.profileImage) {
                 return res.status(400).json({ message: 'Profile image is required' });
             }
         }
-
-        // Set the current step
         updateData.currentStep = step;
-
-        // Handle step 4 - Terms and Conditions
         if (step === 4) {
             updateData.termsAccepted = true;
             updateData.status = 'review';
         }
-
-        // Update restaurant with the exact structure from frontend
-        const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+        const updatedBusiness = await Business.findByIdAndUpdate(
             req.params.id,
             { $set: updateData },
             { new: true }
         );
-
-        res.json(updatedRestaurant);
+        res.json(updatedBusiness);
     } catch (error) {
-        console.error('Error updating restaurant step:', error);
-        res.status(500).json({ message: 'Error updating restaurant step', error: error.message });
+        console.error('Error updating business step:', error);
+        res.status(500).json({ message: 'Error updating business step', error: error.message });
     }
-});
+};
 
-// Get all restaurants for the current user
-router.get('/my-restaurants', authMiddleware, async (req, res) => {
+// Get all businesses for the current user
+const getMyBusinesses = async (req, res) => {
     try {
-        const restaurants = await Restaurant.find({ owner: req.user.id });
-        res.json(restaurants);
+        const businesses = await Business.find({ owner: req.user.id });
+        res.json(businesses);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching restaurants', error: error.message });
+        res.status(500).json({ message: 'Error fetching businesses', error: error.message });
     }
-});
+};
 
-// Get restaurant profile
-router.get('/profile', authMiddleware, restaurantMiddleware, async (req, res) => {
+// Get business profile
+const getBusinessProfile = async (req, res) => {
     try {
-        // Use the restaurant ID from the authenticated user
-
-        const restaurant = await Restaurant.findById(req.restaurant._id);
-
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
+        const business = await Business.findById(req.restaurant._id);
+        if (!business) {
+            return res.status(404).json({ message: 'Business not found' });
         }
-
-        res.json(restaurant);
-
+        res.json(business);
     } catch (error) {
-        console.error('Error getting restaurant profile:', error);
-        res.status(500).json({ message: 'Error getting restaurant profile', error: error.message });
+        console.error('Error getting business profile:', error);
+        res.status(500).json({ message: 'Error getting business profile', error: error.message });
     }
-});
+};
 
-// Update restaurant profile
-router.patch('/profile', authMiddleware, restaurantMiddleware, upload.fields([
-    { name: 'profileImage', maxCount: 1 },
-    { name: 'panCardImage', maxCount: 1 },
-    { name: 'gstImage', maxCount: 1 },
-    { name: 'fssaiImage', maxCount: 1 }
-]), async (req, res) => {
+// Update business profile
+const updateBusinessProfile = async (req, res) => {
     try {
         const updateData = { ...req.body };
-
-        // Handle file uploads
         if (req.files) {
-            // Initialize images object if it doesn't exist
             if (!updateData.images) {
                 updateData.images = {};
             }
-
-            // Handle profile image
             if (req.files.profileImage?.[0]) {
                 try {
                     const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
@@ -321,8 +224,6 @@ router.patch('/profile', authMiddleware, restaurantMiddleware, upload.fields([
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
-
-            // Handle optional images
             const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
@@ -346,277 +247,168 @@ router.patch('/profile', authMiddleware, restaurantMiddleware, upload.fields([
                 }
             }
         }
-
-        // Remove undefined and null values from updateData
         Object.keys(updateData).forEach(key => {
             if (updateData[key] === undefined || updateData[key] === null) {
                 delete updateData[key];
             }
         });
-
-        // Update only the provided fields
-        const restaurant = await Restaurant.findByIdAndUpdate(
+        const business = await Business.findByIdAndUpdate(
             req.restaurant._id,
             { $set: updateData },
             {
                 new: true,
                 runValidators: true,
-                // Only return the updated fields
                 select: Object.keys(updateData).join(' ')
             }
         );
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
+        if (!business) {
+            return res.status(404).json({ message: 'Business not found' });
         }
-
-        res.json(restaurant);
+        res.json(business);
     } catch (error) {
-        console.error('Error updating restaurant profile:', error);
-        res.status(500).json({ message: 'Error updating restaurant profile', error: error.message });
+        console.error('Error updating business profile:', error);
+        res.status(500).json({ message: 'Error updating business profile', error: error.message });
     }
-});
+};
 
-// Get all restaurants for a user
-router.get('/', authMiddleware, async (req, res) => {
-    try {
-        const restaurants = await Restaurant.find({
-            owner: req.user.id
-        });
-
-        // Ensure the contact structure is correct for each restaurant
-        const formattedRestaurants = restaurants.map(restaurant => {
-            const restaurantObj = restaurant.toObject();
-
-            if (!restaurantObj.contact) {
-                restaurantObj.contact = {
-                    primaryPhone: restaurantObj.contact?.primaryPhone || '',
-                    whatsappNumber: restaurantObj.contact?.whatsappNumber || '',
-                    email: restaurantObj.contact?.email || '',
-                    website: restaurantObj.contact?.website || ''
-                };
-            }
-
-            return restaurantObj;
-        });
-
-        res.json(formattedRestaurants);
-    } catch (error) {
-        console.error('Error getting restaurants:', error);
-        res.status(500).json({ message: 'Error getting restaurants', error: error.message });
-    }
-});
-
-// Get restaurant by ID
-router.get('/:id', authMiddleware, async (req, res) => {
-    try {
-        const restaurant = await Restaurant.findOne({
-            _id: req.params.id,
-            owner: req.user.id
-        });
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
-        }
-
-        // Ensure the contact structure is correct
-        if (!restaurant.contact) {
-            restaurant.contact = {
-                primaryPhone: restaurant.contact?.primaryPhone || '',
-                whatsappNumber: restaurant.contact?.whatsappNumber || '',
-                email: restaurant.contact?.email || '',
-                website: restaurant.contact?.website || ''
-            };
-        }
-
-        res.json(restaurant);
-    } catch (error) {
-        console.error('Error getting restaurant:', error);
-        res.status(500).json({ message: 'Error getting restaurant', error: error.message });
-    }
-});
-
-// Delete a restaurant
-router.delete('/:id', authMiddleware, async (req, res) => {
-    try {
-        const restaurant = await Restaurant.findOneAndDelete({
-            _id: req.params.id,
-            owner: req.user.id
-        });
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
-        }
-
-        res.json({ message: 'Restaurant deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting restaurant', error: error.message });
-    }
-});
-
-// Get all restaurants (public route - no auth required)
-router.get('/public/all', async (req, res) => {
+// Get all businesses (public route - no auth required)
+const getAllPublicBusinesses = async (req, res) => {
     try {
         const { lat, lng, category } = req.query;
-
-        // Build query based on filters
         let query = { status: 'published' };
-
-        // Add category filter if provided and not "all"
         if (category && category !== "all") {
             query.$or = [
                 { serviceType: category },
                 { category: category }
             ];
         }
-
-        // Get all published restaurants
-        const restaurants = await Restaurant.find(query)
+        const businesses = await Business.find(query)
             .select('restaurantName serviceType images.profileImage description rating location category operatingHours')
             .lean();
-
-        // Get current day and time in IST
         const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const currentDay = days[now.day()];
         const currentTime = now.format('HH:mm');
-
-        // Format the response to include only necessary fields
-        const formattedRestaurants = restaurants.map(restaurant => {
+        const formattedBusinesses = businesses.map(business => {
             let distance = null;
-            if (lat && lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
+            if (lat && lng && business.location && business.location.lat && business.location.lng) {
                 const distanceInMeters = geolib.getDistance(
                     { latitude: parseFloat(lat), longitude: parseFloat(lng) },
-                    { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+                    { latitude: business.location.lat, longitude: business.location.lng }
                 );
                 distance = distanceInMeters / 1000;
             }
-
-            // Check if restaurant is currently open using IST
             let isOnline = false;
             let openTime = null;
             let closeTime = null;
-            if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
-                const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
+            if (business.operatingHours && business.operatingHours.timeSlots) {
+                const todaySchedule = business.operatingHours.timeSlots[currentDay];
                 if (todaySchedule && todaySchedule.isOpen) {
                     openTime = todaySchedule.openTime;
                     closeTime = todaySchedule.closeTime;
-                    
-                    // Convert times to comparable format using moment
                     const currentTimeMoment = moment(currentTime, 'HH:mm');
                     const openTimeMoment = moment(openTime, 'HH:mm');
                     const closeTimeMoment = moment(closeTime, 'HH:mm');
-
                     isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
                 }
             }
-
             return {
-                _id: restaurant._id,
-                name: restaurant.restaurantName,
-                imageUrl: restaurant.images?.profileImage || null,
-                description: restaurant.description || '',
+                _id: business._id,
+                name: business.restaurantName,
+                imageUrl: business.images?.profileImage || null,
+                description: business.description || '',
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
-                location: restaurant.location || null,
-                serviceType: restaurant.serviceType || '',
-                category: restaurant.category || '',
+                location: business.location || null,
+                serviceType: business.serviceType || '',
+                category: business.category || '',
                 online: isOnline,
                 operatingHours: {
                     openTime: openTime || null,
                     closeTime: closeTime || null
                 },
-                currentTime: currentTime // Adding current time for reference
+                currentTime: currentTime
             };
         });
-
-        // If coordinates are provided, filter and sort by distance
         if (lat && lng) {
-            const filteredRestaurants = formattedRestaurants.filter(restaurant =>
-                restaurant.distance !== null && restaurant.distance <= 50
+            const filteredBusinesses = formattedBusinesses.filter(business =>
+                business.distance !== null && business.distance <= 50
             );
-            filteredRestaurants.sort((a, b) => a.distance - b.distance);
-            res.json(filteredRestaurants);
+            filteredBusinesses.sort((a, b) => a.distance - b.distance);
+            res.json(filteredBusinesses);
         } else {
-            res.json(formattedRestaurants);
+            res.json(formattedBusinesses);
         }
     } catch (error) {
-        console.error('Error getting public restaurants:', error);
-        res.status(500).json({ message: 'Error getting restaurants', error: error.message });
+        console.error('Error getting public businesses:', error);
+        res.status(500).json({ message: 'Error getting businesses', error: error.message });
     }
-});
+};
 
-// Get a specific restaurant's public details
-router.get('/public/:id', async (req, res) => {
+// Get a specific business's public details
+const getPublicBusinessById = async (req, res) => {
     try {
-        const restaurant = await Restaurant.findOne({
+
+        const business = await Business.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('restaurantName images.profileImage description rating location menu operatingHours serviceType');
-
-        if (!restaurant) {
-            return res.status(404).json({ message: 'Restaurant not found' });
+        }).select('restaurantName images.profileImage description location operatingHours serviceType');
+        if (!business) {
+            return res.status(404).json({ message: 'Business not found' });
         }
-
         let distance = null;
-        if (req.query.lat && req.query.lng && restaurant.location && restaurant.location.lat && restaurant.location.lng) {
+        if (req.query.lat && req.query.lng && business.location && business.location.lat && business.location.lng) {
             const distanceInMeters = geolib.getDistance(
                 { latitude: parseFloat(req.query.lat), longitude: parseFloat(req.query.lng) },
-                { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+                { latitude: business.location.lat, longitude: business.location.lng }
             );
             distance = distanceInMeters / 1000;
         }
-
-        // Get current day and time in IST
         const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const currentDay = days[now.day()];
         const currentTime = now.format('HH:mm');
-
-        // Check if restaurant is currently open using IST
         let isOnline = false;
         let openTime = null;
         let closeTime = null;
-        if (restaurant.operatingHours && restaurant.operatingHours.timeSlots) {
-            const todaySchedule = restaurant.operatingHours.timeSlots[currentDay];
+        if (business.operatingHours && business.operatingHours.timeSlots) {
+            const todaySchedule = business.operatingHours.timeSlots[currentDay];
             if (todaySchedule && todaySchedule.isOpen) {
                 openTime = todaySchedule.openTime;
                 closeTime = todaySchedule.closeTime;
-                
-                // Convert times to comparable format using moment
                 const currentTimeMoment = moment(currentTime, 'HH:mm');
                 const openTimeMoment = moment(openTime, 'HH:mm');
                 const closeTimeMoment = moment(closeTime, 'HH:mm');
-
                 isOnline = currentTimeMoment.isBetween(openTimeMoment, closeTimeMoment, null, '[]');
             }
         }
-
-        // Format the response
-        const formattedRestaurant = {
-            _id: restaurant._id,
-            name: restaurant.restaurantName,
-            imageUrl: restaurant.images?.profileImage || null,
-            description: restaurant.description || '',
-            rating: restaurant.rating || 0,
+        const formattedBusiness = {
+            _id: business._id,
+            name: business.restaurantName,
+            imageUrl: business.images?.profileImage || null,
+            description: business.description || '',
             distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
-            location: restaurant.location || '',
-            menu: restaurant.menu || [],
+            location: business.location || '',
             online: isOnline,
-            serviceType: restaurant.serviceType || '',
+            serviceType: business.serviceType || '',
             operatingHours: {
-                openTime: openTime || restaurant.operatingHours?.defaultOpenTime || null,
-                closeTime: closeTime || restaurant.operatingHours?.defaultCloseTime || null
+                openTime: openTime || business.operatingHours?.defaultOpenTime || null,
+                closeTime: closeTime || business.operatingHours?.defaultCloseTime || null
             },
-            currentTime: currentTime // Adding current time for reference
+            currentTime: currentTime
         };
-
-        res.json(formattedRestaurant);
+        res.json(formattedBusiness);
     } catch (error) {
-        console.error('Error getting public restaurant:', error);
-        res.status(500).json({ message: 'Error getting restaurant', error: error.message });
+        console.error('Error getting public business:', error);
+        res.status(500).json({ message: 'Error getting business', error: error.message });
     }
-});
+};
 
-
-
-module.exports = router; 
+module.exports = {
+    createBusiness,
+    updateBusinessStep,
+    getMyBusinesses,
+    getBusinessProfile,
+    updateBusinessProfile,
+    getAllPublicBusinesses,
+    getPublicBusinessById
+};

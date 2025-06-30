@@ -10,7 +10,7 @@ const MenuDetails = ({
     isFormValid,
     onNext
 }) => {
-    const [showTimeSlots, setShowTimeSlots] = useState(false);
+    const [showTimeSlots, setShowTimeSlots] = useState(true);
 
     const getCategoryIcon = (categoryName) => {
         switch(categoryName.toLowerCase()) {
@@ -46,10 +46,32 @@ const MenuDetails = ({
             return;
         }
 
+        // Check and set default times for open days with empty time slots
+        const updatedTimeSlots = {};
+        Object.entries(formData.operatingHours.timeSlots).forEach(([day, slot]) => {
+            if (slot.isOpen) {
+                updatedTimeSlots[day] = {
+                    ...slot,
+                    openTime: slot.openTime || '09:00',
+                    closeTime: slot.closeTime || '22:00'
+                };
+            } else {
+                updatedTimeSlots[day] = slot;
+            }
+        });
+
+        const updatedOperatingHours = {
+            ...formData.operatingHours,
+            timeSlots: updatedTimeSlots
+        };
+
+
         const stepData = {
             category: selectedCategory?.id || '',
-            operatingHours: formData.operatingHours
+            operatingHours: updatedOperatingHours
         };
+
+        console.log(stepData, 'stepdata');
 
         onNext(stepData);
     };
@@ -105,6 +127,26 @@ const MenuDetails = ({
         { id: 'saturday', name: 'Saturday' },
         { id: 'sunday', name: 'Sunday' }
     ];
+
+    // Check if all days are open
+    const allDaysOpen = days.every(day => formData.operatingHours.timeSlots[day.id]?.isOpen !== false);
+
+    // Handler for select all
+    const handleSelectAllDays = (checked) => {
+        setFormData(prev => ({
+            ...prev,
+            operatingHours: {
+                ...prev.operatingHours,
+                timeSlots: days.reduce((acc, day) => {
+                    acc[day.id] = {
+                        ...prev.operatingHours.timeSlots[day.id],
+                        isOpen: checked
+                    };
+                    return acc;
+                }, {})
+            }
+        }));
+    };
 
     return (
         <form onSubmit={handleSubmit} className="menu-details-form">
@@ -176,6 +218,20 @@ const MenuDetails = ({
                                 <span>Show Time Slots <FaChevronDown /></span>
                             )}
                         </button>
+                    </div>
+
+                    {/* Select All Checkbox */}
+                    <div className="form-check mb-2">
+                        <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="select-all-days"
+                            checked={allDaysOpen}
+                            onChange={e => handleSelectAllDays(e.target.checked)}
+                        />
+                        <label className="form-check-label" htmlFor="select-all-days">
+                            Select All
+                        </label>
                     </div>
 
                     <div className="days-list">

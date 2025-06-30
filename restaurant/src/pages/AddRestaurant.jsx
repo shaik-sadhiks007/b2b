@@ -371,6 +371,8 @@ const AddRestaurant = () => {
         }
     };
 
+    console.log(formData,'parent')
+
     const handleStepSubmit = async (step) => {
         try {
             setLoading(true);
@@ -443,21 +445,21 @@ const AddRestaurant = () => {
 
                         case 2:
                             // Step 2: Menu & Operations
+                            const updatedTimeSlots = {};
+                            Object.entries(formData.operatingHours?.timeSlots || {}).forEach(([day, slot]) => {
+                                updatedTimeSlots[day] = {
+                                    isOpen: slot.isOpen || false,
+                                    openTime: slot.isOpen ? (slot.openTime || '09:00') : (slot.openTime || ''),
+                                    closeTime: slot.isOpen ? (slot.closeTime || '22:00') : (slot.closeTime || '')
+                                };
+                            });
 
                             formDataToSend.append('formData', JSON.stringify({
                                 category: formData.category || '',
                                 operatingHours: {
                                     defaultOpenTime: formData.operatingHours?.defaultOpenTime || '09:00',
                                     defaultCloseTime: formData.operatingHours?.defaultCloseTime || '22:00',
-                                    timeSlots: {
-                                        monday: formData.operatingHours?.timeSlots?.monday || { isOpen: false, openTime: '', closeTime: '' },
-                                        tuesday: formData.operatingHours?.timeSlots?.tuesday || { isOpen: false, openTime: '', closeTime: '' },
-                                        wednesday: formData.operatingHours?.timeSlots?.wednesday || { isOpen: false, openTime: '', closeTime: '' },
-                                        thursday: formData.operatingHours?.timeSlots?.thursday || { isOpen: false, openTime: '', closeTime: '' },
-                                        friday: formData.operatingHours?.timeSlots?.friday || { isOpen: false, openTime: '', closeTime: '' },
-                                        saturday: formData.operatingHours?.timeSlots?.saturday || { isOpen: false, openTime: '', closeTime: '' },
-                                        sunday: formData.operatingHours?.timeSlots?.sunday || { isOpen: false, openTime: '', closeTime: '' }
-                                    }
+                                    timeSlots: updatedTimeSlots
                                 }
                             }));
                             break;
@@ -542,52 +544,7 @@ const AddRestaurant = () => {
         setIsMenuOpen(false);
     };
 
-    const handleDayToggle = (day) => {
-        setFormData(prev => ({
-            ...prev,
-            deliveryTiming: {
-                ...prev.deliveryTiming,
-                selectedDays: prev.deliveryTiming.selectedDays.includes(day)
-                    ? prev.deliveryTiming.selectedDays.filter(d => d !== day)
-                    : [...prev.deliveryTiming.selectedDays, day]
-            }
-        }));
-    };
-
-    const handleTimeChange = (day, type, value) => {
-        setFormData(prev => ({
-            ...prev,
-            deliveryTiming: {
-                ...prev.deliveryTiming,
-                timeSlots: {
-                    ...prev.deliveryTiming.timeSlots,
-                    [day]: {
-                        ...prev.deliveryTiming.timeSlots[day],
-                        [type]: value
-                    }
-                }
-            }
-        }));
-    };
-
-    const handleCopyToAll = () => {
-        const defaultTiming = formData.deliveryTiming.timeSlots.default;
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-        setFormData(prev => ({
-            ...prev,
-            deliveryTiming: {
-                ...prev.deliveryTiming,
-                timeSlots: {
-                    ...prev.deliveryTiming.timeSlots,
-                    ...days.reduce((acc, day) => ({
-                        ...acc,
-                        [day]: { ...defaultTiming }
-                    }), {})
-                }
-            }
-        }));
-    };
+  
 
     const validateStep = (step) => {
         switch (step) {
@@ -668,14 +625,37 @@ const AddRestaurant = () => {
                         selectedCategory={categories.find(c => c.id === formData.category) || ''}
                         setSelectedCategory={handleCategorySelect}
                         operatingHours={operatingHours}
-                        setOperatingHours={setOperatingHours}
+                        setOperatingHours={(newOperatingHours) => {
+                            setOperatingHours(newOperatingHours);
+                            setFormData(prev => ({
+                                ...prev,
+                                operatingHours: newOperatingHours
+                            }));
+                        }}
                         isFormValid={validateStep(2)}
                         onNext={(stepData) => {
                             // Update formData with the step data
-                            setFormData(prev => ({
-                                ...prev,
-                                ...stepData
-                            }));
+                            setFormData(prev => {
+                                const updatedData = {
+                                    ...prev,
+                                    category: stepData.category,
+                                    operatingHours: {
+                                        ...stepData.operatingHours,
+                                        defaultOpenTime: stepData.operatingHours.defaultOpenTime || prev.operatingHours.defaultOpenTime,
+                                        defaultCloseTime: stepData.operatingHours.defaultCloseTime || prev.operatingHours.defaultCloseTime,
+                                        timeSlots: Object.entries(stepData.operatingHours.timeSlots).reduce((acc, [day, slot]) => {
+                                            acc[day] = {
+                                                isOpen: slot.isOpen,
+                                                openTime: slot.isOpen ? (slot.openTime || '09:00') : slot.openTime,
+                                                closeTime: slot.isOpen ? (slot.closeTime || '22:00') : slot.closeTime
+                                            };
+                                            return acc;
+                                        }, {})
+                                    }
+                                };
+                                console.log('Updated formData:', updatedData);
+                                return updatedData;
+                            });
                             handleStepSubmit(3);
                         }}
                     />

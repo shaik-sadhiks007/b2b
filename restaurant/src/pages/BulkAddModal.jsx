@@ -11,15 +11,15 @@ const BulkAddModal = ({ open, onClose, onBulkAdd, preSelectedCategory = '', preS
     const [parseError, setParseError] = useState('');
 
     // Define the default header order as a constant
-    const DEFAULT_HEADER = ['Name', 'Price', 'Category', 'Subcategory', 'Quantity', 'Food Type', 'Description', 'In Stock'];
+    const DEFAULT_HEADER = ['Name', 'Price', 'Quantity', 'Category', 'Subcategory', 'Food Type', 'Description', 'In Stock'];
 
     // Sample data format for reference
     const sampleData = `${DEFAULT_HEADER.join(',')}
-Masala Dosa,80,Today Menu,Breakfast,100,veg,Crispy dosa with potato filling,true
-Idly,60,Today Menu,Breakfast,100,veg,Steamed rice cakes,true
-Veg Biryani,150,Main Course,Rice,50,veg,Aromatic rice with vegetables,true
-Chicken Curry,200,Main Course,Curry,30,nonveg,Spicy chicken curry,true
-Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
+Masala Dosa,80,100,Today Menu,Breakfast,veg,Crispy dosa with potato filling,true
+Idly,60,100,Today Menu,Breakfast,veg,Steamed rice cakes,true
+Veg Biryani,150,50,Main Course,Rice,veg,Aromatic rice with vegetables,true
+Chicken Curry,200,30,Main Course,Curry,nonveg,Spicy chicken curry,true
+Cold Coffee,70,100,Beverages,Cold Drinks,veg,Chilled coffee with cream,true`;
 
     // Parse CSV to items whenever bulkData changes
     useEffect(() => {
@@ -34,7 +34,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                     subcategory: subcategory || '',
                     foodType: 'veg',
                     description: '',
-                    quantity: 10,
+                    quantity: null,
                     inStock: true
                 }
             ] : prev));
@@ -66,7 +66,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                 subcategory: subcategory || 'general',
                 foodType: 'veg',
                 description: '',
-                quantity: 100,
+                quantity: null,
                 inStock: true
             }
         ]);
@@ -92,13 +92,16 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                 subcategory: item.subcategory || subcategory || 'general',
                 foodType: item.foodType || 'veg',
                 inStock: item.inStock !== undefined ? item.inStock : true,
-                quantity: item.quantity || 10,
+                quantity: item.quantity ? parseInt(item.quantity) : null,
                 totalPrice: parseFloat(item.totalPrice) || 0,
             }));
             // Filter out items missing required fields
-            const validItems = processedItems.filter(item => item.name && item.totalPrice);
+            const validItems = processedItems.filter(item => {
+                const hasQuantity = item.quantity !== null && item.quantity > 0;
+                return item.name && item.totalPrice && hasQuantity;
+            });
             if (validItems.length === 0) {
-                toast.error('No valid items found (missing name or price)');
+                toast.error('No valid items found (missing name, price or quantity)');
                 return;
             }
             await onBulkAdd(validItems);
@@ -137,7 +140,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                 totalPrice: '',
                 category: '',
                 subcategory: '',
-                quantity: 10,
+                quantity: null,
                 foodType: 'veg',
                 description: '',
                 inStock: true
@@ -163,7 +166,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                             break;
                         case 'quantity':
                         case 'qty':
-                            item.quantity = value || 10;
+                            item.quantity = value ? parseInt(value) : null;
                             break;
                         case 'food type':
                         case 'foodtype':
@@ -187,7 +190,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                     totalPrice: values[1] || '',
                     category: values[2] || '',
                     subcategory: values[3] || '',
-                    quantity: values[4] || 10,
+                    quantity: values[4] ? parseInt(values[4]) : null,
                     foodType: (values[5] || 'veg').toLowerCase(),
                     description: values[6] || '',
                     inStock: typeof values[7] !== 'undefined' ? (values[7].toLowerCase() === 'true' || values[7].toLowerCase() === 'yes' || values[7] === '1') : true
@@ -216,7 +219,7 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                 subcategory: subcategory || '',
                 foodType: 'veg',
                 description: '',
-                quantity: 10,
+                quantity: null,
                 inStock: true
             }
         ]);
@@ -257,10 +260,14 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                             <div className="text-sm text-blue-700 space-y-2">
                                 <p>• Enter menu items in CSV format</p>
                                 <p>• First row should be headers</p>
-                                <p>• Required fields: Name, Price</p>
-                                <p>• Optional fields: Category, Subcategory, Food Type, Description, Quantity, In Stock</p>
+                                <p>• <strong>Required fields: Name, Price, Quantity</strong></p>
+                                <p>• Optional fields: Category, Subcategory, Food Type, Description, In Stock</p>
                                 <p>• Food Type: veg, nonveg, egg</p>
                                 <p>• In Stock: true/false, yes/no, 1/0</p>
+                                <div className="mt-4 pt-2 border-t border-blue-200">
+                                    <p className="text-blue-800 font-medium">Note:</p>
+                                    <p className="text-xs text-blue-700 mt-1"><strong>If you don't want to provide a value for optional fields, still include the comma (,) to maintain the correct format.</strong></p>
+                                </div>
                             </div>
                             
                             <div className="mt-4 space-y-2">
@@ -309,9 +316,9 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                                                 <th className="border px-2 py-1 text-center"></th>
                                                 <th className="border px-2 py-1">Name*</th>
                                                 <th className="border px-2 py-1">Price*</th>
+                                                <th className="border px-2 py-1">Quantity*</th>
                                                 <th className="border px-2 py-1">Category</th>
                                                 <th className="border px-2 py-1">Subcategory</th>
-                                                <th className="border px-2 py-1">Quantity</th>
                                                 <th className="border px-2 py-1">Food Type</th>
                                                 <th className="border px-2 py-1">Description</th>
                                                 <th className="border px-2 py-1">In Stock</th>
@@ -332,13 +339,13 @@ Cold Coffee,70,Beverages,Cold Drinks,100,veg,Chilled coffee with cream,true`;
                                                         <input type="number" value={item.totalPrice || ''} onChange={e => handleItemChange(idx, 'totalPrice', e.target.value)} className="w-16 border rounded px-1 py-0.5" required />
                                                     </td>
                                                     <td className="border px-2 py-1">
+                                                        <input type="number" value={item.quantity || ''} onChange={e => handleItemChange(idx, 'quantity', e.target.value)} className="w-16 border rounded px-1 py-0.5" required min="1" />
+                                                    </td>
+                                                    <td className="border px-2 py-1">
                                                         <input type="text" value={item.category || ''} onChange={e => handleItemChange(idx, 'category', e.target.value)} className="w-20 border rounded px-1 py-0.5" />
                                                     </td>
                                                     <td className="border px-2 py-1">
                                                         <input type="text" value={item.subcategory || ''} onChange={e => handleItemChange(idx, 'subcategory', e.target.value)} className="w-20 border rounded px-1 py-0.5" />
-                                                    </td>
-                                                    <td className="border px-2 py-1">
-                                                        <input type="number" value={item.quantity || 10} onChange={e => handleItemChange(idx, 'quantity', e.target.value)} className="w-12 border rounded px-1 py-0.5" />
                                                     </td>
                                                     <td className="border px-2 py-1">
                                                         <select value={item.foodType || 'veg'} onChange={e => handleItemChange(idx, 'foodType', e.target.value)} className="w-16 border rounded px-1 py-0.5">

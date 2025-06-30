@@ -17,6 +17,7 @@ import superm from "../assets/superm.webp";
 import med from "../assets/med.webp";
 import ck from "../assets/ck.webp";
 import whole from "../assets/whole.webp";
+import Navbar from "./Navbar";
 
 const AboutUs = () => {
   const navigate = useNavigate();
@@ -93,6 +94,9 @@ const AboutUs = () => {
   return (
     <div className="min-h-screen bg-white text-gray-800 mt-8">
       {/* Main Content Section */}
+      <div style={{ marginTop: '30px' }}>
+        <Navbar />
+      </div>
       <div className="pt-16 px-6 md:px-16">
         <div className="flex flex-col md:flex-row gap-10">
           {/* Left Section */}

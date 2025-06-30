@@ -176,16 +176,16 @@ const CartPage = () => {
                                         <div key={`${item.itemId}-${index}`} className="py-4 border-b">
                                             {/* Mobile layout */}
                                             <div className="flex items-center gap-3 sm:hidden">
-                                                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                                                    {item.photos?.length > 0 ? (
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 relative">
+                                                    {item.photos?.length > 0 && item.photos[0] != null && item.photos[0] != '' ? (
                                                         <img
                                                             src={item.photos[0]}
                                                             alt={item.name}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                                            <span className="text-xs text-gray-500">{item.name}</span>
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                                                            <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -215,8 +215,8 @@ const CartPage = () => {
                                             </div>
                                             {/* Desktop/tablet layout (unchanged) */}
                                             <div className="hidden sm:flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden relative">
-                                                    {item.photos?.length > 0 ? (
+                                                <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative">
+                                                    {item.photos?.length > 0 && item.photos[0] != null && item.photos[0] != '' ? (
                                                         <img
                                                             src={item.photos[0]}
                                                             alt={item.name}
@@ -224,7 +224,7 @@ const CartPage = () => {
                                                         />
                                                     ) : (
                                                         <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
-                                                            <span className="text-white text-sm font-bold text-center px-2">{item.name}</span>
+                                                            <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
                                                         </div>
                                                     )}
                                                 </div>

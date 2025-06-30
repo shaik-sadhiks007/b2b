@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 import aboutUsImage from '../assets/aboutus.png';
 import location from '../assets/location.jpg';
@@ -32,14 +31,14 @@ const teamMembers = [
 ];
 
 const benefits = [
-  "View available products",
-  "View in telugu",
-  "Track your orders",
-  "Best user experience",
-  "Make order reservations",
-  "No waiting at stores",
-  "Multi store application",
-  "Order online",
+  { text: "View available products", color: "bg-blue-100 text-blue-800" },
+  { text: "View in telugu", color: "bg-green-100 text-green-800" },
+  { text: "Track your orders", color: "bg-purple-100 text-purple-800" },
+  { text: "Best user experience", color: "bg-yellow-100 text-yellow-800" },
+  { text: "Make order reservations", color: "bg-pink-100 text-pink-800" },
+  { text: "No waiting at stores", color: "bg-indigo-100 text-indigo-800" },
+  { text: "Multi store application", color: "bg-red-100 text-red-800" },
+  { text: "Order online", color: "bg-teal-100 text-teal-800" },
 ];
 
 const Features = () => {
@@ -229,7 +228,7 @@ const Features = () => {
               className="w-24 h-24 md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full border-4 border-blue-500 object-cover"
             />
             <p className="text-center text-base md:text-lg lg:text-xl font-semibold mt-2">
-              Users
+              Customers
             </p>
           </div>
 
@@ -246,14 +245,14 @@ const Features = () => {
             return (
               <div
                 key={index}
-                className="absolute text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center bg-white p-2 md:p-4 rounded-full shadow-lg w-24 md:w-40 lg:w-44 transition hover:scale-105"
+                className={`absolute text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center p-2 md:p-4 rounded-full shadow-lg w-24 md:w-40 lg:w-44 transition hover:scale-105 ${benefit.color}`}
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,
                   fontSize: isMobile ? '0.7rem' : '',
                 }}
               >
-                {benefit}
+                {benefit.text}
               </div>
             );
           })}

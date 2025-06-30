@@ -17,11 +17,12 @@ import superm from "../assets/superm.webp";
 import med from "../assets/med.webp";
 import ck from "../assets/ck.webp";
 import whole from "../assets/whole.webp";
+
 const AboutUs = () => {
   const navigate = useNavigate();
   useEffect(() => {
-  window.scrollTo(0, 0);
-}, []);
+    window.scrollTo(0, 0);
+  }, []);
   const scrollToNextSection = () => {
     navigate("/features");
   };
@@ -30,12 +31,12 @@ const AboutUs = () => {
   const businessTypes = [
     { name: "Supermarket", category: "retail", image: superm },
     { name: "Restaurant", category: "retail", image: restaurant },
-    { name: "Coffee Shop", category: "food" , image: coffee },
+    { name: "Coffee Shop", category: "food", image: coffee },
     { name: "Medical Store", category: "retail", image: med },
     { name: "Cloud kitchen", category: "food", image: ck },
     { name: "Textile", category: "manufacturing", image: textile },
     { name: "Play arena", category: "fashion", image: play },
-    { name: "Mess", category: "fashion",image: mess },
+    { name: "Mess", category: "fashion", image: mess },
     { name: "Footwear Shop", category: "fashion", image: footware },
     { name: "Home Appliances", category: "electronics", image: home },
     { name: "Wholesale Business", category: "wholesale", image: whole },
@@ -45,42 +46,42 @@ const AboutUs = () => {
   // Category-based styling
   const getCategoryStyle = (category) => {
     const baseStyle =
-      "w-48 h-32 rounded-xl flex flex-col items-center justify-center transition-all duration-300 shadow-md hover:shadow-xl ";
+      "w-56 h-40 rounded-xl flex flex-col items-center justify-center transition-all duration-300 shadow-md hover:shadow-xl ";
 
     switch (category) {
       case "retail":
         return (
           baseStyle +
-          "bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:border-blue-300"
+          "bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 hover:border-blue-300"
         );
       case "food":
         return (
           baseStyle +
-          "bg-gradient-to-br from-green-50 to-green-100 border border-green-200 hover:border-green-300"
+          "bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 hover:border-green-300"
         );
       case "manufacturing":
         return (
           baseStyle +
-          "bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 hover:border-purple-300"
+          "bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 hover:border-purple-300"
         );
       case "fashion":
         return (
           baseStyle +
-          "bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 hover:border-pink-300"
+          "bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-200 hover:border-pink-300"
         );
       case "electronics":
         return (
           baseStyle +
-          "bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 hover:border-yellow-300"
+          "bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 hover:border-yellow-300"
         );
       case "wholesale":
         return (
           baseStyle +
-          "bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 hover:border-indigo-300"
+          "bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-200 hover:border-indigo-300"
         );
       default:
         return (
-          baseStyle + "bg-white border border-gray-200 hover:border-gray-300"
+          baseStyle + "bg-white border-2 border-gray-200 hover:border-gray-300"
         );
     }
   };
@@ -90,7 +91,7 @@ const AboutUs = () => {
   const secondRow = businessTypes.slice(6, 12);
 
   return (
-    <div className="min-h-screen bg-white text-gray-800">
+    <div className="min-h-screen bg-white text-gray-800 mt-8">
       {/* Main Content Section */}
       <div className="pt-16 px-6 md:px-16">
         <div className="flex flex-col md:flex-row gap-10">
@@ -168,7 +169,7 @@ const AboutUs = () => {
           </h2>
 
           {/* First Row */}
-          <div className="flex flex-wrap justify-center gap-5 mb-5">
+          <div className="flex flex-wrap justify-center gap-8 mb-8">
             {firstRow.map((item, index) => (
               <div
                 key={index}
@@ -176,12 +177,14 @@ const AboutUs = () => {
                   getCategoryStyle(item.category) + " hover:-translate-y-2"
                 }
               >
-                <div className="p-4 text-center">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-12 h-12 mx-auto mb-2 object-contain"
-                  />
+                <div className="p-4 text-center flex flex-col items-center">
+                  <div className="w-20 h-20 mb-4 flex items-center justify-center">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                   <h3 className="text-gray-800 font-medium text-lg">
                     {item.name}
                   </h3>
@@ -191,7 +194,7 @@ const AboutUs = () => {
           </div>
 
           {/* Second Row */}
-          <div className="flex flex-wrap justify-center gap-5">
+          <div className="flex flex-wrap justify-center gap-8">
             {secondRow.map((item, index) => (
               <div
                 key={index + 6}
@@ -199,12 +202,14 @@ const AboutUs = () => {
                   getCategoryStyle(item.category) + " hover:-translate-y-2"
                 }
               >
-                <div className="p-4 text-center">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-12 h-12 mx-auto mb-2 object-contain"
-                  />
+                <div className="p-4 text-center flex flex-col items-center">
+                  <div className="w-20 h-20 mb-4 flex items-center justify-center">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                   <h3 className="text-gray-800 font-medium text-lg">
                     {item.name}
                   </h3>
@@ -216,7 +221,7 @@ const AboutUs = () => {
 
         {/* New User Types Section */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl border border-blue-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl border-2 border-blue-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
             <h3 className="text-2xl font-semibold mb-4 text-blue-700">
               Business Owners
             </h3>
@@ -236,7 +241,7 @@ const AboutUs = () => {
             </ul>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl border border-green-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl border-2 border-green-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
             <h3 className="text-2xl font-semibold mb-4 text-green-700">
               Customers
             </h3>

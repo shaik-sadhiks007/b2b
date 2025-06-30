@@ -15,6 +15,7 @@ import review from '../assets/review.png';
 import person from '../assets/person.webp';
 import emp  from '../assets/emp.png';
 import pay from '../assets/pay.avif';
+
 const teamMembers = [
   { name: "Digitalize your business", image: website },
   { name: "Customise your local language", image: telugu },
@@ -28,18 +29,17 @@ const teamMembers = [
   { name: "Feedbacks and ratings*", image: review },
   { name: "Employee management*", image: emp },
   { name: "Billing & accounting*", image: billing },
-
 ];
 
 const benefits = [
-  "Customise to your business needs",
-  "Digitalize your business",
-  "Increase customer reach",
-  "Edit and manage your products",
-  "Increase sales",
-  "High value",
-  "Low cost",
-  "No custoner waiting",
+  { text: "Customise to your business needs", color: "bg-blue-100 text-blue-800 border-blue-300" },
+  { text: "Digitalize your business", color: "bg-purple-100 text-purple-800 border-purple-300" },
+  { text: "Increase customer reach", color: "bg-green-100 text-green-800 border-green-300" },
+  { text: "Edit and manage your products", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { text: "Increase sales", color: "bg-red-100 text-red-800 border-red-300" },
+  { text: "High value", color: "bg-indigo-100 text-indigo-800 border-indigo-300" },
+  { text: "Low cost", color: "bg-pink-100 text-pink-800 border-pink-300" },
+  { text: "No customer waiting", color: "bg-teal-100 text-teal-800 border-teal-300" },
 ];
 
 const Features = () => {
@@ -47,7 +47,7 @@ const Features = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
-     window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
     const handleResize = () => {
       const width = window.innerWidth;
       setWindowWidth(width);
@@ -62,7 +62,7 @@ const Features = () => {
     <div className="min-h-screen bg-white text-gray-800">
       <Header />
 
-      {/* Banner Section - Improved responsive behavior */}
+      {/* Banner Section */}
       <div className="w-full h-[40vh] sm:h-[50vh] md:h-[70vh] lg:h-[100vh] relative">
         <img
           src={aboutUsImage}
@@ -108,7 +108,7 @@ const Features = () => {
           More About Our Features
         </h2>
 
-        {/* Feature Items - Improved responsive layout */}
+        {/* Feature Items */}
         {[
           {
             title: "Digitalize your business",
@@ -167,11 +167,10 @@ const Features = () => {
             ),
             reverse: true
           },
-           {
+          {
             title: "Instore Billing",
             image: billing,
-            content: "In-store Billing feature enables quick and seamless checkout experiences for customers within a physical store. It allows staff to generate accurate bills using barcode scanning, apply discounts or offers, calculate taxes automatically, and accept multiple payment methods including cash, cards, and digital wallets. Integrated with the inventory system, it updates stock levels in real-time, preventing discrepancies. This feature reduces billing errors, speeds up transaction time, and improves customer satisfaction. It also supports printed and digital receipts, return processing, and bill history tracking. In-store billing is essential for efficient retail operations and ensures a smooth end-to-end sales process.",
-
+            content: "In-store Billing feature enables quick and seamless checkout experiences for customers within a physical store. It allows staff to generate accurate bills. Integrated with the inventory system, it updates stock levels in real-time, preventing discrepancies. This feature reduces billing errors, speeds up transaction time, and improves customer satisfaction. It also supports printed and digital receipts, return processing, and bill history tracking. In-store billing is essential for efficient retail operations and ensures a smooth end-to-end sales process.",
             reverse: false
           },
           {
@@ -186,7 +185,6 @@ const Features = () => {
             content: "Boost your sales with targeted promotions and discounts. Easily create offers, seasonal deals, and limited-time discounts to attract new customers and retain existing ones. The promotions feature helps increase visibility, drive customer engagement, and maximize revenue, all while giving you full control over your marketing campaigns.",
             reverse: false
           },
-         
           {
             title: "Khata book*",
             image: book,
@@ -225,19 +223,16 @@ const Features = () => {
             content: (
               <>
                 The Employee Management feature streamlines the process of handling employee records and operations. It allows administrators to add, edit, or remove employee profiles, assign roles and responsibilities, track attendance, monitor performance, and manage payroll efficiently. With centralized access, it ensures transparency, accountability, and real-time updates. This feature helps businesses optimize workforce productivity by offering insights into employee performance and simplifying HR tasks. It also includes leave tracking, shift scheduling, and communication tools to keep teams connected and aligned. Overall, the employee management feature reduces administrative burden and boosts organizational efficiency through smart automation and data-driven decision-making.
-
-
               </>
             ),
             reverse: false
           },
-           {
+          {
             title: "Billing & accounting*",
             image: billing,
             content: "Our Billing and Accounting feature simplifies financial management by automating invoice generation, payment tracking, and expense monitoring. It ensures accurate record-keeping, reduces manual errors, and provides detailed financial reports. Small businesses can efficiently manage cash flow, monitor profitability, and maintain transparency, enabling smarter financial decisions and streamlined business operations. we can also genewrate GST reports and other tax-related documents, ensuring compliance with local regulations and also profit and loss satements",
             reverse: true
           },
-
         ].map((feature, index) => (
           <div 
             key={index} 
@@ -268,7 +263,7 @@ const Features = () => {
           Benefits of Using B2B
         </h2>
 
-        {/* Circular Benefits - Improved responsive behavior */}
+        {/* Circular Benefits with Colors */}
         <div className="relative w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] h-[90vw] max-h-[300px] sm:max-h-[400px] md:max-h-[500px] mx-auto mb-12 sm:mb-20 md:mb-28">
           {/* Center Avatar */}
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center">
@@ -282,30 +277,28 @@ const Features = () => {
             </p>
           </div>
 
-          {/* Circular Benefits */}
+          {/* Colorful Benefit Items */}
           {benefits.map((benefit, index) => {
-             const isMobile = windowWidth < 768;
+            const isMobile = windowWidth < 768;
             const radius = isMobile ? 150 : 200;
             const centerX = isMobile ? 180 : 250;
             const centerY = isMobile ? 180 : 250;
             const angle = (index / benefits.length) * 2 * Math.PI;
             const x = centerX + radius * Math.cos(angle) - (isMobile ? 40 : 60);
             const y = centerY + radius * Math.sin(angle) - (isMobile ? 20 : 30);
+            
             return (
               <div
                 key={index}
-                className="absolute text-[10px] xs:text-xs sm:text-sm md:text-base font-medium text-center bg-white p-1 sm:p-2 md:p-3 rounded-full shadow hover:scale-105 transition-all duration-200"
+                className={`absolute text-[10px] xs:text-xs sm:text-sm md:text-base font-medium text-center ${benefit.color} p-1 sm:p-2 md:p-3 rounded-full shadow hover:scale-105 transition-all duration-200 border-2 flex items-center justify-center`}
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,
                   width: isMobile ? '70px' : windowWidth < 1024 ? '90px' : '110px',
                   height: isMobile ? '70px' : windowWidth < 1024 ? '90px' : '110px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
                 }}
               >
-                {benefit}
+                {benefit.text}
               </div>
             );
           })}

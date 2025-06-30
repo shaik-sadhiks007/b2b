@@ -265,10 +265,10 @@ const Orders = () => {
                     <>
                         <button 
                             className="btn btn-success w-100 mb-2" 
-                            onClick={() => handleStatusChange(order._id, order.orderType === 'DELIVERY' ? 'ORDER_DELIVERED' : 'ORDER_PICKED_UP')}
+                            onClick={() => handleStatusChange(order._id, order.orderType === 'delivery' ? 'ORDER_DELIVERED' : 'ORDER_PICKED_UP')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
-                            Mark as {order.orderType === 'DELIVERY' ? 'Delivered' : 'Picked Up'}
+                            Mark as {order.orderType === 'delivery' ? 'Delivered' : 'Picked Up'}
                         </button>
                         <button 
                             className="btn btn-outline-danger w-100" 
@@ -473,7 +473,7 @@ const Orders = () => {
                                                             {order.items.map((item, index) => (
                                                                 <div key={index} className="d-flex justify-content-between align-items-center mb-2 p-2 rounded border border-info" style={{ backgroundColor: '#e0f7fa' }}>
                                                                     <div>
-                                                                        <i className={`bi bi-circle-fill ${item.isVeg ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '8px' }}></i>
+                                                                        <i className={`bi bi-circle-fill ${item.foodType='veg' ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '8px' }}></i>
                                                                         <span className="fw-medium">{item.quantity} x {item.name}</span>
                                                                     </div>
                                                                     <div className="fw-bold">{formatCurrency(item.totalPrice)}</div>
@@ -492,7 +492,7 @@ const Orders = () => {
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        {order.items.every(item => item.isVeg) && (
+                                                        {order.items.every(item => item.foodType='veg') && (
                                                             <div className="text-success mt-2">
                                                                 <i className="bi bi-circle-fill me-2"></i>
                                                                 VEG ONLY ORDER

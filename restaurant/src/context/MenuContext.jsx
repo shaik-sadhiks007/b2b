@@ -8,24 +8,22 @@ export const MenuContext = createContext();
 
 export const MenuProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
-    const [categories, setCategories] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-    // Fetch menu items when user is authenticated
     useEffect(() => {
         if (user) {
             fetchMenu();
         }
     }, [user]);
 
-    // Fetch menu items
+    // Fetch all menu items
     const fetchMenu = async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/api/menu`);
-            setCategories(response.data);
+            setMenuItems(response.data);
             setLoading(false);
         } catch (error) {
             setError('Error fetching menu items');
@@ -33,359 +31,321 @@ export const MenuProvider = ({ children }) => {
         }
     };
 
-    // Add new category
-    const addCategory = async (name) => {
+    // Add a new menu item
+    const addMenuItem = async (itemData) => {
         try {
-            const newCategory = {
-                name: name,
-                isExpanded: true,
-                subcategories: []
-            };
-            await axios.post(`${API_URL}/api/menu`, newCategory);
-            fetchMenu();
-            toast.success('Category added successfully');
+            const response = await axios.post(`${API_URL}/api/menu`, itemData);
+            const newItem = response.data;
+            
+            setMenuItems(prev => {
+                // Find if category exists
+                const categoryIndex = prev.findIndex(cat => cat.category === newItem.category);
+                
+                if (categoryIndex !== -1) {
+                    // Category exists, find if subcategory exists
+                    const category = prev[categoryIndex];
+                    const subcategoryIndex = category.subcategories.findIndex(sub => sub.subcategory === newItem.subcategory);
+                    
+                    if (subcategoryIndex !== -1) {
+                        // Subcategory exists, add item to existing subcategory
+                        const updatedMenuItems = [...prev];
+                        updatedMenuItems[categoryIndex] = {
+                            ...category,
+                            subcategories: [...category.subcategories]
+                        };
+                        updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                            ...category.subcategories[subcategoryIndex],
+                            items: [...category.subcategories[subcategoryIndex].items, newItem]
+                        };
+                        return updatedMenuItems;
+                    } else {
+                        // Subcategory doesn't exist, create new subcategory
+                        const updatedMenuItems = [...prev];
+                        updatedMenuItems[categoryIndex] = {
+                            ...category,
+                            subcategories: [...category.subcategories, {
+                                subcategory: newItem.subcategory,
+                                items: [newItem]
+                            }]
+                        };
+                        return updatedMenuItems;
+                    }
+                } else {
+                    // Category doesn't exist, create new category with subcategory
+                    return [...prev, {
+                        category: newItem.category,
+                        subcategories: [{
+                            subcategory: newItem.subcategory,
+                            items: [newItem]
+                        }]
+                    }];
+                }
+            });
+            
+            toast.success('Menu item added successfully');
         } catch (error) {
-            setError('Error adding category');
-            toast.error('Failed to add category');
+            setError('Error adding menu item');
+            toast.error('Failed to add menu item');
         }
     };
 
-    // Update category
-    const updateCategory = async (categoryId, newName) => {
-        if (!categoryId) {
-            setError('Category ID is required');
-            return;
-        }
+    // Update a menu item
+    const updateMenuItem = async (itemId, itemData) => {
         try {
-            await axios.put(`${API_URL}/api/menu/${categoryId}`, { name: newName });
-            fetchMenu();
-            toast.success('Category updated successfully');
+            const response = await axios.put(`${API_URL}/api/menu/${itemId}`, itemData);
+            const updatedItem = response.data;
+            
+            setMenuItems(prev => {
+                // Find the item in the structured data
+                for (let categoryIndex = 0; categoryIndex < prev.length; categoryIndex++) {
+                    const category = prev[categoryIndex];
+                    for (let subcategoryIndex = 0; subcategoryIndex < category.subcategories.length; subcategoryIndex++) {
+                        const subcategory = category.subcategories[subcategoryIndex];
+                        const itemIndex = subcategory.items.findIndex(item => item._id === itemId);
+                        
+                        if (itemIndex !== -1) {
+                            // Found the item, update it
+                            const updatedMenuItems = [...prev];
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...subcategory,
+                                items: [...subcategory.items]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex].items[itemIndex] = updatedItem;
+                            return updatedMenuItems;
+                        }
+                    }
+                }
+                return prev; // Item not found
+            });
+            
+            toast.success('Menu item updated successfully');
         } catch (error) {
-            setError('Error updating category');
-            toast.error('Failed to update category');
+            setError('Error updating menu item');
+            toast.error('Failed to update menu item');
         }
     };
 
-    // Delete category
-    const deleteCategory = async (categoryId) => {
+    // Delete a menu item
+    const deleteMenuItem = async (itemId) => {
         try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}`);
-            fetchMenu();
+            await axios.delete(`${API_URL}/api/menu/${itemId}`);
+            
+            setMenuItems(prev => {
+                // Find the item in the structured data
+                for (let categoryIndex = 0; categoryIndex < prev.length; categoryIndex++) {
+                    const category = prev[categoryIndex];
+                    for (let subcategoryIndex = 0; subcategoryIndex < category.subcategories.length; subcategoryIndex++) {
+                        const subcategory = category.subcategories[subcategoryIndex];
+                        const itemIndex = subcategory.items.findIndex(item => item._id === itemId);
+                        
+                        if (itemIndex !== -1) {
+                            // Found the item, remove it
+                            const updatedMenuItems = [...prev];
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...subcategory,
+                                items: subcategory.items.filter((_, index) => index !== itemIndex)
+                            };
+                            
+                            // If subcategory is now empty, remove it
+                            if (updatedMenuItems[categoryIndex].subcategories[subcategoryIndex].items.length === 0) {
+                                updatedMenuItems[categoryIndex].subcategories = updatedMenuItems[categoryIndex].subcategories.filter((_, index) => index !== subcategoryIndex);
+                            }
+                            
+                            // If category is now empty, remove it
+                            if (updatedMenuItems[categoryIndex].subcategories.length === 0) {
+                                return updatedMenuItems.filter((_, index) => index !== categoryIndex);
+                            }
+                            
+                            return updatedMenuItems;
+                        }
+                    }
+                }
+                return prev; // Item not found
+            });
+            
+            toast.success('Menu item deleted successfully');
+        } catch (error) {
+            setError('Error deleting menu item');
+            toast.error('Failed to delete menu item');
+        }
+    };
+
+    // Add multiple menu items in bulk
+    const bulkAddMenuItems = async (itemsData) => {
+        try {
+            // Use the new bulk endpoint instead of multiple individual calls
+            const response = await axios.post(`${API_URL}/api/menu/bulk`, {
+                items: itemsData
+            });
+            
+            const newItems = response.data;
+            
+            setMenuItems(prev => {
+                const updatedMenuItems = [...prev];
+                
+                newItems.forEach(newItem => {
+                    // Find if category exists
+                    const categoryIndex = updatedMenuItems.findIndex(cat => cat.category === newItem.category);
+                    
+                    if (categoryIndex !== -1) {
+                        // Category exists, find if subcategory exists
+                        const category = updatedMenuItems[categoryIndex];
+                        const subcategoryIndex = category.subcategories.findIndex(sub => sub.subcategory === newItem.subcategory);
+                        
+                        if (subcategoryIndex !== -1) {
+                            // Subcategory exists, add item to existing subcategory
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories]
+                            };
+                            updatedMenuItems[categoryIndex].subcategories[subcategoryIndex] = {
+                                ...category.subcategories[subcategoryIndex],
+                                items: [...category.subcategories[subcategoryIndex].items, newItem]
+                            };
+                        } else {
+                            // Subcategory doesn't exist, create new subcategory
+                            updatedMenuItems[categoryIndex] = {
+                                ...category,
+                                subcategories: [...category.subcategories, {
+                                    subcategory: newItem.subcategory,
+                                    items: [newItem]
+                                }]
+                            };
+                        }
+                    } else {
+                        // Category doesn't exist, create new category with subcategory
+                        updatedMenuItems.push({
+                            category: newItem.category,
+                            subcategories: [{
+                                subcategory: newItem.subcategory,
+                                items: [newItem]
+                            }]
+                        });
+                    }
+                });
+                
+                return updatedMenuItems;
+            });
+            
+            toast.success(`Successfully added ${newItems.length} menu items`);
+        } catch (error) {
+            setError('Error adding menu items in bulk');
+            toast.error('Failed to add menu items in bulk');
+            throw error;
+        }
+    };
+
+    // Delete multiple menu items in bulk
+    const bulkDeleteMenuItems = async (itemIds) => {
+        try {
+            const response = await axios.delete(`${API_URL}/api/menu/bulk`, {
+                data: { itemIds }
+            });
+            
+            const { deletedCount } = response.data;
+            
+            setMenuItems(prev => {
+                const updatedMenuItems = [...prev];
+                
+                // Remove deleted items from the state
+                updatedMenuItems.forEach(category => {
+                    category.subcategories.forEach(subcategory => {
+                        subcategory.items = subcategory.items.filter(item => !itemIds.includes(item._id));
+                    });
+                });
+                
+                // Remove empty subcategories and categories
+                const cleanedMenuItems = updatedMenuItems.map(category => ({
+                    ...category,
+                    subcategories: category.subcategories.filter(sub => sub.items.length > 0)
+                })).filter(category => category.subcategories.length > 0);
+                
+                return cleanedMenuItems;
+            });
+            
+            toast.success(`Successfully deleted ${deletedCount} menu items`);
+        } catch (error) {
+            setError('Error deleting menu items in bulk');
+            toast.error('Failed to delete menu items in bulk');
+            throw error;
+        }
+    };
+
+    // Helpers to get unique categories and subcategories
+    const getCategories = () => {
+        return menuItems.map(category => category.category);
+    };
+
+    const getSubcategories = (category) => {
+        const categoryObj = menuItems.find(cat => cat.category === category);
+        return categoryObj ? categoryObj.subcategories.map(sub => sub.subcategory) : [];
+    };
+
+    // Rename a category
+    const renameCategory = async (oldCategory, newCategory) => {
+        try {
+            await axios.put(`${API_URL}/api/menu/category/rename`, { oldCategory, newCategory });
+            await fetchMenu();
+            toast.success('Category renamed successfully');
+        } catch (error) {
+            setError('Error renaming category');
+            toast.error('Failed to rename category');
+            throw error;
+        }
+    };
+
+    // Rename a subcategory
+    const renameSubcategory = async (category, oldSubcategory, newSubcategory) => {
+        try {
+            await axios.put(`${API_URL}/api/menu/subcategory/rename`, { category, oldSubcategory, newSubcategory });
+            await fetchMenu();
+            toast.success('Subcategory renamed successfully');
+        } catch (error) {
+            setError('Error renaming subcategory');
+            toast.error('Failed to rename subcategory');
+            throw error;
+        }
+    };
+
+    // Delete all items in a category
+    const deleteCategory = async (category) => {
+        try {
+            const categoryObj = menuItems.find(cat => cat.category === category);
+            if (!categoryObj) return;
+            const itemIds = categoryObj.subcategories.flatMap(sub => sub.items.map(item => item._id));
+            if (itemIds.length === 0) return;
+            await bulkDeleteMenuItems(itemIds);
             toast.success('Category deleted successfully');
         } catch (error) {
             setError('Error deleting category');
             toast.error('Failed to delete category');
+            throw error;
         }
-    };
-
-    // Add new subcategory
-    const addSubcategory = async (categoryId, name) => {
-        if (!categoryId) {
-            setError('Category ID is required');
-            return;
-        }
-        try {
-            const newSubcategory = {
-                name: name,
-                items: []
-            };
-            await axios.post(`${API_URL}/api/menu/${categoryId}/subcategories`, newSubcategory);
-            fetchMenu();
-            toast.success('Subcategory added successfully');
-        } catch (error) {
-            setError('Error adding subcategory');
-            toast.error('Failed to add subcategory');
-        }
-    };
-
-    // Update subcategory
-    const updateSubcategory = async (categoryId, subcategoryId, newName) => {
-        if (!categoryId || !subcategoryId) {
-            setError('Category ID and Subcategory ID are required');
-            return;
-        }
-        try {
-            await axios.put(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`, { name: newName });
-            fetchMenu();
-            toast.success('Subcategory updated successfully');
-        } catch (error) {
-            setError('Error updating subcategory');
-            toast.error('Failed to update subcategory');
-        }
-    };
-
-    // Delete subcategory
-    const deleteSubcategory = async (categoryId, subcategoryId) => {
-        if (!categoryId || !subcategoryId) {
-            setError('Category ID and Subcategory ID are required');
-            return;
-        }
-        try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}`);
-            fetchMenu();
-            toast.success('Subcategory deleted successfully');
-        } catch (error) {
-            setError('Error deleting subcategory');
-            toast.error('Failed to delete subcategory');
-        }
-    };
-
-    // Add new item to subcategory
-    const addItem = async (categoryId, subcategoryId, itemData) => {
-        try {
-            const response = await axios.post(
-                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
-                itemData
-            );
-
-            // Update local state after successful addition
-            setCategories(prevCategories =>
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: [...subcategory.items, response.data]
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-
-            // Update selectedSubcategory if it's the one we're adding to
-            if (selectedSubcategory?._id === subcategoryId) {
-                setSelectedSubcategory(prev => ({
-                    ...prev,
-                    items: [...prev.items, response.data]
-                }));
-            }
-
-            toast.success('Item added successfully');
-        } catch (error) {
-            setError('Error adding item');
-            toast.error('Failed to add item');
-        }
-    };
-    const addItemsBulk = async (categoryId, subcategoryId, itemNames) => {
-        if (!Array.isArray(itemNames) || itemNames.length === 0) {
-            setError('No item names provided');
-            toast.error('No item names provided');
-            return;
-        }
-        try {
-            // Prepare item objects
-            const items = itemNames.map(name => ({
-                name,
-                basePrice: "30",
-                packagingCharges : '0',
-                totalPrice: "30",
-                isVeg: true
-            }));
-            const response = await axios.post(
-                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/bulk`,
-                { items }
-            );
-
-            // Update local state after successful addition
-            setCategories(prevCategories =>
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: [...subcategory.items, ...response.data.items]
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-            toast.success('Items added successfully');
-        } catch (error) {
-            setError('Error adding items in bulk');
-            toast.error('Failed to add items in bulk');
-        }
-    };
-
-    // Bulk delete items
-    const deleteItemsBulk = async (categoryId, subcategoryId, itemIds) => {
-        if (!Array.isArray(itemIds) || itemIds.length === 0) {
-            setError('No item IDs provided');
-            toast.error('No item IDs provided');
-            return;
-        }
-        try {
-            await axios.delete(
-                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items`,
-                { data: { itemIds } }
-            );
-            // Update local state after successful deletion
-            setCategories(prevCategories =>
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: subcategory.items.filter(item => !itemIds.includes(item._id))
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-            toast.success('Items deleted successfully');
-        } catch (error) {
-            setError('Error deleting items in bulk');
-            toast.error('Failed to delete items in bulk');
-        }
-
-    };
-
-
-    // Update item
-    const updateItem = async (categoryId, subcategoryId, itemId, itemData) => {
-        try {
-            const response = await axios.put(
-                `${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`,
-                itemData
-            );
-
-            // Update the categories state with the edited item
-            const updatedCategories = categories.map(category => {
-                if (category._id === categoryId) {
-                    return {
-                        ...category,
-                        subcategories: category.subcategories.map(subcategory => {
-                            if (subcategory._id === subcategoryId) {
-                                return {
-                                    ...subcategory,
-                                    items: subcategory.items.map(item =>
-                                        item._id === itemId ? response.data : item
-                                    )
-                                };
-                            }
-                            return subcategory;
-                        })
-                    };
-                }
-                return category;
-            });
-
-            setCategories(updatedCategories);
-
-            // Update selectedSubcategory if needed
-            if (selectedSubcategory?._id === subcategoryId) {
-                const updatedSubcategory = updatedCategories
-                    .find(cat => cat._id === categoryId)
-                    ?.subcategories.find(sub => sub._id === subcategoryId);
-
-                if (updatedSubcategory) {
-                    setSelectedSubcategory({ ...updatedSubcategory });
-                }
-            }
-
-            toast.success('Item updated successfully');
-        } catch (error) {
-            setError('Error updating item');
-            toast.error('Failed to update item');
-        }
-    };
-
-    // Delete item
-    const deleteItem = async (categoryId, subcategoryId, itemId) => {
-        if (!categoryId || !subcategoryId || !itemId) {
-            setError('Category ID, Subcategory ID, and Item ID are required');
-            return;
-        }
-        try {
-            await axios.delete(`${API_URL}/api/menu/${categoryId}/subcategories/${subcategoryId}/items/${itemId}`);
-
-            // Update local state after successful deletion
-            setCategories(prevCategories =>
-                prevCategories.map(category => {
-                    if (category._id === categoryId) {
-                        return {
-                            ...category,
-                            subcategories: category.subcategories.map(subcategory => {
-                                if (subcategory._id === subcategoryId) {
-                                    return {
-                                        ...subcategory,
-                                        items: subcategory.items.filter(item => item._id !== itemId)
-                                    };
-                                }
-                                return subcategory;
-                            })
-                        };
-                    }
-                    return category;
-                })
-            );
-
-            // Update selectedSubcategory if it contains the deleted item
-            if (selectedSubcategory?._id === subcategoryId) {
-                setSelectedSubcategory(prev => ({
-                    ...prev,
-                    items: prev.items.filter(item => item._id !== itemId)
-                }));
-            }
-
-            toast.success('Item deleted successfully');
-        } catch (error) {
-            setError('Error deleting item');
-            toast.error('Failed to delete item');
-        }
-    };
-
-    // Toggle category expansion
-    const toggleCategoryExpansion = (categoryId) => {
-        setCategories(categories.map(category => {
-            if (category._id === categoryId) {
-                return { ...category, isExpanded: !category.isExpanded };
-            }
-            return category;
-        }));
     };
 
     const value = {
-        categories,
+        menuItems,
         loading,
         error,
-        selectedCategory,
-        setSelectedCategory,
-        selectedSubcategory,
-        setSelectedSubcategory,
-        addCategory,
-        updateCategory,
-        deleteCategory,
-        addSubcategory,
-        updateSubcategory,
-        deleteSubcategory,
-        addItem,
-        updateItem,
-        deleteItem,
-        toggleCategoryExpansion,
         fetchMenu,
-        addItemsBulk,
-        deleteItemsBulk,
+        addMenuItem,
+        updateMenuItem,
+        deleteMenuItem,
+        getCategories,
+        getSubcategories,
+        bulkAddMenuItems,
+        bulkDeleteMenuItems,
+        renameCategory,
+        renameSubcategory,
+        deleteCategory,
     };
 
     return (

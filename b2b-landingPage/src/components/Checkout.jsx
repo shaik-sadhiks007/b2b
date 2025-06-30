@@ -94,7 +94,7 @@ const Checkout = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [orderType, setOrderType] = useState('DELIVERY');
+    const [orderType, setOrderType] = useState('delivery');
     const navigate = useNavigate();
     const { carts, clearCart } = useCart();
     const { user } = useContext(HotelContext);
@@ -136,11 +136,11 @@ const Checkout = () => {
 
                 // Set default order type based on service type
                 if (cartData?.serviceType === 'pickup') {
-                    setOrderType('PICKUP');
+                    setOrderType('pickyp');
                 } else if (cartData?.serviceType === 'delivery') {
-                    setOrderType('DELIVERY');
+                    setOrderType('delivery');
                 } else if (cartData?.serviceType === 'both') {
-                    setOrderType('DELIVERY');
+                    setOrderType('delivery');
                 }
 
                 setAddresses(addressesResponse.data);
@@ -171,7 +171,7 @@ const Checkout = () => {
 
     const handleCompletePurchase = async () => {
         // Only validate address for delivery orders
-        if (orderType === 'DELIVERY') {
+        if (orderType === 'delivery') {
             if (!selectedAddress && !showAddressForm) {
                 toast.error('Please select or add a delivery address to continue');
                 return;
@@ -215,8 +215,6 @@ const Checkout = () => {
                     itemId: item.itemId,
                     name: item.name,
                     quantity: item.quantity,
-                    basePrice: item.basePrice,
-                    packagingCharges: item.packagingCharges || 0,
                     totalPrice: item.totalPrice,
                     photos: item.photos || [],
                     isVeg: item.isVeg || false
@@ -230,7 +228,7 @@ const Checkout = () => {
             };
 
             // Only include address data for delivery orders
-            if (orderType === 'DELIVERY') {
+            if (orderType === 'delivery') {
                 if (selectedAddress) {
                     orderData.addressId = selectedAddress._id;
                 } else if (showAddressForm) {
@@ -273,15 +271,15 @@ const Checkout = () => {
     };
 
     const cartData = carts[0];
-    const isDeliveryAvailable = cartData?.serviceType === 'DELIVERY' || cartData?.serviceType === 'BOTH';
-    const isPickupAvailable = cartData?.serviceType === 'PICKUP' || cartData?.serviceType === 'BOTH';
+    const isDeliveryAvailable = cartData?.serviceType === 'delivery' || cartData?.serviceType === 'both';
+    const isPickupAvailable = cartData?.serviceType === 'pickup' || cartData?.serviceType === 'both';
 
     // If only one option is available, automatically select it
     useEffect(() => {
         if (isDeliveryAvailable && !isPickupAvailable) {
-            setOrderType('DELIVERY');
+            setOrderType('delivery');
         } else if (!isDeliveryAvailable && isPickupAvailable) {
-            setOrderType('PICKUP');
+            setOrderType('pickup');
         }
     }, [isDeliveryAvailable, isPickupAvailable]);
 
@@ -562,8 +560,8 @@ const Checkout = () => {
                                         <input
                                             type="radio"
                                             name="orderType"
-                                            value="DELIVERY"
-                                            checked={orderType === 'DELIVERY'}
+                                            value="delivery"
+                                            checked={orderType === 'delivery'}
                                             onChange={(e) => setOrderType(e.target.value)}
                                             className="h-5 w-5 text-blue-600"
                                         />
@@ -578,8 +576,8 @@ const Checkout = () => {
                                         <input
                                             type="radio"
                                             name="orderType"
-                                            value="PICKUP"
-                                            checked={orderType === 'PICKUP'}
+                                            value="pickup"
+                                            checked={orderType === 'pickup'}
                                             onChange={(e) => setOrderType(e.target.value)}
                                             className="h-5 w-5 text-blue-600"
                                         />

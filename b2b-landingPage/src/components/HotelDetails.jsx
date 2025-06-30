@@ -9,6 +9,7 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { HotelContext } from '../contextApi/HotelContextProvider';
 import { useRestaurantDetails } from '../hooks/useRestaurantDetails';
+import HotelMenu from './HotelMenu';
 
 const MenuItemSkeleton = () => (
     <div className="flex gap-4 p-4 border rounded-lg">
@@ -86,6 +87,7 @@ const HotelDetails = () => {
     const [showRestaurantModal, setShowRestaurantModal] = useState(false);
     const [pendingAddItem, setPendingAddItem] = useState(null);
     const { user } = useContext(HotelContext);
+    const [expandedSubcategories, setExpandedSubcategories] = useState({});
 
     const { restaurant, menu, isLoading, error } = useRestaurantDetails(id);
 
@@ -108,14 +110,6 @@ const HotelDetails = () => {
         }
     }, [fetchCart, user]);
 
-    const toggleCategory = (categoryId) => {
-        setExpandedCategories(prevCategories => {
-            if (prevCategories.includes(categoryId)) {
-                return prevCategories.filter(id => id !== categoryId);
-            }
-            return [...prevCategories, categoryId];
-        });
-    };
 
     const handleAddToCart = async (item) => {
         if (!user) {
@@ -147,11 +141,9 @@ const HotelDetails = () => {
             itemId: item._id,
             name: item.name,
             quantity: 1,
-            basePrice: Number(item.basePrice),
-            packagingCharges: Number(item.packagingCharges),
             totalPrice: Number(item.totalPrice),
-            isVeg: item.isVeg,
-            photos: item.photos || []
+            foodType: item.foodType,
+            photos: [item.photos] || []
         }];
 
         const result = await addToCart(
@@ -189,10 +181,8 @@ const HotelDetails = () => {
                         itemId: item._id,
                         name: item.name,
                         quantity: 1,
-                        basePrice: Number(item.basePrice),
-                        packagingCharges: Number(item.packagingCharges),
                         totalPrice: Number(item.totalPrice),
-                        isVeg: item.isVeg,
+                        foodType: item.foodType,
                         photos: item.photos || []
                     }];
 
@@ -289,99 +279,13 @@ const HotelDetails = () => {
                         </div>
 
                         <div className="mt-8">
-                            <h2 className="text-2xl font-bold mb-4">Menu</h2>
-                            {menu && menu.length > 0 ? (
-                                <div className="space-y-4">
-                                    {menu.map(category => (
-                                        <div key={category._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                                            <button
-                                                onClick={() => toggleCategory(category._id)}
-                                                className="w-full p-4 flex justify-between items-center hover:bg-gray-50 cursor-pointer transition-colors"
-                                            >
-                                                <h3 className="text-xl font-semibold">{category.name}</h3>
-                                                <span className="text-xl font-bold">
-                                                    {expandedCategories.includes(category._id) ? '−' : '+'}
-                                                </span>
-                                            </button>
-                                            {expandedCategories.includes(category._id) && (
-                                                <div className="p-4 border-t">
-                                                    {category.subcategories.map(subcategory => (
-                                                        <div key={subcategory._id} className="mb-6">
-                                                            <h4 className="text-lg font-medium mb-3">{subcategory.name}</h4>
-                                                            <div className="space-y-4">
-                                                                {subcategory.items.map(item => (
-                                                                    <div key={item._id} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg">
-                                                                        <div className="flex gap-4 flex-1">
-                                                                            <div className="flex-1">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <span className={`w-3 h-3 border ${item.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center`}>
-                                                                                        <span className={`w-1.5 h-1.5 ${item.isVeg ? 'bg-green-600' : 'bg-red-600'} rounded-full`}></span>
-                                                                                    </span>
-                                                                                    <h5 className="font-medium">{item.name}</h5>
-                                                                                    {!item.inStock && (
-                                                                                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                                                                                            Out of Stock
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                                {item?.description && (
-                                                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                                                                                        {item.description}
-                                                                                    </p>
-                                                                                )}
-                                                                                <div className="mt-2">
-                                                                                    <span className="font-medium">₹{item.totalPrice}</span>
-                                                                                    <span className="text-xs text-gray-500 ml-2">
-                                                                                        (₹{item.basePrice} + ₹{item.packagingCharges} packaging)
-                                                                                    </span>
-                                                                                </div>
-                                                                                {item.customisable && (
-                                                                                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                                                                        Customizable
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative flex-shrink-0">
-                                                                                {item?.photos?.length > 0 ? (
-                                                                                    <img
-                                                                                        src={item.photos[0]}
-                                                                                        alt={item.name}
-                                                                                        className={`w-full h-full object-cover ${(!restaurant?.online || !item.inStock) ? 'grayscale' : ''}`}
-                                                                                    />
-                                                                                ) : (
-                                                                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
-                                                                                        <span className="text-white text-md font-bold text-center px-2">{item.name}</span>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => handleAddToCart(item)}
-                                                                            disabled={!restaurant?.online || !item.inStock}
-                                                                            className={`w-full md:w-[160px] md:self-center px-4 py-2 ${!restaurant?.online || !item.inStock
-                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                                                    : isItemInCart(item._id)
-                                                                                        ? 'bg-green-600 text-white'
-                                                                                        : 'border border-green-600 text-green-600 hover:bg-green-700 hover:text-white'
-                                                                                } rounded transition-colors`}
-                                                                        >
-                                                                            {!restaurant?.online ? 'CLOSED' : !item.inStock ? 'OUT OF STOCK' : isItemInCart(item._id) ? 'GO TO CART' : 'ADD'}
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    No menu items available
-                                </div>
-                            )}
+                            <h2 className="text-2xl text-center mb-4">Menu</h2>
+                            <HotelMenu
+                                menu={menu}
+                                onAddToCart={handleAddToCart}
+                                isItemInCart={isItemInCart}
+                                restaurantOnline={restaurant?.online}
+                            />
                         </div>
                     </div>
                 </div>

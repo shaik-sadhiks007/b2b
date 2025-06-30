@@ -26,6 +26,7 @@ import Helpbutton from './components/Helpbutton';
 import Whatsappbutton from './components/Whatsappbutton';
 import Summary from './components/Summary'
 import Features from './components/Features'
+import MenuEditor from './pages/MenuEditor'
 function App() {
   return (
     <MobileMenuProvider>
@@ -67,7 +68,7 @@ function App() {
               } />
               <Route path='/menu' element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <MenuEditor />
                 </PrivateRoute>
               } />
               <Route path='/add-restaurant' element={
@@ -77,7 +78,7 @@ function App() {
               } />
               <Route path='/dashboard' element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <MenuEditor />
                 </PrivateRoute>
               } />
               <Route path='/instore-orders' element={

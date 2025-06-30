@@ -1,8 +1,8 @@
 const Order = require("../models/orderModel");
 const User = require("../models/userModel");
-const MenuOfRestaurant = require("../models/Menu");
+const Menu = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
-const Restaurant = require("../models/Restaurant");
+const Restaurant = require("../models/businessModel");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
 const moment = require('moment-timezone');
 
@@ -19,74 +19,36 @@ exports.placeOrder = async (req, res) => {
 
         // Check if all items are in stock
         for (const item of items) {
-            // Find the menu item within categories and subcategories
-            const menu = await MenuOfRestaurant.find({ restaurantId });
-            if (!menu) {
-                return res.status(404).json({ error: "Menu not found for this restaurant" });
-            }
+            // Direct query using businessId and _id
+            const menuItem = await Menu.findOne({ 
+                _id: item.itemId, 
+                businessId: restaurantId 
+            });
 
-            let foundItem = null;
-            let foundMenuDoc = null;
-            let foundSubcategory = null;
-
-            // Search through all menus
-            for (const menuItem of menu) {
-                // Search through subcategories of each menu
-                for (const subcategory of menuItem.subcategories) {
-                    const menuItemFound = subcategory.items.find(i => i._id.toString() === item.itemId);
-                    if (menuItemFound) {
-                        foundItem = menuItemFound;
-                        foundMenuDoc = menuItem;
-                        foundSubcategory = subcategory;
-                        break;
-                    }
-                }
-                if (foundItem) break; // Break out of menu loop if item is found
-            }
-
-            if (!foundItem) {
+            if (!menuItem) {
                 return res.status(404).json({ error: `Item ${item.name} not found` });
             }
-            if (!foundItem.inStock) {
+            if (!menuItem.inStock) {
                 return res.status(400).json({ error: `${item.name} is out of stock` });
             }
-            if (foundItem.quantity < item.quantity) {
-                return res.status(400).json({ error: `Only ${foundItem.quantity} quantity available for ${item.name}` });
+            if (menuItem.quantity < item.quantity) {
+                return res.status(400).json({ error: `Only ${menuItem.quantity} quantity available for ${item.name}` });
             }
 
-            // Push details for later quantity update
             totalOrders.push({
-                menuDoc: foundMenuDoc,
-                subcategory: foundSubcategory,
-                item: foundItem,
+                menuItem,
                 orderQuantity: item.quantity
             });
         }
 
-        // Reduce quantity for each ordered item
+        // Update quantities for ordered items
         for (const order of totalOrders) {
-            // Find the menu document for this restaurant
-            const menuDocs = await MenuOfRestaurant.find({ restaurantId });
-            for (const menuDoc of menuDocs) {
-                let updated = false;
-                for (const subcategory of menuDoc.subcategories) {
-                    const menuItem = subcategory.items.find(i => i._id.toString() === order.item._id.toString());
-                    if (menuItem) {
-                        // Reduce the quantity
-                        menuItem.quantity = Math.max(0, menuItem.quantity - order.orderQuantity);
-                        // Optionally, set inStock to false if quantity is 0
-                        if (menuItem.quantity === 0) {
-                            menuItem.inStock = false;
-                        }
-                        updated = true;
-                        break;
-                    }
-                }
-                if (updated) {
-                    await menuDoc.save();
-                    break; // Stop after updating the correct menuDoc
-                }
+            const { menuItem, orderQuantity } = order;
+            menuItem.quantity = Math.max(0, menuItem.quantity - orderQuantity);
+            if (menuItem.quantity === 0) {
+                menuItem.inStock = false;
             }
+            await menuItem.save();
         }
 
         let customerAddressId;
@@ -94,7 +56,7 @@ exports.placeOrder = async (req, res) => {
         let customerPhone;
 
         // Handle address logic based on orderType
-        if (orderType === 'DELIVERY') {
+        if (orderType === 'delivery') {
             // For delivery orders, address is required
             if (!addressId && !customerAddressData) {
                 return res.status(400).json({ error: "Delivery address is required for delivery orders" });
@@ -131,7 +93,7 @@ exports.placeOrder = async (req, res) => {
                 customerName = newAddress.fullName;
                 customerPhone = newAddress.phone;
             }
-        } else if (orderType === 'PICKUP') {
+        } else if (orderType === 'pickup') {
             // For pickup orders, address is optional
             if (addressId) {
                 const address = await CustomerAddress.findById(addressId);
@@ -159,7 +121,7 @@ exports.placeOrder = async (req, res) => {
                 customerPhone = newAddress.phone;
             }
         } else {
-            return res.status(400).json({ error: "Invalid order type. Must be either 'DELIVERY' or 'PICKUP'" });
+            return res.status(400).json({ error: "Invalid order type. Must be either 'delivery' or 'pickup'" });
         }
 
         // Validate restaurant exists
@@ -175,11 +137,9 @@ exports.placeOrder = async (req, res) => {
                 itemId: item.itemId,
                 name: item.name,
                 quantity: item.quantity,
-                basePrice: item.basePrice,
-                packagingCharges: item.packagingCharges || 0,
                 totalPrice: item.totalPrice,
                 photos: item.photos || [],
-                isVeg: item.isVeg || false
+                foodType: item.foodType || 'veg'
             })),
             totalAmount,
             paymentMethod: paymentMethod || "COD",
@@ -187,7 +147,7 @@ exports.placeOrder = async (req, res) => {
             status: "ORDER_PLACED",
             restaurantId,
             restaurantName,
-            orderType: orderType || "DELIVERY",
+            orderType: orderType || "delivery",
             customerAddress: customerAddressId,
             customerName,
             customerPhone
@@ -325,7 +285,7 @@ exports.instoreOrder = async (req, res) => {
                 quantity: item.quantity,
                 totalPrice: item.totalPrice,
                 photos: item.photos || [],
-                isVeg: item.isVeg
+                foodType: item.foodType
             })),
             totalAmount,
             paymentMethod,
@@ -333,7 +293,7 @@ exports.instoreOrder = async (req, res) => {
             status: "INSTORE_ORDER",
             restaurantId,
             restaurantName,
-            orderType: "PICKUP",
+            orderType: "pickup",
             deliveryTime: 0,
             customerName,
             customerPhone

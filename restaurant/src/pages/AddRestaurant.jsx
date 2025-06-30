@@ -85,16 +85,16 @@ const AddRestaurant = () => {
         },
         category: '',
         operatingHours: {
-            defaultOpenTime: '9:00',
+            defaultOpenTime: '09:00',
             defaultCloseTime: '22:00',
             timeSlots: {
-                monday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                tuesday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                wednesday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                thursday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                friday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                saturday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                sunday: { isOpen: false, openTime: '9:00', closeTime: '22:00' }
+                monday: { isOpen: false, openTime: '', closeTime: '' },
+                tuesday: { isOpen: false, openTime: '', closeTime: '' },
+                wednesday: { isOpen: false, openTime: '', closeTime: '' },
+                thursday: { isOpen: false, openTime: '', closeTime: '' },
+                friday: { isOpen: false, openTime: '', closeTime: '' },
+                saturday: { isOpen: false, openTime: '', closeTime: '' },
+                sunday: { isOpen: false, openTime: '', closeTime: '' }
             }
         },
         images: {
@@ -393,7 +393,7 @@ const AddRestaurant = () => {
                             // Step 1: Basic Information
                             formDataToSend.append('formData', JSON.stringify({
                                 restaurantName: formData.restaurantName,
-                                serviceType: formData.serviceType,
+                                serviceType: formData.serviceType.toLowerCase(),
                                 ownerName: formData.ownerName,
                                 description : formData.description,
                                 sameAsOwnerPhone: formData.sameAsOwnerPhone || false,
@@ -417,16 +417,16 @@ const AddRestaurant = () => {
                                     lng: null
                                 },
                                 operatingHours: formData.operatingHours || {
-                                    defaultOpenTime: '9:00',
+                                    defaultOpenTime: '09:00',
                                     defaultCloseTime: '22:00',
                                     timeSlots: {
-                                        monday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        tuesday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        wednesday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        thursday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        friday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        saturday: { isOpen: false, openTime: '9:00', closeTime: '22:00' },
-                                        sunday: { isOpen: false, openTime: '9:00', closeTime: '22:00' }
+                                        monday: { isOpen: false, openTime: '', closeTime: '' },
+                                        tuesday: { isOpen: false, openTime: '', closeTime: '' },
+                                        wednesday: { isOpen: false, openTime: '', closeTime: '' },
+                                        thursday: { isOpen: false, openTime: '', closeTime: '' },
+                                        friday: { isOpen: false, openTime: '', closeTime: '' },
+                                        saturday: { isOpen: false, openTime: '', closeTime: '' },
+                                        sunday: { isOpen: false, openTime: '', closeTime: '' }
                                     }
                                 }
                             }));
@@ -450,13 +450,13 @@ const AddRestaurant = () => {
                                     defaultOpenTime: formData.operatingHours?.defaultOpenTime || '09:00',
                                     defaultCloseTime: formData.operatingHours?.defaultCloseTime || '22:00',
                                     timeSlots: {
-                                        monday: formData.operatingHours?.timeSlots?.monday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        tuesday: formData.operatingHours?.timeSlots?.tuesday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        wednesday: formData.operatingHours?.timeSlots?.wednesday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        thursday: formData.operatingHours?.timeSlots?.thursday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        friday: formData.operatingHours?.timeSlots?.friday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        saturday: formData.operatingHours?.timeSlots?.saturday || { isOpen: false, openTime: '09:00', closeTime: '22:00' },
-                                        sunday: formData.operatingHours?.timeSlots?.sunday || { isOpen: false, openTime: '09:00', closeTime: '22:00' }
+                                        monday: formData.operatingHours?.timeSlots?.monday || { isOpen: false, openTime: '', closeTime: '' },
+                                        tuesday: formData.operatingHours?.timeSlots?.tuesday || { isOpen: false, openTime: '', closeTime: '' },
+                                        wednesday: formData.operatingHours?.timeSlots?.wednesday || { isOpen: false, openTime: '', closeTime: '' },
+                                        thursday: formData.operatingHours?.timeSlots?.thursday || { isOpen: false, openTime: '', closeTime: '' },
+                                        friday: formData.operatingHours?.timeSlots?.friday || { isOpen: false, openTime: '', closeTime: '' },
+                                        saturday: formData.operatingHours?.timeSlots?.saturday || { isOpen: false, openTime: '', closeTime: '' },
+                                        sunday: formData.operatingHours?.timeSlots?.sunday || { isOpen: false, openTime: '', closeTime: '' }
                                     }
                                 }
                             }));

@@ -1,4 +1,4 @@
-const Restaurant = require('../models/Restaurant');
+const Restaurant = require('../models/businessModel');
 
 const restaurantMiddleware = async (req, res, next) => {
     try {

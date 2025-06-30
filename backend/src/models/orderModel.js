@@ -17,7 +17,7 @@ const orderSchema = new mongoose.Schema({
     items: [{
         itemId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "MenuOfRestaurant",
+            ref: "Menu",
             required: true
         },
         name: {
@@ -35,8 +35,8 @@ const orderSchema = new mongoose.Schema({
         photos: [{
             type: String
         }],
-        isVeg: {
-            type: Boolean,
+        foodType: {
+            type: String,
             required: true
         }
     }],
@@ -67,7 +67,7 @@ const orderSchema = new mongoose.Schema({
     },
     restaurantId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Restaurant",
+        ref: "Business",
         required: true
     },
     restaurantName: {
@@ -77,7 +77,7 @@ const orderSchema = new mongoose.Schema({
     orderType: {
         type: String,
         required: true,
-        enum: ["PICKUP", "DELIVERY"]
+        enum: ["pickup", "delivery"]
     },
     deliveryTime: {
         type: Number,

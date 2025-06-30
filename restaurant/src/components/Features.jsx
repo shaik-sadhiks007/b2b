@@ -47,6 +47,7 @@ const Features = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
+     window.scrollTo(0, 0);
     const handleResize = () => {
       const width = window.innerWidth;
       setWindowWidth(width);

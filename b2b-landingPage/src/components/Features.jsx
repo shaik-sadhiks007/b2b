@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import aboutUsImage from '../assets/aboutus.png';
 import location from '../assets/location.jpg';
@@ -46,6 +47,7 @@ const Features = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
+     window.scrollTo(0, 0);
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };

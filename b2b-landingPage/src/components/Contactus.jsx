@@ -24,7 +24,9 @@ const Contactus = () => {
                         <i className="bi bi-envelope-fill text-xl text-red-600"></i>
                         <div>
                             <h2 className="font-semibold">Email</h2>
-                            <p>support@b2binfotech.com</p>
+                            <p>
+                                <a href="mailto:info@shopatb2b.com">info@shopatb2b.com</a>
+                            </p>
                         </div>
                     </div>
                 </div>

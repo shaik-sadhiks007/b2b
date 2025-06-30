@@ -26,7 +26,8 @@ const Footer = () => {
                     <div className="col-md-4 mb-4">
                         <h6 className="text-uppercase fw-bold mb-3">Contact Us</h6>
                         <ul className="list-unstyled text-white">
-                            <li>Email: <a href="mailto:support@b2b.com">support@b2b.com</a></li>
+                            <li>Email : <a href="mailto:info@shopatb2b.com">info@shopatb2b.com</a>
+                            </li>
                             <li>Phone: <a href="tel:+1234567890">+1 (234) 567-890</a></li>
                             <li>Address: Vijayawada, India</li>
                         </ul>

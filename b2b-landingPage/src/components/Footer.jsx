@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
 import { ORIGIN_URL, RESTAURANT_URL } from '../api/api';
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 console.log('ORIGIN_URL in Footer:', ORIGIN_URL);
 
@@ -14,7 +14,7 @@ const Footer = () => {
         e.preventDefault();
         console.log('Opening window with URL:', RESTAURANT_URL);
         const targetWindow = openWindowWithToken(RESTAURANT_URL, ORIGIN_URL);
-        
+
         if (!targetWindow) {
             console.log('Failed to open window, navigating to login');
             navigate('/login');
@@ -23,7 +23,7 @@ const Footer = () => {
         }
     };
 
- 
+
 
     return (
         <footer className="bg-gray-900 text-white py-12">
@@ -41,7 +41,7 @@ const Footer = () => {
                         <ul className="space-y-2">
                             <li> <Link to="/about-us" className="text-gray-400 hover:text-white">
                                 About B2B
-                             </Link></li>
+                            </Link></li>
                             {/* <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li> */}
                             {/* <li><a href="#" className="text-gray-400 hover:text-white">FAQ</a></li> */}
                         </ul>
@@ -52,7 +52,7 @@ const Footer = () => {
                         <h3 className="text-xl font-bold mb-4">Partner With Us</h3>
                         <ul className="space-y-2">
                             <li>
-                                <a 
+                                <a
 
                                     // onClick={handleRestaurantClick}
                                     href={RESTAURANT_URL}
@@ -78,9 +78,14 @@ const Footer = () => {
                     <div>
                         <h3 className="text-xl font-bold mb-4">Contact Us</h3>
                         <ul className="space-y-2 text-gray-400">
-                            <li>Email: support@b2b.com</li>
+                            <li>
+                                <a href="mailto:info@shopatb2b.com">
+                                    Email: info@shopatb2b.com
+
+                                </a>
+                            </li>
                             <li>Phone: +1 234 567 890</li>
-                            <li>Address: 123 Business Street, City, Country</li>
+                            <li>Address: Vijayawada, Andhra Pradesh</li>
                         </ul>
                     </div>
                 </div>

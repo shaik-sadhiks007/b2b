@@ -121,6 +121,7 @@ exports.placeOrder = async (req, res) => {
                 customerPhone = newAddress.phone;
             }
         } else {
+            console.error('[orderController.js][placeOrder-invalidOrderType]', { orderType });
             return res.status(400).json({ error: "Invalid order type. Must be either 'delivery' or 'pickup'" });
         }
 
@@ -162,12 +163,12 @@ exports.placeOrder = async (req, res) => {
                 await sendOrderConfirmationEmail(user.email, newOrder);
             }
         } catch (emailError) {
-            console.error('Error sending confirmation email:', emailError);
+            console.error('[orderController.js][placeOrder-email]', emailError);
         }
 
         res.status(201).json({ message: "Order placed successfully", order: newOrder });
     } catch (error) {
-        console.error('Error placing order:', error);
+        console.error('[orderController.js][placeOrder]', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };
@@ -208,6 +209,7 @@ exports.orderHistory = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('[orderController.js][orderHistory]', error);
         res.status(500).json({ error: "Failed to fetch order history" });
     }
 };
@@ -221,6 +223,7 @@ exports.orderHistoryByUser = async (req, res) => {
 
         res.status(200).json(orders);
     } catch (error) {
+        console.error('[orderController.js][orderHistoryByUser]', error);
         res.status(500).json({ error: "Failed to fetch order history", message: error.message });
     }
 };
@@ -262,6 +265,7 @@ exports.updateOrderStatus = async (req, res) => {
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
+        console.error('[orderController.js][updateOrderStatus]', error);
         res.status(500).json({ error: "Failed to update order status" });
     }
 };
@@ -302,7 +306,7 @@ exports.instoreOrder = async (req, res) => {
         await newOrder.save();
         res.status(201).json({ message: "In-store order placed successfully", order: newOrder });
     } catch (error) {
-        console.error('Error placing instore order:', error);
+        console.error('[orderController.js][instoreOrder]', error);
         res.status(500).json({ error: "Failed to place instore order" });
     }
 };
@@ -317,6 +321,7 @@ exports.orderSuccess = async (req, res) => {
 
         res.status(200).json({ message: "Order placed successfully", order });
     } catch (error) {
+        console.error('[orderController.js][orderSuccess]', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };
@@ -343,6 +348,7 @@ exports.postRestaurantOrderStatus = async (req, res) => {
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
+        console.error('[orderController.js][postRestaurantOrderStatus]', error);
         res.status(500).json({ error: "Failed to update order status", message: error.message });
     }
 };
@@ -377,6 +383,7 @@ exports.getRestaurantOrderStatus = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('[orderController.js][getRestaurantOrderStatus]', error);
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
 };
@@ -401,6 +408,7 @@ exports.getRestaurantOrderCounts = async (req, res) => {
 
         res.status(200).json(countsObject);
     } catch (error) {
+        console.error('[orderController.js][getRestaurantOrderCounts]', error);
         res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
     }
 };
@@ -434,6 +442,7 @@ exports.getAcceptedItemsSummary = async (req, res) => {
             totalItems: totalItemsToPack
         });
     } catch (error) {
+        console.error('[orderController.js][getAcceptedItemsSummary]', error);
         res.status(500).json({ error: "Failed to fetch accepted items summary" });
     }
 };
@@ -452,6 +461,7 @@ exports.getOrderDetails = async (req, res) => {
 
         res.status(200).json(order);
     } catch (error) {
+        console.error('[orderController.js][getOrderDetails]', error);
         res.status(500).json({ error: "Failed to fetch order details", message: error.message });
     }
 };
@@ -494,6 +504,7 @@ exports.getPublicOrderStatus = async (req, res) => {
 
         res.status(200).json(publicOrderInfo);
     } catch (error) {
+        console.error('[orderController.js][getPublicOrderStatus]', error);
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
 };
@@ -621,7 +632,7 @@ exports.getOrdersSummary = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching order summary:', error);
+        console.error('[orderController.js][getOrdersSummary]', error);
         res.status(500).json({ error: 'Failed to fetch order summary', message: error.message });
     }
 };

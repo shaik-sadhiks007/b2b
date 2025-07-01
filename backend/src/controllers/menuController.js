@@ -32,7 +32,8 @@ const getAllMenuItems = async (req, res) => {
         }));
         res.json(result);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('[menuController.js][getAllMenuItems]', error);
+        res.status(500).json({ message: 'Error fetching menu items', error: error.message });
     }
 };
 
@@ -67,6 +68,7 @@ const getAllMenuItemsOfPublic = async (req, res) => {
         }));
         res.json(result);
     } catch (error) {
+        console.error('[menuController.js][getAllMenuItemsOfPublic]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -81,7 +83,7 @@ const getAllMenuItemsInstore = async (req, res) => {
         const menuItems = await Menu.find({ businessId });
         res.json({ menu: menuItems });
     } catch (error) {
-        console.error('Error fetching menu items:', error);
+        console.error('[menuController.js][getAllMenuItemsInstore]', error);
         res.status(500).json({ message: 'Error fetching menu items', error: error.message });
     }
 
@@ -95,6 +97,7 @@ const getMenuItem = async (req, res) => {
         if (!item) return res.status(404).json({ message: 'Menu item not found' });
         res.json(item);
     } catch (error) {
+        console.error('[menuController.js][getMenuItem]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -128,7 +131,7 @@ const createMenuItem = async (req, res) => {
         const savedItem = await newItem.save();
         res.status(201).json(savedItem);
     } catch (error) {
-        console.error('Error creating menu item:', error);
+        console.error('[menuController.js][createMenuItem]', error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -170,7 +173,7 @@ const bulkCreateMenuItems = async (req, res) => {
         const savedItems = await Menu.insertMany(menuItemsToCreate);
         res.status(201).json(savedItems);
     } catch (error) {
-        console.error('Bulk create error:', error);
+        console.error('[menuController.js][bulkCreateMenuItems]', error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -197,7 +200,7 @@ const updateMenuItem = async (req, res) => {
         if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
         res.json(updatedItem);
     } catch (error) {
-        console.error('Error updating menu item:', error);
+        console.error('[menuController.js][updateMenuItem]', error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -209,6 +212,7 @@ const deleteMenuItem = async (req, res) => {
         if (!deleted) return res.status(404).json({ message: 'Menu item not found' });
         res.json({ message: 'Menu item deleted' });
     } catch (error) {
+        console.error('[menuController.js][deleteMenuItem]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -236,7 +240,7 @@ const bulkDeleteMenuItems = async (req, res) => {
             deletedCount: result.deletedCount
         });
     } catch (error) {
-        console.error('Bulk delete error:', error);
+        console.error('[menuController.js][bulkDeleteMenuItems]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -254,6 +258,7 @@ const renameCategory = async (req, res) => {
         );
         res.json({ message: `Category renamed from '${oldCategory}' to '${newCategory}'`, modifiedCount: result.modifiedCount });
     } catch (error) {
+        console.error('[menuController.js][renameCategory]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -271,6 +276,7 @@ const renameSubcategory = async (req, res) => {
         );
         res.json({ message: `Subcategory renamed from '${oldSubcategory}' to '${newSubcategory}' in category '${category}'`, modifiedCount: result.modifiedCount });
     } catch (error) {
+        console.error('[menuController.js][renameSubcategory]', error);
         res.status(500).json({ message: error.message });
     }
 };

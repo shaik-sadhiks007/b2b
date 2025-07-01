@@ -32,6 +32,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import Feedback from './pages/Feedback';
 
 
 function AppContent() {
@@ -109,6 +110,7 @@ function AppContent() {
         <Route path="/contactus" element={<Contactus />} />
         <Route path="/features" element={<Features />} />
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
+        <Route path="/feedback" element={<Feedback />} />
       </Routes>
       <Footer />
     </div>

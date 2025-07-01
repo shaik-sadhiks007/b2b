@@ -49,7 +49,7 @@ const addToCart = async (req, res) => {
         await cart.save();
         res.status(201).json(cart);
     } catch (error) {
-        console.error('Error in addToCart:', error);
+        console.error('[cartController.js][addToCart]', error);
         res.status(500).json({ message: "Error adding to cart", error: error.message });
     }
 };
@@ -75,7 +75,7 @@ const getCartItems = async (req, res) => {
 
         res.json(transformedCarts);
     } catch (error) {
-        console.error('Error in getCartItems:', error);
+        console.error('[cartController.js][getCartItems]', error);
         res.status(500).json({ message: "Error fetching cart items", error: error.message });
     }
 };
@@ -106,7 +106,7 @@ const updateCartQuantity = async (req, res) => {
 
         res.json(cart);
     } catch (error) {
-        console.error('Error in updateCartQuantity:', error);
+        console.error('[cartController.js][updateCartQuantity]', error);
         res.status(500).json({ message: "Error updating cart quantity", error: error.message });
     }
 };
@@ -134,7 +134,7 @@ const deleteCartItem = async (req, res) => {
 
         res.json(cart);
     } catch (error) {
-        console.error('Error in deleteCartItem:', error);
+        console.error('[cartController.js][deleteCartItem]', error);
         res.status(500).json({ message: "Error deleting cart item", error: error.message });
     }
 };
@@ -151,7 +151,7 @@ const clearCart = async (req, res) => {
         await Cart.deleteMany({ userId });
         res.json({ message: "Cart cleared successfully" });
     } catch (error) {
-        console.error('Error in clearCart:', error);
+        console.error('[cartController.js][clearCart]', error);
         res.status(500).json({ message: "Error clearing cart", error: error.message });
     }
 };

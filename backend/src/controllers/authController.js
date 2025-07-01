@@ -82,7 +82,7 @@ const register = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('[authController.js][register]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -178,7 +178,7 @@ const guestLogin = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Guest login error:', error);
+        console.error('[authController.js][guestLogin]', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -212,7 +212,7 @@ const verifyOTP = async (req, res) => {
         const token = generateToken(user);
         res.json({ token, message: 'Phone number verified successfully' });
     } catch (error) {
-        console.error('OTP verification error:', error);
+        console.error('[authController.js][verifyOTP]', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -239,7 +239,7 @@ const resendOTP = async (req, res) => {
 
         res.json({ message: 'OTP resent successfully' });
     } catch (error) {
-        console.error('Resend OTP error:', error);
+        console.error('[authController.js][resendOTP]', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -323,8 +323,8 @@ const uploadImage = async (req, res) => {
 
         res.json({ imageUrl });
     } catch (error) {
-        console.error('Error uploading image:', error);
-        res.status(500).json({ message: 'Failed to upload image' });
+        console.error('[authController.js][uploadImage]', error);
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -352,8 +352,8 @@ const transferToken = async (req, res) => {
 
         res.json({ message: 'Token transferred successfully' });
     } catch (error) {
-        console.error('Token transfer error:', error);
-        res.status(500).json({ message: 'Failed to transfer token' });
+        console.error('[authController.js][transferToken]', error);
+        res.status(500).json({ message: error.message });
     }
 };
 

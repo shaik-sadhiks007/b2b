@@ -1,4 +1,4 @@
-import { Search, Mic, Camera, ShoppingBag, Home, User, LogOut, ShoppingCart, CreditCard, Package, UserCircle, X } from "lucide-react"
+import { Search, Mic, Camera, ShoppingBag, Home, User, LogOut, ShoppingCart, CreditCard, Package, UserCircle, X, MessageSquare } from "lucide-react"
 import LocationSuggestions from "./LocationSuggestions"
 import { useState, useEffect, useContext, useRef } from "react"
 import { HotelContext } from "../contextApi/HotelContextProvider"
@@ -276,7 +276,14 @@ function Navbar({ alwaysVisible }) {
                           Profile
                         </button>
                       </Link>
-
+                      <Link to="/feedback">
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <MessageSquare size={18} />
+                          <span>Feedback</span>
+                        </button>
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
@@ -310,6 +317,14 @@ function Navbar({ alwaysVisible }) {
                         >
                           <LogOut size={18} />
                           <span>Register</span>
+                        </button>
+                      </Link>
+                      <Link to="/feedback">
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <MessageSquare size={18} />
+                          <span>Feedback</span>
                         </button>
                       </Link>
                     </>
@@ -375,6 +390,12 @@ function Navbar({ alwaysVisible }) {
                     <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
                       <Package size={20} />
                       <span>Orders</span>
+                    </button>
+                  </Link>
+                  <Link to="/feedback" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
+                      <MessageSquare size={20} />
+                      <span>Feedback</span>
                     </button>
                   </Link>
 

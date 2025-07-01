@@ -6,6 +6,7 @@ const getAllAddresses = async (req, res) => {
     const addresses = await CustomerAddress.find({ userId: req.user.id }).sort({ isDefault: -1 });
     res.json(addresses);
   } catch (error) {
+    console.error('[customerAddressController.js][getAllAddresses]', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -32,6 +33,7 @@ const createAddress = async (req, res) => {
     const newAddress = await address.save();
     res.status(201).json(newAddress);
   } catch (error) {
+    console.error('[customerAddressController.js][createAddress]', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -58,6 +60,7 @@ const updateAddress = async (req, res) => {
     const updatedAddress = await address.save();
     res.json(updatedAddress);
   } catch (error) {
+    console.error('[customerAddressController.js][updateAddress]', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -76,6 +79,7 @@ const deleteAddress = async (req, res) => {
 
     res.json({ message: 'Address deleted successfully' });
   } catch (error) {
+    console.error('[customerAddressController.js][deleteAddress]', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -99,6 +103,7 @@ const setDefaultAddress = async (req, res) => {
     const updatedAddress = await address.save();
     res.json(updatedAddress);
   } catch (error) {
+    console.error('[customerAddressController.js][setDefaultAddress]', error);
     res.status(400).json({ message: error.message });
   }
 };

@@ -64,6 +64,15 @@ const Helpbutton = () => {
                 Tutorial
               </Link>
             </li>
+            <li>
+              <Link
+                to="/feedback"
+                className="text-blue-600 hover:underline"
+                onClick={handleClose}
+              >
+                Feedback
+              </Link>
+            </li>
           </ul>
         </div>
       )}

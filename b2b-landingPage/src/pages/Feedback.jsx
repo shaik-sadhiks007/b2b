@@ -24,6 +24,11 @@ const Feedback = () => {
         }));
     }, [user]);
 
+    useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
+
     const handleFeedbackInput = (e) => {
         const { name, value } = e.target;
         setFeedbackForm(f => ({ ...f, [name]: value }));
@@ -86,41 +91,44 @@ const Feedback = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 mt-8">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-                <h2 className="text-xl font-semibold mb-4">Submit Feedback</h2>
-                <h2 className="text-2xl md:text-3xl font-bold text-blue-700 mb-2">We Value Your Feedback</h2>
-                <p className="text-gray-500 text-base md:text-lg">Help us improve by sharing your thoughts, suggestions, or issues below.</p>
-                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium">Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={feedbackForm.name}
-                            onChange={handleFeedbackInput}
-                            className="w-full border rounded px-3 py-2 mt-1"
-                            placeholder="Your name"
-                        />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 py-8 px-4 mt-12">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-8 md:p-10 relative border border-blue-100">
+                <div className="mb-6 text-center">
+                    <h2 className="text-2xl md:text-3xl font-bold text-blue-700 mb-2">We Value Your Feedback</h2>
+                    <p className="text-gray-500 text-base md:text-lg">Help us improve by sharing your thoughts, suggestions, or issues below.</p>
+                </div>
+                <form onSubmit={handleFeedbackSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={feedbackForm.name}
+                                onChange={handleFeedbackInput}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                                placeholder="Your name"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={feedbackForm.email}
+                                onChange={handleFeedbackInput}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                                placeholder="Your email"
+                            />
+                        </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={feedbackForm.email}
-                            onChange={handleFeedbackInput}
-                            className="w-full border rounded px-3 py-2 mt-1"
-                            placeholder="Your email"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Category</label>
+                        <label className="block text-sm font-medium text-gray-700">Category</label>
                         <select
                             name="category"
                             value={feedbackForm.category}
                             onChange={handleFeedbackInput}
-                            className="w-full border rounded px-3 py-2 mt-1"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
                         >
                             <option value="General Feedback">General Feedback</option>
                             <option value="Bug Report">Bug Report</option>
@@ -128,36 +136,37 @@ const Feedback = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Comments <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700">Comments <span className="text-red-500">*</span></label>
                         <textarea
                             name="comments"
                             value={feedbackForm.comments}
                             onChange={handleFeedbackInput}
-                            className="w-full border rounded px-3 py-2 mt-1"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
                             placeholder="Your feedback..."
                             required
                             rows={4}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Upload Images (max 3)</label>
+                        <label className="block text-sm font-medium text-gray-700">Upload Images (max 3)</label>
                         <input
                             type="file"
                             accept="image/*"
                             multiple
                             onChange={handleFeedbackImage}
                             disabled={feedbackForm.images.length >= 3}
+                            className="mt-1"
                         />
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-3 mt-3 flex-wrap">
                             {feedbackForm.images.map((img, idx) => (
-                                <div key={idx} className="relative w-16 h-16">
-                                    <img src={img} alt="preview" className="w-16 h-16 object-cover rounded" />
+                                <div key={idx} className="relative w-20 h-20 md:w-16 md:h-16">
+                                    <img src={img} alt="preview" className="w-full h-full object-cover rounded-lg border border-gray-200 shadow-sm" />
                                     <button
                                         type="button"
-                                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow"
+                                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow border border-gray-200 hover:bg-red-100"
                                         onClick={() => handleRemoveFeedbackImage(idx)}
                                     >
-                                        <span className="text-gray-600">&times;</span>
+                                        <span className="text-gray-600 text-lg">&times;</span>
                                     </button>
                                 </div>
                             ))}
@@ -165,7 +174,7 @@ const Feedback = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg shadow-md hover:from-blue-700 hover:to-blue-600 transition disabled:opacity-50"
                         disabled={feedbackUploading}
                     >
                         {feedbackUploading ? 'Submitting...' : 'Submit Feedback'}

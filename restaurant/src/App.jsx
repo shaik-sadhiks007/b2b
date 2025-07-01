@@ -27,6 +27,7 @@ import Whatsappbutton from './components/Whatsappbutton';
 import Summary from './components/Summary'
 import Features from './components/Features'
 import MenuEditor from './pages/MenuEditor'
+import Feedback from './pages/Feedback'
 function App() {
   return (
     <MobileMenuProvider>
@@ -104,6 +105,11 @@ function App() {
               <Route path='/summary' element={
                 <PrivateRoute>
                   <Summary />
+                </PrivateRoute>
+              } />
+              <Route path='/feedback' element={
+                <PrivateRoute>
+                  <Feedback />
                 </PrivateRoute>
               } />
             </Routes>

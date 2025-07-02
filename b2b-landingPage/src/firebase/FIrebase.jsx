@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail as firebaseSendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDmxqsBuOxxQ2DwIgAQQo-bTI8dV0nAtpA",
-    authDomain: "b2b-company-3de08.firebaseapp.com",
-    projectId: "b2b-company-3de08",
-    storageBucket: "b2b-company-3de08.firebasestorage.app",
-    messagingSenderId: "676612335148",
-    appId: "1:676612335148:web:49700f714cfd7be4065389"
+    apiKey: "AIzaSyCSB3Gs2S2yTIZWj5saf3ytg_weZUa7exw",
+    authDomain: "b2b-company-26b7e.firebaseapp.com",
+    projectId: "b2b-company-26b7e",
+    storageBucket: "b2b-company-26b7e.firebasestorage.app",
+    messagingSenderId: "1094239535773",
+    appId: "1:1094239535773:web:9c703bf81af1afbb80ca74"
 };
 
 // Initialize Firebase
@@ -43,7 +43,7 @@ export {
     auth,
     RecaptchaVerifier,
     signInWithPhoneNumber,
-    googleProvider, 
+    googleProvider,
     signInWithPopup,
     createUserWithEmailAndPassword,
     sendVerificationEmail as sendEmailVerification,

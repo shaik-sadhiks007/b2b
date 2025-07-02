@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { use, useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HotelContext } from "../contextApi/HotelContextProvider";
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from "../firebase/FIrebase";
@@ -17,6 +17,11 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
+
+
+  useEffect(() => {
+   window.scrollTo(0, 0);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +65,7 @@ const Login = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 mt-16">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-3xl font-bold text-center mb-8">Login</h2>
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">{error}</div>}

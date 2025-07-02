@@ -159,8 +159,18 @@ exports.placeOrder = async (req, res) => {
         // Send confirmation email
         try {
             const user = await User.findById(userId);
+            let orderForEmail = newOrder.toObject();
+            orderForEmail.orderType = orderType;
+            if (orderType === 'delivery' && newOrder.customerAddress) {
+                // Populate customerAddress for delivery
+                const address = await CustomerAddress.findById(newOrder.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
             if (user && user.email) {
-                await sendOrderConfirmationEmail(user.email, newOrder);
+                sendOrderConfirmationEmail(user.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][placeOrder-email]', err));
             }
         } catch (emailError) {
             console.error('[orderController.js][placeOrder-email]', emailError);
@@ -249,15 +259,19 @@ exports.updateOrderStatus = async (req, res) => {
         // Send status change email notification
         try {
             const user = await User.findById(order.user);
+            let orderForEmail = order.toObject();
+            orderForEmail.previousStatus = previousStatus;
+            orderForEmail.newStatus = status;
+            orderForEmail.orderType = order.orderType;
+            if (order.orderType === 'delivery' && order.customerAddress) {
+                const address = await CustomerAddress.findById(order.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
             if (user && user.email) {
-                await sendStatusChangeEmail(user.email, {
-                    orderId: order._id,
-                    previousStatus,
-                    newStatus: status,
-                    items: order.items,
-                    totalAmount: order.totalAmount,
-                    paymentMethod: order.paymentMethod
-                });
+                sendStatusChangeEmail(user.email, orderForEmail)
+                    .catch(err => console.error('Error sending status change email:', err));
             }
         } catch (emailError) {
             console.error('Error sending status change email:', emailError);
@@ -532,8 +546,9 @@ exports.getOrdersSummary = async (req, res) => {
                 queryStartDate = now.startOf('week').toDate();
                 queryEndDate = now.endOf('week').toDate();
             } else if (timeFrame === '1M') {
-                queryStartDate = now.startOf('month').toDate();
-                queryEndDate = now.endOf('month').toDate();
+                // Last 30 days, not current calendar month
+                queryStartDate = moment().tz(timezone).subtract(30, 'days').startOf('day').toDate();
+                queryEndDate = moment().tz(timezone).endOf('day').toDate();
             } else if (timeFrame === '3M') {
                 queryStartDate = now.subtract(2, 'months').startOf('month').toDate();
                 queryEndDate = now.add(2, 'months').endOf('month').toDate();

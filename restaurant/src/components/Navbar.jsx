@@ -30,12 +30,12 @@ const Navbar = () => {
                         <i className="bi bi-list fs-4"></i>
                     </button>
                     <div className="d-flex flex-column">
-                       <Link  to ="/">
-                       <img
-                            src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
-                            alt="logo"
-                            width="40px"
-                        />
+                        <Link to="/">
+                            <img
+                                src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
+                                alt="logo"
+                                width="40px"
+                            />
                         </Link>
                     </div>
                 </div>
@@ -49,6 +49,9 @@ const Navbar = () => {
                         </Link>
                         <Link className="text-decoration-none text-dark fw-medium" to="/contactus">
                             Contact Us
+                        </Link>
+                        <Link className="text-decoration-none text-dark fw-medium" to="/feedback">
+                            Feedback
                         </Link>
                     </div>
 

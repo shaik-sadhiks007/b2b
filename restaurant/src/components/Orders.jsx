@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import io from 'socket.io-client';
+import ConfirmModal from '../reusable/ConfirmModal';
 
 // Initialize socket connection
 const socket = io(API_URL, { withCredentials: true });
@@ -42,6 +43,8 @@ const Orders = () => {
         total: 0,
         totalPages: 0
     });
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelOrderId, setCancelOrderId] = useState(null);
 
     useEffect(() => {
         if (user) {
@@ -175,6 +178,18 @@ const Orders = () => {
         }
     };
 
+    const handleCancelClick = (orderId) => {
+        setCancelOrderId(orderId);
+        setShowCancelModal(true);
+    };
+
+    const confirmCancelOrder = () => {
+        if (cancelOrderId) {
+            handleStatusChange(cancelOrderId, 'CANCELLED');
+            setCancelOrderId(null);
+        }
+    };
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -234,7 +249,7 @@ const Orders = () => {
                         </button>
                         <button 
                             className="btn btn-outline-danger w-100" 
-                            onClick={() => handleStatusChange(order._id, 'CANCELLED')}
+                            onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
                             Cancel Order
@@ -253,7 +268,7 @@ const Orders = () => {
                         </button>
                         <button 
                             className="btn btn-outline-danger w-100" 
-                            onClick={() => handleStatusChange(order._id, 'CANCELLED')}
+                            onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
                             Cancel Order
@@ -272,7 +287,7 @@ const Orders = () => {
                         </button>
                         <button 
                             className="btn btn-outline-danger w-100" 
-                            onClick={() => handleStatusChange(order._id, 'CANCELLED')}
+                            onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
                             Cancel Order
@@ -516,7 +531,14 @@ const Orders = () => {
                     )}
                 </div>
             </div>
-            
+            <ConfirmModal
+                isOpen={showCancelModal}
+                onClose={() => setShowCancelModal(false)}
+                onConfirm={confirmCancelOrder}
+                title="Cancel Order"
+                message="Are you sure you want to cancel this order? This action cannot be undone."
+                buttonText="Cancel Order"
+            />
         </div>
     );
 };

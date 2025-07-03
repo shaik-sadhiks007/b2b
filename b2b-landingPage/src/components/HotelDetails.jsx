@@ -237,70 +237,75 @@ const HotelDetails = () => {
                     </div>
                 </div>
             )}
-            
-            {/* Banner Image Section */}
-            <div className="relative w-full h-full overflow-hidden mt-16">
-                <img
-                    src={restaurant?.imageUrl || 'https://via.placeholder.com/1920x600?text=Restaurant+Banner'}
-                    alt={restaurant?.name || 'Restaurant'}
-                    className={`w-full h-full object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <h1 className="text-4xl md:text-5xl font-bold text-white text-center px-4">
-                        {restaurant?.name || 'Restaurant'}
-                    </h1>
-                </div>
-            </div>
-
-            {/* Restaurant Info Section */}
-            <div className="container mx-auto px-4 py-8">
-                <div className="bg-white rounded-lg shadow-md p-6 -mt-16 relative z-10 max-w-4xl mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            {restaurant?.description && (
-                                <p className="text-gray-600 mb-4">{restaurant.description}</p>
-                            )}
-                            <div className="flex flex-wrap items-center gap-4">
-                                {restaurant?.distance !== null && restaurant?.distance !== "" && (
-                                    <div className="flex items-center gap-2 text-gray-500">
+            <div className="mt-16">
+                <div className="flex flex-col md:flex-row gap-8">
+                    <div className="w-full">
+                        <div className="bg-white">
+                            <img
+                                src={restaurant?.imageUrl || 'https://via.placeholder.com/800x400?text=Restaurant'}
+                                alt={restaurant?.name || 'Restaurant'}
+                                className={`w-full h-64 object-cover ${!restaurant?.online ? 'grayscale' : ''}`}
+                            />
+                            <div className="p-6">
+                                <h1 className="text-3xl font-bold mb-2">{restaurant?.name || 'Restaurant'}</h1>
+                                {/* Google Maps Link for Location */}
+                                {restaurant?.location && restaurant.location.lat && restaurant.location.lng && (
+                                    <a
+                                        href={`https://www.google.com/maps?q=${restaurant.location.lat},${restaurant.location.lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-blue-600 hover:underline mb-2"
+                                    >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                            <path fillRule="evenodd" d="M10 2C6.13 2 3 5.13 3 9c0 5.25 7 9 7 9s7-3.75 7-9c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1110 6a2.5 2.5 0 010 5.5z" clipRule="evenodd" />
                                         </svg>
-                                        {restaurant.distance} km away
-                                    </div>
+                                        View on Google Maps
+                                    </a>
                                 )}
-                                <div className="flex items-center gap-2">
-                                    <span className={`px-3 py-1.5 text-sm font-medium rounded-full flex items-center gap-1.5 ${restaurant?.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                        <span className={`w-2 h-2 rounded-full ${restaurant?.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
-                                        {restaurant?.online ? 'Open' : 'Closed'}
-                                    </span>
-                                    {restaurant?.operatingHours?.openTime && restaurant?.operatingHours?.closeTime && (
-                                        <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                {restaurant?.description && (
+                                    <p className="text-gray-600 mb-4">{restaurant.description}</p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-4">
+                                    {restaurant?.distance !== null && restaurant?.distance !== "" && (
+                                        <div className="flex items-center gap-2 text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                                             </svg>
-                                            {restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}
+                                            {restaurant.distance} km away
                                         </div>
                                     )}
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-3 py-1.5 text-sm font-medium rounded-full flex items-center gap-1.5 ${restaurant?.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            <span className={`w-2 h-2 rounded-full ${restaurant?.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                            {restaurant?.online ? 'Open' : 'Closed'}
+                                        </span>
+                                        {restaurant?.operatingHours?.openTime && restaurant?.operatingHours?.closeTime && (
+                                            <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                </svg>
+                                                {restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* Menu Section */}
-                <div className="mt-12 max-w-4xl mx-auto">
-                    <h2 className="text-3xl font-bold text-center mb-8">Menu</h2>
-                    <HotelMenu
-                        menu={menu}
-                        onAddToCart={handleAddToCart}
-                        isItemInCart={isItemInCart}
-                        restaurantOnline={restaurant?.online}
-                    />
+                        <div className="mt-8">
+                            <h2 className="text-2xl text-center mb-4">Menu</h2>
+                            <HotelMenu
+                                menu={menu}
+                                onAddToCart={handleAddToCart}
+                                isItemInCart={isItemInCart}
+                                restaurantOnline={restaurant?.online}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </>
     );
 };
 
-export default HotelDetails;
+export default HotelDetails; 

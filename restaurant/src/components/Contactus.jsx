@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from './Navbar';
+import Sidebar from './Sidebar';
 
 const Contactus = () => {
     return (
@@ -7,6 +8,7 @@ const Contactus = () => {
         <>
             <div style={{ marginTop: '30px' }}>
                 <Navbar />
+                <Sidebar />
             </div>
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
 
@@ -26,6 +28,7 @@ const Contactus = () => {
                                 <h2 className="font-semibold">Phone</h2>
                                 <p>+91 98765 43210</p>
                             </div>
+
                         </div>
                         <div className="flex items-start gap-4">
                             <i className="bi bi-envelope-fill text-xl text-red-600"></i>
@@ -46,3 +49,4 @@ const Contactus = () => {
 };
 
 export default Contactus;
+

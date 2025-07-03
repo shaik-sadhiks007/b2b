@@ -3,7 +3,7 @@ const User = require("../models/userModel");
 const Menu = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/businessModel");
-const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
+const { sendOrderConfirmationEmail, sendStatusChangeEmail, sendOrderNotificationToRestaurant, sendStatusChangeToRestaurant } = require('../utils/emailService');
 const moment = require('moment-timezone');
 
 exports.placeOrder = async (req, res) => {
@@ -121,6 +121,7 @@ exports.placeOrder = async (req, res) => {
                 customerPhone = newAddress.phone;
             }
         } else {
+            console.error('[orderController.js][placeOrder-invalidOrderType]', { orderType });
             return res.status(400).json({ error: "Invalid order type. Must be either 'delivery' or 'pickup'" });
         }
 
@@ -158,16 +159,31 @@ exports.placeOrder = async (req, res) => {
         // Send confirmation email
         try {
             const user = await User.findById(userId);
+            let orderForEmail = newOrder.toObject();
+            orderForEmail.orderType = orderType;
+            if (orderType === 'delivery' && newOrder.customerAddress) {
+                // Populate customerAddress for delivery
+                const address = await CustomerAddress.findById(newOrder.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
             if (user && user.email) {
-                await sendOrderConfirmationEmail(user.email, newOrder);
+                sendOrderConfirmationEmail(user.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][placeOrder-email]', err));
+            }
+            // Send email to restaurant as well
+            if (restaurant && restaurant.contact && restaurant.contact.email) {
+                sendOrderNotificationToRestaurant(restaurant.contact.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][placeOrder-restaurant-email]', err));
             }
         } catch (emailError) {
-            console.error('Error sending confirmation email:', emailError);
+            console.error('[orderController.js][placeOrder-email]', emailError);
         }
 
         res.status(201).json({ message: "Order placed successfully", order: newOrder });
     } catch (error) {
-        console.error('Error placing order:', error);
+        console.error('[orderController.js][placeOrder]', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };
@@ -208,6 +224,7 @@ exports.orderHistory = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('[orderController.js][orderHistory]', error);
         res.status(500).json({ error: "Failed to fetch order history" });
     }
 };
@@ -221,6 +238,7 @@ exports.orderHistoryByUser = async (req, res) => {
 
         res.status(200).json(orders);
     } catch (error) {
+        console.error('[orderController.js][orderHistoryByUser]', error);
         res.status(500).json({ error: "Failed to fetch order history", message: error.message });
     }
 };
@@ -246,15 +264,25 @@ exports.updateOrderStatus = async (req, res) => {
         // Send status change email notification
         try {
             const user = await User.findById(order.user);
+            let orderForEmail = order.toObject();
+            orderForEmail.previousStatus = previousStatus;
+            orderForEmail.newStatus = status;
+            orderForEmail.orderType = order.orderType;
+            if (order.orderType === 'delivery' && order.customerAddress) {
+                const address = await CustomerAddress.findById(order.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
             if (user && user.email) {
-                await sendStatusChangeEmail(user.email, {
-                    orderId: order._id,
-                    previousStatus,
-                    newStatus: status,
-                    items: order.items,
-                    totalAmount: order.totalAmount,
-                    paymentMethod: order.paymentMethod
-                });
+                sendStatusChangeEmail(user.email, orderForEmail)
+                    .catch(err => console.error('Error sending status change email:', err));
+            }
+            // Send status change email to restaurant as well
+            const restaurant = await Restaurant.findById(order.restaurantId);
+            if (restaurant && restaurant.contact && restaurant.contact.email) {
+                sendStatusChangeToRestaurant(restaurant.contact.email, orderForEmail)
+                    .catch(err => console.error('Error sending status change email to restaurant:', err));
             }
         } catch (emailError) {
             console.error('Error sending status change email:', emailError);
@@ -262,6 +290,7 @@ exports.updateOrderStatus = async (req, res) => {
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
+        console.error('[orderController.js][updateOrderStatus]', error);
         res.status(500).json({ error: "Failed to update order status" });
     }
 };
@@ -302,7 +331,7 @@ exports.instoreOrder = async (req, res) => {
         await newOrder.save();
         res.status(201).json({ message: "In-store order placed successfully", order: newOrder });
     } catch (error) {
-        console.error('Error placing instore order:', error);
+        console.error('[orderController.js][instoreOrder]', error);
         res.status(500).json({ error: "Failed to place instore order" });
     }
 };
@@ -317,6 +346,7 @@ exports.orderSuccess = async (req, res) => {
 
         res.status(200).json({ message: "Order placed successfully", order });
     } catch (error) {
+        console.error('[orderController.js][orderSuccess]', error);
         res.status(500).json({ error: "Failed to place order" });
     }
 };
@@ -337,12 +367,35 @@ exports.postRestaurantOrderStatus = async (req, res) => {
             return res.status(403).json({ error: "You are not authorized to update this order" });
         }
 
+        const previousStatus = order.status;
         order.status = status;
         if (!order.orderType) order.orderType = 'PICKUP';
         await order.save();
 
+        // Send status change email notification to customer
+        try {
+            const user = await User.findById(order.user);
+            let orderForEmail = order.toObject();
+            orderForEmail.previousStatus = previousStatus;
+            orderForEmail.newStatus = status;
+            orderForEmail.orderType = order.orderType;
+            if (order.orderType === 'delivery' && order.customerAddress) {
+                const address = await CustomerAddress.findById(order.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
+            if (user && user.email) {
+                sendStatusChangeEmail(user.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][postRestaurantOrderStatus-customer-email]', err));
+            }
+        } catch (emailError) {
+            console.error('[orderController.js][postRestaurantOrderStatus-customer-email]', emailError);
+        }
+
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {
+        console.error('[orderController.js][postRestaurantOrderStatus]', error);
         res.status(500).json({ error: "Failed to update order status", message: error.message });
     }
 };
@@ -377,6 +430,7 @@ exports.getRestaurantOrderStatus = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('[orderController.js][getRestaurantOrderStatus]', error);
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
 };
@@ -401,6 +455,7 @@ exports.getRestaurantOrderCounts = async (req, res) => {
 
         res.status(200).json(countsObject);
     } catch (error) {
+        console.error('[orderController.js][getRestaurantOrderCounts]', error);
         res.status(500).json({ error: "Failed to fetch order counts", message: error.message });
     }
 };
@@ -434,6 +489,7 @@ exports.getAcceptedItemsSummary = async (req, res) => {
             totalItems: totalItemsToPack
         });
     } catch (error) {
+        console.error('[orderController.js][getAcceptedItemsSummary]', error);
         res.status(500).json({ error: "Failed to fetch accepted items summary" });
     }
 };
@@ -452,6 +508,7 @@ exports.getOrderDetails = async (req, res) => {
 
         res.status(200).json(order);
     } catch (error) {
+        console.error('[orderController.js][getOrderDetails]', error);
         res.status(500).json({ error: "Failed to fetch order details", message: error.message });
     }
 };
@@ -494,6 +551,7 @@ exports.getPublicOrderStatus = async (req, res) => {
 
         res.status(200).json(publicOrderInfo);
     } catch (error) {
+        console.error('[orderController.js][getPublicOrderStatus]', error);
         res.status(500).json({ error: "Failed to fetch order status", message: error.message });
     }
 };
@@ -521,8 +579,9 @@ exports.getOrdersSummary = async (req, res) => {
                 queryStartDate = now.startOf('week').toDate();
                 queryEndDate = now.endOf('week').toDate();
             } else if (timeFrame === '1M') {
-                queryStartDate = now.startOf('month').toDate();
-                queryEndDate = now.endOf('month').toDate();
+                // Last 30 days, not current calendar month
+                queryStartDate = moment().tz(timezone).subtract(30, 'days').startOf('day').toDate();
+                queryEndDate = moment().tz(timezone).endOf('day').toDate();
             } else if (timeFrame === '3M') {
                 queryStartDate = now.subtract(2, 'months').startOf('month').toDate();
                 queryEndDate = now.add(2, 'months').endOf('month').toDate();
@@ -621,7 +680,7 @@ exports.getOrdersSummary = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching order summary:', error);
+        console.error('[orderController.js][getOrdersSummary]', error);
         res.status(500).json({ error: 'Failed to fetch order summary', message: error.message });
     }
 };

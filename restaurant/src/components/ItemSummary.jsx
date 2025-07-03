@@ -57,8 +57,8 @@ const ItemSummary = () => {
             <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-8">Item Summary</h1>
-                        <p className="text-xl text-gray-900 mb-8">Item Summary of Accepted Orders only</p>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-8">Summary</h1>
+                        <p className="text-xl text-gray-900 mb-8">Summary of Accepted Orders only</p>
                         {loadingSummary ? (
                             <div className="text-center py-5">Loading summary...</div>
                         ) : itemSummary.length === 0 ? (

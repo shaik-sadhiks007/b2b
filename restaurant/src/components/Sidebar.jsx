@@ -8,13 +8,13 @@ export const menuItems = [
         icon: "bi-box", label: "Orders", path: "/orders",
         children: [
             // { label: "All Orders", path: "/orders" },
-            { label: "Item Summary", path: "/orders/item-summary" },
+            { label: "Summary", path: "/orders/item-summary" },
         ]
     },
     { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
-    { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
-    { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
     { icon: "bi-bar-chart", label: "Dashboard", path: "/summary" },
+    { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
+    { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
 
     // { icon: "bi-gift", label: "Offers", path: "/offers" },
     // { icon: "bi-wallet2", label: "Payout", path: "/payout" },

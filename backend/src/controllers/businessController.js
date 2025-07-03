@@ -67,7 +67,7 @@ const createBusiness = async (req, res) => {
         await business.save();
         res.status(201).json(business);
     } catch (error) {
-        console.error('Error creating business:', error);
+        console.error('[businessController.js][createBusiness]', error);
         res.status(500).json({ message: 'Error creating business', error: error.message });
     }
 };
@@ -108,7 +108,7 @@ const updateBusinessStep = async (req, res) => {
                     const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
                     updateData.images.profileImage = result.secure_url;
                 } catch (error) {
-                    console.error('Error uploading profile image:', error);
+                    console.error('[businessController.js][updateBusinessStep-profileImage]', error);
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             } else if (formDataObj.images?.profileImage) {
@@ -122,7 +122,7 @@ const updateBusinessStep = async (req, res) => {
                         updateData.images.profileImage = formDataObj.images.profileImage;
                     }
                 } catch (error) {
-                    console.error('Error uploading profile image:', error);
+                    console.error('[businessController.js][updateBusinessStep-profileImage]', error);
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
@@ -133,7 +133,7 @@ const updateBusinessStep = async (req, res) => {
                         const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
                         updateData.images[imageType] = result.secure_url;
                     } catch (error) {
-                        console.error(`Error uploading ${imageType}:`, error);
+                        console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 } else if (formDataObj.images?.[imageType]) {
@@ -147,7 +147,7 @@ const updateBusinessStep = async (req, res) => {
                             updateData.images[imageType] = formDataObj.images[imageType];
                         }
                     } catch (error) {
-                        console.error(`Error uploading ${imageType}:`, error);
+                        console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
@@ -168,7 +168,7 @@ const updateBusinessStep = async (req, res) => {
         );
         res.json(updatedBusiness);
     } catch (error) {
-        console.error('Error updating business step:', error);
+        console.error('[businessController.js][updateBusinessStep]', error);
         res.status(500).json({ message: 'Error updating business step', error: error.message });
     }
 };
@@ -179,6 +179,7 @@ const getMyBusinesses = async (req, res) => {
         const businesses = await Business.find({ owner: req.user.id });
         res.json(businesses);
     } catch (error) {
+        console.error('[businessController.js][getMyBusinesses]', error);
         res.status(500).json({ message: 'Error fetching businesses', error: error.message });
     }
 };
@@ -192,7 +193,7 @@ const getBusinessProfile = async (req, res) => {
         }
         res.json(business);
     } catch (error) {
-        console.error('Error getting business profile:', error);
+        console.error('[businessController.js][getBusinessProfile]', error);
         res.status(500).json({ message: 'Error getting business profile', error: error.message });
     }
 };
@@ -210,7 +211,7 @@ const updateBusinessProfile = async (req, res) => {
                     const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
                     updateData.images.profileImage = result.secure_url;
                 } catch (error) {
-                    console.error('Error uploading profile image:', error);
+                    console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             } else if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
@@ -220,7 +221,7 @@ const updateBusinessProfile = async (req, res) => {
                         updateData.images.profileImage = imageUrl;
                     }
                 } catch (error) {
-                    console.error('Error uploading profile image:', error);
+                    console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
@@ -231,7 +232,7 @@ const updateBusinessProfile = async (req, res) => {
                         const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
                         updateData.images[imageType] = result.secure_url;
                     } catch (error) {
-                        console.error(`Error uploading ${imageType}:`, error);
+                        console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 } else if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
@@ -241,7 +242,7 @@ const updateBusinessProfile = async (req, res) => {
                             updateData.images[imageType] = imageUrl;
                         }
                     } catch (error) {
-                        console.error(`Error uploading ${imageType}:`, error);
+                        console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
@@ -266,7 +267,7 @@ const updateBusinessProfile = async (req, res) => {
         }
         res.json(business);
     } catch (error) {
-        console.error('Error updating business profile:', error);
+        console.error('[businessController.js][updateBusinessProfile]', error);
         res.status(500).json({ message: 'Error updating business profile', error: error.message });
     }
 };
@@ -339,7 +340,7 @@ const getAllPublicBusinesses = async (req, res) => {
             res.json(formattedBusinesses);
         }
     } catch (error) {
-        console.error('Error getting public businesses:', error);
+        console.error('[businessController.js][getAllPublicBusinesses]', error);
         res.status(500).json({ message: 'Error getting businesses', error: error.message });
     }
 };
@@ -347,7 +348,6 @@ const getAllPublicBusinesses = async (req, res) => {
 // Get a specific business's public details
 const getPublicBusinessById = async (req, res) => {
     try {
-
         const business = await Business.findOne({
             _id: req.params.id,
             status: 'published'
@@ -398,7 +398,7 @@ const getPublicBusinessById = async (req, res) => {
         };
         res.json(formattedBusiness);
     } catch (error) {
-        console.error('Error getting public business:', error);
+        console.error('[businessController.js][getPublicBusinessById]', error);
         res.status(500).json({ message: 'Error getting business', error: error.message });
     }
 };

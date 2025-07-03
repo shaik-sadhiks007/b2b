@@ -3,7 +3,7 @@ const User = require("../models/userModel");
 const Menu = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/businessModel");
-const { sendOrderConfirmationEmail, sendStatusChangeEmail } = require('../utils/emailService');
+const { sendOrderConfirmationEmail, sendStatusChangeEmail, sendOrderNotificationToRestaurant, sendStatusChangeToRestaurant } = require('../utils/emailService');
 const moment = require('moment-timezone');
 
 exports.placeOrder = async (req, res) => {
@@ -172,6 +172,11 @@ exports.placeOrder = async (req, res) => {
                 sendOrderConfirmationEmail(user.email, orderForEmail)
                     .catch(err => console.error('[orderController.js][placeOrder-email]', err));
             }
+            // Send email to restaurant as well
+            if (restaurant && restaurant.contact && restaurant.contact.email) {
+                sendOrderNotificationToRestaurant(restaurant.contact.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][placeOrder-restaurant-email]', err));
+            }
         } catch (emailError) {
             console.error('[orderController.js][placeOrder-email]', emailError);
         }
@@ -273,6 +278,12 @@ exports.updateOrderStatus = async (req, res) => {
                 sendStatusChangeEmail(user.email, orderForEmail)
                     .catch(err => console.error('Error sending status change email:', err));
             }
+            // Send status change email to restaurant as well
+            const restaurant = await Restaurant.findById(order.restaurantId);
+            if (restaurant && restaurant.contact && restaurant.contact.email) {
+                sendStatusChangeToRestaurant(restaurant.contact.email, orderForEmail)
+                    .catch(err => console.error('Error sending status change email to restaurant:', err));
+            }
         } catch (emailError) {
             console.error('Error sending status change email:', emailError);
         }
@@ -356,9 +367,31 @@ exports.postRestaurantOrderStatus = async (req, res) => {
             return res.status(403).json({ error: "You are not authorized to update this order" });
         }
 
+        const previousStatus = order.status;
         order.status = status;
         if (!order.orderType) order.orderType = 'PICKUP';
         await order.save();
+
+        // Send status change email notification to customer
+        try {
+            const user = await User.findById(order.user);
+            let orderForEmail = order.toObject();
+            orderForEmail.previousStatus = previousStatus;
+            orderForEmail.newStatus = status;
+            orderForEmail.orderType = order.orderType;
+            if (order.orderType === 'delivery' && order.customerAddress) {
+                const address = await CustomerAddress.findById(order.customerAddress);
+                if (address) {
+                    orderForEmail.customerAddress = address.toObject();
+                }
+            }
+            if (user && user.email) {
+                sendStatusChangeEmail(user.email, orderForEmail)
+                    .catch(err => console.error('[orderController.js][postRestaurantOrderStatus-customer-email]', err));
+            }
+        } catch (emailError) {
+            console.error('[orderController.js][postRestaurantOrderStatus-customer-email]', emailError);
+        }
 
         res.status(200).json({ message: "Order status updated successfully", order });
     } catch (error) {

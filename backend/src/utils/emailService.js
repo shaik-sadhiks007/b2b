@@ -158,8 +158,81 @@ const testEmailConfiguration = async (testEmail) => {
     }
 };
 
+// Restaurant order notification template
+const sendOrderNotificationToRestaurant = async (email, order) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'New Order Received - B2B App',
+            html: `
+                <h2>New Order Received</h2>
+                <p>You have received a new order. Here are the details:</p>
+                <h3>Customer Name:</h3>
+                <p>${order.customerName || '-'}</p>
+                <h3>Order Type:</h3>
+                <p>${order.orderType ? (order.orderType.charAt(0).toUpperCase() + order.orderType.slice(1)) : 'N/A'}</p>
+                <h3>Order Items:</h3>
+                <ul>
+                    ${renderOrderItems(order.items)}
+                </ul>
+                ${renderShippingDetails(order)}
+                <h3>Payment Method:</h3>
+                <p>${order.paymentMethod}</p>
+                <h3>Total Amount:</h3>
+                <p>₹${order.totalAmount}</p>
+                <p><strong>Please process this order promptly in your dashboard.</strong></p>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Restaurant order notification sent:', info.messageId);
+    } catch (error) {
+        console.error('Error sending restaurant order notification:', error);
+        throw error;
+    }
+};
+
+const sendStatusChangeToRestaurant = async (email, order) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: `Order Status Changed - ${order.newStatus || order.status}`,
+            html: `
+                <h2>Order Status Changed</h2>
+                <p>The status of an order has changed. Here are the details:</p>
+                <h3>Customer Name:</h3>
+                <p>${order.customerName || '-'}</p>
+                <h3>Order ID:</h3>
+                <p>${order.orderId || order._id}</p>
+                <h3>Previous Status:</h3>
+                <p>${order.previousStatus}</p>
+                <h3>New Status:</h3>
+                <p>${order.newStatus || order.status}</p>
+                <h3>Order Items:</h3>
+                <ul>
+                    ${renderOrderItems(order.items)}
+                </ul>
+                ${renderShippingDetails(order)}
+                <h3>Payment Method:</h3>
+                <p>${order.paymentMethod}</p>
+                <h3>Total Amount:</h3>
+                <p>₹${order.totalAmount}</p>
+                <p><strong>Check your dashboard for more details.</strong></p>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Restaurant status change notification sent:', info.messageId);
+    } catch (error) {
+        console.error('Error sending restaurant status change notification:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendOrderConfirmationEmail,
     sendStatusChangeEmail,
-    testEmailConfiguration
+    testEmailConfiguration,
+    sendOrderNotificationToRestaurant,
+    sendStatusChangeToRestaurant
 }; 

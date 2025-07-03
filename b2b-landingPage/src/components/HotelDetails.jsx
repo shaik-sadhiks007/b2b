@@ -248,6 +248,20 @@ const HotelDetails = () => {
                             />
                             <div className="p-6">
                                 <h1 className="text-3xl font-bold mb-2">{restaurant?.name || 'Restaurant'}</h1>
+                                {/* Google Maps Link for Location */}
+                                {restaurant?.location && restaurant.location.lat && restaurant.location.lng && (
+                                    <a
+                                        href={`https://www.google.com/maps?q=${restaurant.location.lat},${restaurant.location.lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-blue-600 hover:underline mb-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 2C6.13 2 3 5.13 3 9c0 5.25 7 9 7 9s7-3.75 7-9c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1110 6a2.5 2.5 0 010 5.5z" clipRule="evenodd" />
+                                        </svg>
+                                        View on Google Maps
+                                    </a>
+                                )}
                                 {restaurant?.description && (
                                     <p className="text-gray-600 mb-4">{restaurant.description}</p>
                                 )}

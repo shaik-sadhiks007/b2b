@@ -5,7 +5,8 @@ const ConfirmModal = ({
     onClose, 
     onConfirm, 
     title = "Confirm Delete", 
-    message = "Are you sure you want to delete this item?" 
+    message = "Are you sure you want to delete this item?",
+    buttonText = "Delete"
 }) => {
     if (!isOpen) return null;
 
@@ -31,7 +32,7 @@ const ConfirmModal = ({
                             onClose();
                         }}
                     >
-                        Delete
+                        {buttonText}
                     </button>
                 </div>
             </div>

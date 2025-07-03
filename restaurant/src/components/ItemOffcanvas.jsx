@@ -367,7 +367,7 @@ const ItemOffcanvas = ({
               </small>
             </div>
             <div className="mb-3">
-              <label className="form-label">Base price</label>
+              <label className="form-label">Base pricefrkjtr</label>
               <input
                 type="number"
                 className="form-control"

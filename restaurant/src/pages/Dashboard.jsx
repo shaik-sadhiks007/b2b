@@ -100,10 +100,12 @@ const Dashboard = () => {
     if (categories.length > 0 && !defaultCategory) {
       const firstCategory = categories[0];
       setDefaultCategory(firstCategory._id);
+      setExpandedCategories(prev => ({ ...prev, [firstCategory._id]: true }));
 
       if (firstCategory.subcategories.length > 0) {
         const firstSubcategory = firstCategory.subcategories[0];
         setDefaultSubcategory(firstSubcategory._id);
+        setExpandedSubcategories(prev => ({ ...prev, [firstSubcategory._id]: true }));
       }
     }
   }, [categories, defaultCategory]);
@@ -148,6 +150,11 @@ const Dashboard = () => {
       ...prev,
       [categoryId]: !prev[categoryId],
     }));
+    
+    // If expanding, select this category
+    if (!expandedCategories[categoryId]) {
+      handleCategorySelect(categoryId);
+    }
   };
 
   const toggleSubcategory = (subcategoryId) => {
@@ -222,6 +229,9 @@ const Dashboard = () => {
         }
       }
     }
+    
+    // Expand the selected category
+    setExpandedCategories(prev => ({ ...prev, [categoryId]: true }));
   };
 
   const handleAddItemClick = (categoryId, subcategoryId) => {
@@ -247,8 +257,6 @@ const Dashboard = () => {
 
     const categoryId = bulkTarget.categoryId || defaultCategory
     const subcategoryId = bulkTarget.subcategoryId  || defaultSubcategory;
-
-
 
     if (!categoryId || !subcategoryId) {
       toast.error("Please select a category and subcategory first");
@@ -816,10 +824,7 @@ const Dashboard = () => {
                               ? "bg-light"
                               : "bg-white"
                               }`}
-                            onClick={() => {
-                              toggleCategory(category._id);
-                              handleCategorySelect(category._id);
-                            }}
+                            onClick={() => toggleCategory(category._id)}
                           >
                             <div className="d-flex align-items-center">
                               <span className="fw-bold fs-5">
@@ -887,193 +892,217 @@ const Dashboard = () => {
                               ></i>
                             </div>
                           </div>
+                          
+                          {/* Category content - always visible when expanded */}
                           {expandedCategories[category._id] && (
                             <div className="accordion-body p-3 bg-light">
-                              {category.subcategories.map((subcategory) => (
-                                <div key={subcategory._id} className="mb-3">
-                                  <div
-                                    className={`d-flex justify-content-between align-items-center p-3 rounded ${selectedSubcategory?._id ===
-                                      subcategory._id
-                                      ? "bg-info bg-opacity-10"
-                                      : "bg-white"
-                                      }`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleSubcategory(subcategory._id);
-                                      handleCategorySelect(
-                                        category._id,
+                              {category.subcategories.length === 0 ? (
+                                <div className="text-center py-3">
+                                  <p>No subcategories yet. Click the + button to add one.</p>
+                                </div>
+                              ) : (
+                                category.subcategories.map((subcategory) => (
+                                  <div key={subcategory._id} className="mb-3">
+                                    <div
+                                      className={`d-flex justify-content-between align-items-center p-3 rounded ${selectedSubcategory?._id ===
                                         subcategory._id
-                                      );
-                                    }}
-                                  >
-                                    <div className="d-flex align-items-center">
-                                      <input
-                                        type="checkbox"
-                                        className="form-check-input me-2"
-                                        checked={subcategory.items.every(item => selectedItems[item._id])}
-                                        onChange={(e) => {
-                                          const isChecked = e.target.checked;
-                                          const newSelected = { ...selectedItems };
-                                          subcategory.items.forEach(item => {
-                                            newSelected[item._id] = isChecked;
-                                          });
-                                          setSelectedItems(newSelected);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                      <span className="fw-medium fs-6 fs-sm-5 fs-md-4 fs-lg-3">
-                                        {subcategory.name}
-                                      </span>
-                                      <span className="badge bg-secondary ms-3 fs-6 fs-sm-5 fs-md-5 fs-lg-4 gap-2">
-                                        {subcategory.items.length}
-                                      </span>
+                                        ? "bg-info bg-opacity-10"
+                                        : "bg-white"
+                                        }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSubcategory(subcategory._id);
+                                        handleCategorySelect(
+                                          category._id,
+                                          subcategory._id
+                                        );
+                                      }}
+                                    >
+                                      <div className="d-flex align-items-center">
+                                        <input
+                                          type="checkbox"
+                                          className="form-check-input me-2"
+                                          checked={subcategory.items.every(item => selectedItems[item._id])}
+                                          onChange={(e) => {
+                                            const isChecked = e.target.checked;
+                                            const newSelected = { ...selectedItems };
+                                            subcategory.items.forEach(item => {
+                                              newSelected[item._id] = isChecked;
+                                            });
+                                            setSelectedItems(newSelected);
+                                          }}
+                                          onClick={(e) => e.stopPropagation()}
+                                        />
+                                        <span className="fw-medium fs-6 fs-sm-5 fs-md-4 fs-lg-3">
+                                          {subcategory.name}
+                                        </span>
+                                        <span className="badge bg-secondary ms-3 fs-6 fs-sm-5 fs-md-5 fs-lg-4 gap-2">
+                                          {subcategory.items.length}
+                                        </span>
+                                      </div>
+                                      <div className="d-flex align-items-center gap-3">
+                                        <button
+                                          className="btn btn-outline-info p-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            showInfoTooltip(
+                                              e,
+                                              `Click on + icon to add more items, click on pencil to edit sub-category name, click on trash bin to delete sub-category`
+                                            );
+                                          }}
+                                          title="Info"
+                                        >
+                                          <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-secondary p-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openModal(
+                                              "subcategory",
+                                              "edit",
+                                              subcategory,
+                                              category._id
+                                            );
+                                          }}
+                                        >
+                                          <i className="bi bi-pencil fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-success p-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAddItemClick(
+                                              category._id,
+                                              subcategory._id
+                                            );
+                                          }}
+                                          title="Add Item"
+                                        >
+                                          <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-danger p-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteSubcategory(
+                                              category._id,
+                                              subcategory._id
+                                            );
+                                          }}
+                                        >
+                                          <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                        </button>
+                                        <button>
+                                         <i className="chevron-icon" style={{ width: 16, height: 16 }}>
+  {expandedSubcategories[subcategory._id] ? (
+    // Chevron Down SVG
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path fillRule="evenodd" d="M1.646 5.646a.5.5 0 0 1 .708 0L8 11.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+    </svg>
+  ) : (
+    // Chevron Right SVG
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path fillRule="evenodd" d="M6.646 14.854a.5.5 0 0 1 0-.708L11.293 8 6.646 3.354a.5.5 0 1 1 .708-.708l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708 0z"/>
+    </svg>
+  )}
+</i>
+                                        </button>
+                                        
+                                      </div>
                                     </div>
-                                    <div className="d-flex align-items-center gap-3">
-                                      <button
-                                        className="btn btn-outline-info p-2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          showInfoTooltip(
-                                            e,
-                                            `Click on + icon to add more items, click on pencil to edit sub-category name, click on trash bin to delete sub-category`
-                                          );
-                                        }}
-                                        title="Info"
-                                      >
-                                        <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary p-2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openModal(
-                                            "subcategory",
-                                            "edit",
-                                            subcategory,
-                                            category._id
-                                          );
-                                        }}
-                                      >
-                                        <i className="bi bi-pencil fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-success p-2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleAddItemClick(
-                                            category._id,
-                                            subcategory._id
-                                          );
-                                        }}
-                                        title="Add Item"
-                                      >
-                                        <i className="bi bi-plus-lg fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-danger p-2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          deleteSubcategory(
-                                            category._id,
-                                            subcategory._id
-                                          );
-                                        }}
-                                      >
-                                        <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                      </button>
-                                      <i
-                                        className={`bi bi-chevron-${expandedSubcategories[subcategory._id]
-                                          ? "up"
-                                          : "down"
-                                          } fs-5`}
-                                      ></i>
-                                    </div>
-                                  </div>
-                                  {expandedSubcategories[subcategory._id] && (
-                                    <div className="ms-4 ps-3 border-start">
-                                      <div className="d-flex justify-content-between p-2 bg-light">
-                                        <div>
-                                          <span className="me-2">
-                                            {Object.values(selectedItems).filter(Boolean).length} selected
-                                          </span>
+                                    {expandedSubcategories[subcategory._id] && (
+                                      <div className="ms-4 ps-3 border-start">
+                                        <div className="d-flex justify-content-between p-2 bg-light">
+                                          <div>
+                                            <span className="me-2">
+                                              {Object.values(selectedItems).filter(Boolean).length} selected
+                                            </span>
+                                            <button
+                                              className="btn btn-sm btn-outline-danger me-2"
+                                              disabled={!Object.values(selectedItems).some(Boolean)}
+                                              onClick={() => handleDeleteSelectedItems(category._id, subcategory._id)}
+                                            >
+                                              Delete Selected
+                                            </button>
+                                          </div>
                                           <button
-                                            className="btn btn-sm btn-outline-danger me-2"
-                                            disabled={!Object.values(selectedItems).some(Boolean)}
-                                            onClick={() => handleDeleteSelectedItems(category._id, subcategory._id)}
+                                            className="btn btn-sm btn-outline-secondary"
+                                            onClick={() => setSelectedItems({})}
                                           >
-                                            Delete Selected
+                                            Clear Selection
                                           </button>
                                         </div>
-                                        <button
-                                          className="btn btn-sm btn-outline-secondary"
-                                          onClick={() => setSelectedItems({})}
-                                        >
-                                          Clear Selection
-                                        </button>
-                                      </div>
-                                      {subcategory.items.map((item) => (
-                                        <div
-                                          key={item._id}
-                                          className="d-flex justify-content-between align-items-center p-3 my-2 bg-white rounded"
-                                          style={{ cursor: "pointer" }}
-                                        >
-                                          <div className="d-flex align-items-center">
-                                            <input
-                                              type="checkbox"
-                                              className="form-check-input me-3"
-                                              checked={!!selectedItems[item._id]}
-                                              onChange={(e) => {
-                                                e.stopPropagation();
-                                                handleItemCheckboxChange(item._id, e.target.checked);
-                                              }}
-                                              onClick={(e) => e.stopPropagation()}
-                                            />
-                                            <span className="fs-5" onClick={() => handleEditItem(item)}>
-                                              {item.name}
-                                            </span>
-                                            <div className="d-flex align-items-center gap-2 ms-2">
-                                              <span className="badge bg-info">Qty: {item.quantity == null ? 'not given' : item.quantity}</span>
-                                              {item.inStock === false && (
-                                                <span className="badge bg-danger">Out of Stock</span>
-                                              )}
+                                        {subcategory.items.length === 0 ? (
+                                          <div className="text-center py-3">
+                                            <p>No items in this subcategory yet. Click the + button to add one.</p>
+                                          </div>
+                                        ) : (
+                                          subcategory.items.map((item) => (
+                                            <div
+                                              key={item._id}
+                                              className="d-flex justify-content-between align-items-center p-3 my-2 bg-white rounded"
+                                              style={{ cursor: "pointer" }}
+                                            >
+                                              <div className="d-flex align-items-center">
+                                                <input
+                                                  type="checkbox"
+                                                  className="form-check-input me-3"
+                                                  checked={!!selectedItems[item._id]}
+                                                  onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    handleItemCheckboxChange(item._id, e.target.checked);
+                                                  }}
+                                                  onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <span className="fs-5" onClick={() => handleEditItem(item)}>
+                                                  {item.name}
+                                                </span>
+                                                <div className="d-flex align-items-center gap-2 ms-2">
+                                                  <span className="badge bg-info">Qty: {item.quantity == null ? 'not given' : item.quantity}</span>
+                                                  {item.inStock === false && (
+                                                    <span className="badge bg-danger">Out of Stock</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                              <div className="d-flex align-items-center gap-3">
+                                                <button
+                                                  className="btn btn-outline-info p-2"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    showInfoTooltip(
+                                                      e,
+                                                      `Click here to edit item details, click on trash bin to delete the item`
+                                                    );
+                                                  }}
+                                                  title="Info"
+                                                >
+                                                  <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                                </button>
+                                                <button
+                                                  className="btn btn-outline-danger p-2"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteItem(
+                                                      category._id,
+                                                      subcategory._id,
+                                                      item._id,
+                                                      e
+                                                    );
+                                                  }}
+                                                  title="Delete Item"
+                                                >
+                                                  <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
+                                                </button>
+                                              </div>
                                             </div>
-                                          </div>
-                                          <div className="d-flex align-items-center gap-3">
-                                            <button
-                                              className="btn btn-outline-info p-2"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                showInfoTooltip(
-                                                  e,
-                                                  `Click here to edit item details, click on trash bin to delete the item`
-                                                );
-                                              }}
-                                              title="Info"
-                                            >
-                                              <i className="bi bi-info-circle fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                            </button>
-                                            <button
-                                              className="btn btn-outline-danger p-2"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteItem(
-                                                  category._id,
-                                                  subcategory._id,
-                                                  item._id,
-                                                  e
-                                                );
-                                              }}
-                                              title="Delete Item"
-                                            >
-                                              <i className="bi bi-trash fs-6 fs-sm-5 fs-md-2 fs-lg-3"></i>
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                          ))
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              )}
                             </div>
                           )}
                         </div>

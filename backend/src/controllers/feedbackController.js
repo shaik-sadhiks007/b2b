@@ -1,5 +1,5 @@
 const Feedback = require('../models/feedbackModel');
-const { uploadMultipleBase64Images } = require('../config/cloudinary');
+const { uploadMultipleBase64Images } = require('../utils/awsS3');
 
 // POST /api/feedback
 const submitFeedback = async (req, res) => {

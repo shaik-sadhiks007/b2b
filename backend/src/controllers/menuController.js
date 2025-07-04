@@ -1,5 +1,5 @@
 const Menu = require('../models/menuModel');
-const { cloudinary, uploadMultipleBase64Images } = require('../config/cloudinary');
+const { uploadBase64ImageToS3, getS3ObjectUrl, deleteS3Object } = require('../utils/awsS3');
 
 // Get all menu items for a business
 const getAllMenuItems = async (req, res) => {
@@ -110,20 +110,17 @@ const getMenuItem = async (req, res) => {
 const createMenuItem = async (req, res) => {
     try {
         // Use default values if category or subcategory are empty or missing
-        console.log(req.body, 'body')
         const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
         const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
-        
+
         // Handle photo upload if photo is provided
         let photoUrl = null;
         if (req.body.photos) {
-            // Upload single photo to Cloudinary
-            photoUrl = await uploadMultipleBase64Images([req.body.photos]);
-            
-            // Get the first (and only) uploaded photo URL
-            photoUrl = photoUrl.length > 0 ? photoUrl[0] : null;
+            // Upload single photo to S3
+            const s3Key = await uploadBase64ImageToS3(req.body.photos);
+            photoUrl = getS3ObjectUrl(s3Key);
         }
-        
+
         // Create menu item with uploaded photo URL
         const newItem = new Menu({
             ...req.body,
@@ -159,11 +156,9 @@ const bulkCreateMenuItems = async (req, res) => {
             
             let photoUrl = null;
             if (item.photos) {
-                // Upload single photo to Cloudinary
-                const photoUrls = await uploadMultipleBase64Images([item.photos]);
-                
-                // Get the first (and only) uploaded photo URL
-                photoUrl = photoUrls.length > 0 ? photoUrls[0] : null;
+                // Upload single photo to S3
+                const s3Key = await uploadBase64ImageToS3(item.photos);
+                photoUrl = getS3ObjectUrl(s3Key);
             }
             
             menuItemsToCreate.push(new Menu({
@@ -189,13 +184,22 @@ const updateMenuItem = async (req, res) => {
     try {
         // Handle photo upload if photo is provided in the update
         let updateData = { ...req.body };
-        
+        let oldPhotoKey = null;
+        let oldPhotoUrl = null;
         if (req.body.photos) {
-            // Upload single photo to Cloudinary
-            const photoUrls = await uploadMultipleBase64Images([req.body.photos]);
-            
-            // Get the first (and only) uploaded photo URL
-            updateData.photos = photoUrls.length > 0 ? photoUrls[0] : null;
+            // Find the existing item to get the old photo URL
+            const existingItem = await Menu.findOne({ _id: req.params.id, businessId: req.restaurant._id });
+            if (existingItem && existingItem.photos) {
+                oldPhotoUrl = existingItem.photos;
+                // Extract the S3 key from the old photo URL
+                const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+                if (oldPhotoUrl.startsWith(s3UrlPrefix)) {
+                    oldPhotoKey = oldPhotoUrl.replace(s3UrlPrefix, '');
+                }
+            }
+            // Upload single photo to S3
+            const s3Key = await uploadBase64ImageToS3(req.body.photos);
+            updateData.photos = getS3ObjectUrl(s3Key);
         }
         
         const updatedItem = await Menu.findOneAndUpdate(
@@ -203,6 +207,10 @@ const updateMenuItem = async (req, res) => {
             updateData,
             { new: true }
         );
+        // Delete the old photo from S3 after updating
+        if (oldPhotoKey) {
+            await deleteS3Object(oldPhotoKey);
+        }
         if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
         res.json(updatedItem);
     } catch (error) {
@@ -217,6 +225,14 @@ const deleteMenuItem = async (req, res) => {
     try {
         const deleted = await Menu.findOneAndDelete({ _id: req.params.id, businessId: req.restaurant._id });
         if (!deleted) return res.status(404).json({ message: 'Menu item not found' });
+        // Fire-and-forget delete of S3 image if present
+        if (deleted.photos) {
+            const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+            if (deleted.photos.startsWith(s3UrlPrefix)) {
+                const oldPhotoKey = deleted.photos.replace(s3UrlPrefix, '');
+                deleteS3Object(oldPhotoKey); // don't await
+            }
+        }
         res.json({ message: 'Menu item deleted' });
     } catch (error) {
         console.error('[menuController.js][deleteMenuItem]', error);
@@ -234,9 +250,24 @@ const bulkDeleteMenuItems = async (req, res) => {
             return res.status(400).json({ message: 'Item IDs array is required and must not be empty' });
         }
 
+        // Find all items to be deleted to get their photo URLs
+        const itemsToDelete = await Menu.find({ 
+            _id: { $in: itemIds }, 
+            businessId: req.restaurant._id 
+        });
+
         const result = await Menu.deleteMany({ 
             _id: { $in: itemIds }, 
             businessId: req.restaurant._id 
+        });
+
+        // Fire-and-forget delete of S3 images for each item
+        const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+        itemsToDelete.forEach(item => {
+            if (item.photos && item.photos.startsWith(s3UrlPrefix)) {
+                const oldPhotoKey = item.photos.replace(s3UrlPrefix, '');
+                deleteS3Object(oldPhotoKey); // don't await
+            }
         });
 
         if (result.deletedCount === 0) {

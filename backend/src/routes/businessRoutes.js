@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const cloudinary = require('cloudinary').v2;
 const authMiddleware = require('../middleware/authMiddleware');
 const businessMiddleware = require('../middleware/restaurantMiddleware');
 const {
@@ -34,12 +33,6 @@ const upload = multer({
     }
 });
 
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 // Create new business (Step 1)
 router.post('/', authMiddleware, upload.single('profileImage'), createBusiness);

@@ -22,7 +22,7 @@ const businessSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    
+
     sameAsOwnerPhone: {
         type: Boolean,
         default: false
@@ -35,12 +35,11 @@ const businessSchema = new mongoose.Schema({
         type: String
     },
     address: {
-        shopNo: String,
-        floor: String,
-        locality: String,
-        landmark: String,
-        city: String,
-        fullAddress: String
+        streetAddress: { type: String },
+        city: { type: String },
+        state: { type: String },
+        country: { type: String, default: "india" },
+        pinCode: { type: String }
     },
     location: {
         lat: Number,
@@ -79,7 +78,7 @@ const businessSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['draft', 'published', 'archived','review','rejected'],
+        enum: ['draft', 'published', 'archived', 'review', 'rejected'],
         default: 'draft'
     },
     online: {

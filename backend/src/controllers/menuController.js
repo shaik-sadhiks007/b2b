@@ -33,6 +33,7 @@ const getAllMenuItems = async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('[menuController.js][getAllMenuItems]', error);
+        console.trace('[menuController.js][getAllMenuItems] Stack trace:');
         res.status(500).json({ message: 'Error fetching menu items', error: error.message });
     }
 };
@@ -69,6 +70,7 @@ const getAllMenuItemsOfPublic = async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('[menuController.js][getAllMenuItemsOfPublic]', error);
+        console.trace('[menuController.js][getAllMenuItemsOfPublic] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -84,6 +86,7 @@ const getAllMenuItemsInstore = async (req, res) => {
         res.json({ menu: menuItems });
     } catch (error) {
         console.error('[menuController.js][getAllMenuItemsInstore]', error);
+        console.trace('[menuController.js][getAllMenuItemsInstore] Stack trace:');
         res.status(500).json({ message: 'Error fetching menu items', error: error.message });
     }
 
@@ -98,6 +101,7 @@ const getMenuItem = async (req, res) => {
         res.json(item);
     } catch (error) {
         console.error('[menuController.js][getMenuItem]', error);
+        console.trace('[menuController.js][getMenuItem] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -132,6 +136,7 @@ const createMenuItem = async (req, res) => {
         res.status(201).json(savedItem);
     } catch (error) {
         console.error('[menuController.js][createMenuItem]', error);
+        console.trace('[menuController.js][createMenuItem] Stack trace:');
         res.status(400).json({ message: error.message });
     }
 };
@@ -174,6 +179,7 @@ const bulkCreateMenuItems = async (req, res) => {
         res.status(201).json(savedItems);
     } catch (error) {
         console.error('[menuController.js][bulkCreateMenuItems]', error);
+        console.trace('[menuController.js][bulkCreateMenuItems] Stack trace:');
         res.status(400).json({ message: error.message });
     }
 };
@@ -201,6 +207,7 @@ const updateMenuItem = async (req, res) => {
         res.json(updatedItem);
     } catch (error) {
         console.error('[menuController.js][updateMenuItem]', error);
+        console.trace('[menuController.js][updateMenuItem] Stack trace:');
         res.status(400).json({ message: error.message });
     }
 };
@@ -213,6 +220,7 @@ const deleteMenuItem = async (req, res) => {
         res.json({ message: 'Menu item deleted' });
     } catch (error) {
         console.error('[menuController.js][deleteMenuItem]', error);
+        console.trace('[menuController.js][deleteMenuItem] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -241,6 +249,7 @@ const bulkDeleteMenuItems = async (req, res) => {
         });
     } catch (error) {
         console.error('[menuController.js][bulkDeleteMenuItems]', error);
+        console.trace('[menuController.js][bulkDeleteMenuItems] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -259,6 +268,7 @@ const renameCategory = async (req, res) => {
         res.json({ message: `Category renamed from '${oldCategory}' to '${newCategory}'`, modifiedCount: result.modifiedCount });
     } catch (error) {
         console.error('[menuController.js][renameCategory]', error);
+        console.trace('[menuController.js][renameCategory] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -277,6 +287,7 @@ const renameSubcategory = async (req, res) => {
         res.json({ message: `Subcategory renamed from '${oldSubcategory}' to '${newSubcategory}' in category '${category}'`, modifiedCount: result.modifiedCount });
     } catch (error) {
         console.error('[menuController.js][renameSubcategory]', error);
+        console.trace('[menuController.js][renameSubcategory] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };

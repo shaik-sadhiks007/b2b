@@ -7,6 +7,7 @@ const getAllAddresses = async (req, res) => {
     res.json(addresses);
   } catch (error) {
     console.error('[customerAddressController.js][getAllAddresses]', error);
+    console.trace('[customerAddressController.js][getAllAddresses] Stack trace:');
     res.status(500).json({ message: error.message });
   }
 };
@@ -34,6 +35,7 @@ const createAddress = async (req, res) => {
     res.status(201).json(newAddress);
   } catch (error) {
     console.error('[customerAddressController.js][createAddress]', error);
+    console.trace('[customerAddressController.js][createAddress] Stack trace:');
     res.status(400).json({ message: error.message });
   }
 };
@@ -61,6 +63,7 @@ const updateAddress = async (req, res) => {
     res.json(updatedAddress);
   } catch (error) {
     console.error('[customerAddressController.js][updateAddress]', error);
+    console.trace('[customerAddressController.js][updateAddress] Stack trace:');
     res.status(400).json({ message: error.message });
   }
 };
@@ -80,6 +83,7 @@ const deleteAddress = async (req, res) => {
     res.json({ message: 'Address deleted successfully' });
   } catch (error) {
     console.error('[customerAddressController.js][deleteAddress]', error);
+    console.trace('[customerAddressController.js][deleteAddress] Stack trace:');
     res.status(500).json({ message: error.message });
   }
 };
@@ -104,6 +108,7 @@ const setDefaultAddress = async (req, res) => {
     res.json(updatedAddress);
   } catch (error) {
     console.error('[customerAddressController.js][setDefaultAddress]', error);
+    console.trace('[customerAddressController.js][setDefaultAddress] Stack trace:');
     res.status(400).json({ message: error.message });
   }
 };

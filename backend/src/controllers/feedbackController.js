@@ -26,6 +26,7 @@ const submitFeedback = async (req, res) => {
     res.status(201).json({ message: 'Feedback submitted successfully.' });
   } catch (error) {
     console.error('[feedbackController.js][submitFeedback]', error);
+    console.trace('[feedbackController.js][submitFeedback] Stack trace:');
     res.status(500).json({ message: 'Failed to submit feedback.' });
   }
 };

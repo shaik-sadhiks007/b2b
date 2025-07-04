@@ -68,6 +68,7 @@ const createBusiness = async (req, res) => {
         res.status(201).json(business);
     } catch (error) {
         console.error('[businessController.js][createBusiness]', error);
+        console.trace('[businessController.js][createBusiness] Stack trace:');
         res.status(500).json({ message: 'Error creating business', error: error.message });
     }
 };
@@ -109,6 +110,7 @@ const updateBusinessStep = async (req, res) => {
                     updateData.images.profileImage = result.secure_url;
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessStep-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             } else if (formDataObj.images?.profileImage) {
@@ -123,6 +125,7 @@ const updateBusinessStep = async (req, res) => {
                     }
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessStep-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
@@ -134,6 +137,7 @@ const updateBusinessStep = async (req, res) => {
                         updateData.images[imageType] = result.secure_url;
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessStep-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 } else if (formDataObj.images?.[imageType]) {
@@ -148,6 +152,7 @@ const updateBusinessStep = async (req, res) => {
                         }
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessStep-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
@@ -169,6 +174,7 @@ const updateBusinessStep = async (req, res) => {
         res.json(updatedBusiness);
     } catch (error) {
         console.error('[businessController.js][updateBusinessStep]', error);
+        console.trace('[businessController.js][updateBusinessStep] Stack trace:');
         res.status(500).json({ message: 'Error updating business step', error: error.message });
     }
 };
@@ -180,6 +186,7 @@ const getMyBusinesses = async (req, res) => {
         res.json(businesses);
     } catch (error) {
         console.error('[businessController.js][getMyBusinesses]', error);
+        console.trace('[businessController.js][getMyBusinesses] Stack trace:');
         res.status(500).json({ message: 'Error fetching businesses', error: error.message });
     }
 };
@@ -194,6 +201,7 @@ const getBusinessProfile = async (req, res) => {
         res.json(business);
     } catch (error) {
         console.error('[businessController.js][getBusinessProfile]', error);
+        console.trace('[businessController.js][getBusinessProfile] Stack trace:');
         res.status(500).json({ message: 'Error getting business profile', error: error.message });
     }
 };
@@ -212,6 +220,7 @@ const updateBusinessProfile = async (req, res) => {
                     updateData.images.profileImage = result.secure_url;
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             } else if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
@@ -222,6 +231,7 @@ const updateBusinessProfile = async (req, res) => {
                     }
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
@@ -233,6 +243,7 @@ const updateBusinessProfile = async (req, res) => {
                         updateData.images[imageType] = result.secure_url;
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessProfile-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 } else if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
@@ -243,6 +254,7 @@ const updateBusinessProfile = async (req, res) => {
                         }
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessProfile-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
@@ -268,6 +280,7 @@ const updateBusinessProfile = async (req, res) => {
         res.json(business);
     } catch (error) {
         console.error('[businessController.js][updateBusinessProfile]', error);
+        console.trace('[businessController.js][updateBusinessProfile] Stack trace:');
         res.status(500).json({ message: 'Error updating business profile', error: error.message });
     }
 };
@@ -341,6 +354,7 @@ const getAllPublicBusinesses = async (req, res) => {
         }
     } catch (error) {
         console.error('[businessController.js][getAllPublicBusinesses]', error);
+        console.trace('[businessController.js][getAllPublicBusinesses] Stack trace:');
         res.status(500).json({ message: 'Error getting businesses', error: error.message });
     }
 };
@@ -399,6 +413,7 @@ const getPublicBusinessById = async (req, res) => {
         res.json(formattedBusiness);
     } catch (error) {
         console.error('[businessController.js][getPublicBusinessById]', error);
+        console.trace('[businessController.js][getPublicBusinessById] Stack trace:');
         res.status(500).json({ message: 'Error getting business', error: error.message });
     }
 };

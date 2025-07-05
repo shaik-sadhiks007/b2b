@@ -22,7 +22,7 @@ const customerAddressSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  zip: {
+  pincode: {
     type: String,
     required: true
   },

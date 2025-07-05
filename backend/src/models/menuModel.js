@@ -58,10 +58,11 @@ const menuItemSchema = new mongoose.Schema({
     },
     quantity: {
         type: Number,
-        default: 100,
-        required: true
-        
+        default: 100
+
     }
+}, {
+    timestamps: true
 });
 
 // Compound index

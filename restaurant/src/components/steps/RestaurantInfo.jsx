@@ -125,8 +125,10 @@ const RestaurantInfo = ({
             errors.push('WhatsApp Number must be 10 digits');
         }
 
-        if (!formData.address?.shopNo) errors.push('Shop No. / Building No. is required');
-        if (!formData.address?.locality) errors.push('Area / Sector / Locality is required');
+        if (!formData.address?.streetAddress) errors.push('Street Address is required');
+        if (!formData.address?.city) errors.push('City is required');
+        if (!formData.address?.state) errors.push('State is required');
+        if (!formData.address?.pinCode) errors.push('Pin Code is required');
         if (!selectedLocation) errors.push('Please select a location on the map');
 
 
@@ -150,12 +152,11 @@ const RestaurantInfo = ({
                 website: formData.contact?.website || ''
             },
             address: {
-                shopNo: formData.address?.shopNo || '',
-                floor: formData.address?.floor || '',
-                locality: formData.address?.locality || '',
-                landmark: formData.address?.landmark || '',
+                streetAddress: formData.address?.streetAddress || '',
                 city: formData.address?.city || '',
-                fullAddress: selectedLocation ? selectedLocation.display_name : ''
+                state: formData.address?.state || '',
+                country: formData.address?.country || 'india',
+                pinCode: formData.address?.pinCode || ''
             },
             location: {
                 lat: selectedLocation ? parseFloat(selectedLocation.lat) : null,
@@ -330,45 +331,56 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Shop No. / Building No. <span className="text-danger">*</span></label>
+                <label className="form-label">Street Address <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
-                    name="shopNo"
-                    value={formData.address?.shopNo || ''}
+                    name="streetAddress"
+                    value={formData.address?.streetAddress || ''}
                     onChange={handleAddressChange}
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Floor / Tower <span className="text-muted">(Optional)</span></label>
+                <label className="form-label">City <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
-                    name="floor"
-                    value={formData.address?.floor || ''}
+                    name="city"
+                    value={formData.address?.city || ''}
                     onChange={handleAddressChange}
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Enter your complete address <span className="text-danger">*</span></label>
+                <label className="form-label">State <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"
-                    name="locality"
-                    value={formData.address?.locality || ''}
+                    name="state"
+                    value={formData.address?.state || ''}
                     onChange={handleAddressChange}
                 />
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Landmark <span className="text-muted">(Optional)</span></label>
+                <label className="form-label">Country <span className="text-muted">(Default: India)</span></label>
                 <input
                     type="text"
                     className="form-control"
-                    name="landmark"
-                    value={formData.address?.landmark || ''}
+                    name="country"
+                    value={formData.address?.country || 'india'}
+                    onChange={handleAddressChange}
+                />
+            </div>
+
+            <div className="mb-3">
+                <label className="form-label">Pin Code <span className="text-danger">*</span></label>
+                <input
+                    type="text"
+                    className="form-control"
+                    name="pinCode"
+                    value={formData.address?.pinCode || ''}
                     onChange={handleAddressChange}
                 />
             </div>

@@ -1,7 +1,5 @@
 # Dependencies
 node_modules/
-.env
-
 # Firebase
 # backend/firebase-service-account.json
 
@@ -26,3 +24,7 @@ yarn-error.log*
 Thumbs.db 
 
 backend/serviceAccountKey.json
+
+.env
+
+backend/.env

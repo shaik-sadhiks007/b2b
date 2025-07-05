@@ -50,6 +50,7 @@ const addToCart = async (req, res) => {
         res.status(201).json(cart);
     } catch (error) {
         console.error('[cartController.js][addToCart]', error);
+        console.trace('[cartController.js][addToCart] Stack trace:');
         res.status(500).json({ message: "Error adding to cart", error: error.message });
     }
 };
@@ -76,6 +77,7 @@ const getCartItems = async (req, res) => {
         res.json(transformedCarts);
     } catch (error) {
         console.error('[cartController.js][getCartItems]', error);
+        console.trace('[cartController.js][getCartItems] Stack trace:');
         res.status(500).json({ message: "Error fetching cart items", error: error.message });
     }
 };
@@ -107,6 +109,7 @@ const updateCartQuantity = async (req, res) => {
         res.json(cart);
     } catch (error) {
         console.error('[cartController.js][updateCartQuantity]', error);
+        console.trace('[cartController.js][updateCartQuantity] Stack trace:');
         res.status(500).json({ message: "Error updating cart quantity", error: error.message });
     }
 };
@@ -135,6 +138,7 @@ const deleteCartItem = async (req, res) => {
         res.json(cart);
     } catch (error) {
         console.error('[cartController.js][deleteCartItem]', error);
+        console.trace('[cartController.js][deleteCartItem] Stack trace:');
         res.status(500).json({ message: "Error deleting cart item", error: error.message });
     }
 };
@@ -152,6 +156,7 @@ const clearCart = async (req, res) => {
         res.json({ message: "Cart cleared successfully" });
     } catch (error) {
         console.error('[cartController.js][clearCart]', error);
+        console.trace('[cartController.js][clearCart] Stack trace:');
         res.status(500).json({ message: "Error clearing cart", error: error.message });
     }
 };

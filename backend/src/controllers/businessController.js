@@ -1,8 +1,7 @@
 const path = require('path');
-const cloudinary = require('cloudinary').v2;
 const Business = require('../models/businessModel');
 const geolib = require('geolib');
-const { uploadBase64ToCloudinary } = require('../config/cloudinary');
+const { uploadBase64ImageToS3, getS3ObjectUrl } = require('../utils/awsS3');
 const moment = require('moment-timezone');
 
 // Create new business (Step 1)
@@ -23,8 +22,13 @@ const createBusiness = async (req, res) => {
         } = formDataObj;
         let profileImageUrl = null;
         if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.path);
-            profileImageUrl = result.secure_url;
+            // Assume req.file.buffer contains the image buffer
+            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+            profileImageUrl = getS3ObjectUrl(s3Key);
+        } else if (formDataObj.profileImage && formDataObj.profileImage.startsWith('data:image')) {
+            const s3Key = await uploadBase64ImageToS3(formDataObj.profileImage, 'business');
+            profileImageUrl = getS3ObjectUrl(s3Key);
         }
         const business = new Business({
             owner: req.user.id,
@@ -42,6 +46,7 @@ const createBusiness = async (req, res) => {
             sameAsOwnerPhone,
             whatsappUpdates,
             description,
+            images: { profileImage: profileImageUrl },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
                 defaultCloseTime: operatingHours?.defaultCloseTime || '',
@@ -68,6 +73,7 @@ const createBusiness = async (req, res) => {
         res.status(201).json(business);
     } catch (error) {
         console.error('[businessController.js][createBusiness]', error);
+        console.trace('[businessController.js][createBusiness] Stack trace:');
         res.status(500).json({ message: 'Error creating business', error: error.message });
     }
 };
@@ -103,58 +109,69 @@ const updateBusinessStep = async (req, res) => {
             if (!updateData.images) {
                 updateData.images = {};
             }
+            // Profile image
             if (req.files?.profileImage?.[0]) {
                 try {
-                    const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
-                    updateData.images.profileImage = result.secure_url;
+                    const file = req.files.profileImage[0];
+                    const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                    const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessStep-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
-            } else if (formDataObj.images?.profileImage) {
+            } else if (formDataObj.images?.profileImage && formDataObj.images.profileImage.startsWith('data:image')) {
                 try {
-                    if (formDataObj.images.profileImage.startsWith('data:image')) {
-                        const imageUrl = await uploadBase64ToCloudinary(formDataObj.images.profileImage);
-                        if (imageUrl) {
-                            updateData.images.profileImage = imageUrl;
-                        }
-                    } else if (formDataObj.images.profileImage.includes('cloudinary')) {
-                        updateData.images.profileImage = formDataObj.images.profileImage;
-                    }
+                    const s3Key = await uploadBase64ImageToS3(formDataObj.images.profileImage, 'business');
+                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessStep-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
+            } else if (formDataObj.images?.profileImage && formDataObj.images.profileImage.includes('amazonaws.com')) {
+                updateData.images.profileImage = formDataObj.images.profileImage;
             }
+            // Optional images
             const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
                     try {
-                        const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
-                        updateData.images[imageType] = result.secure_url;
+                        const file = req.files[imageType][0];
+                        const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                        const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                        updateData.images[imageType] = getS3ObjectUrl(s3Key);
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessStep-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
-                } else if (formDataObj.images?.[imageType]) {
+                } else if (formDataObj.images?.[imageType] && formDataObj.images[imageType].startsWith('data:image')) {
                     try {
-                        if (formDataObj.images[imageType].startsWith('data:image')) {
-                            const imageUrl = await uploadBase64ToCloudinary(formDataObj.images[imageType]);
-                            if (imageUrl) {
-                                updateData.images[imageType] = imageUrl;
-                            }
-                        } else if (formDataObj.images[imageType].includes('cloudinary')) {
-                            updateData.images[imageType] = formDataObj.images[imageType];
-                        }
+                        const s3Key = await uploadBase64ImageToS3(formDataObj.images[imageType], 'business');
+                        updateData.images[imageType] = getS3ObjectUrl(s3Key);
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessStep-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessStep-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
+                } else if (formDataObj.images?.[imageType] && formDataObj.images[imageType].includes('amazonaws.com')) {
+                    updateData.images[imageType] = formDataObj.images[imageType];
                 }
             }
             if (!updateData.images.profileImage) {
                 return res.status(400).json({ message: 'Profile image is required' });
             }
+        }
+        if (updateData.address) {
+            updateData.address = {
+                streetAddress: updateData.address.streetAddress || '',
+                city: updateData.address.city || '',
+                state: updateData.address.state || '',
+                country: updateData.address.country || 'india',
+                pinCode: updateData.address.pinCode || ''
+            };
         }
         updateData.currentStep = step;
         if (step === 4) {
@@ -169,6 +186,7 @@ const updateBusinessStep = async (req, res) => {
         res.json(updatedBusiness);
     } catch (error) {
         console.error('[businessController.js][updateBusinessStep]', error);
+        console.trace('[businessController.js][updateBusinessStep] Stack trace:');
         res.status(500).json({ message: 'Error updating business step', error: error.message });
     }
 };
@@ -180,6 +198,7 @@ const getMyBusinesses = async (req, res) => {
         res.json(businesses);
     } catch (error) {
         console.error('[businessController.js][getMyBusinesses]', error);
+        console.trace('[businessController.js][getMyBusinesses] Stack trace:');
         res.status(500).json({ message: 'Error fetching businesses', error: error.message });
     }
 };
@@ -194,6 +213,7 @@ const getBusinessProfile = async (req, res) => {
         res.json(business);
     } catch (error) {
         console.error('[businessController.js][getBusinessProfile]', error);
+        console.trace('[businessController.js][getBusinessProfile] Stack trace:');
         res.status(500).json({ message: 'Error getting business profile', error: error.message });
     }
 };
@@ -202,26 +222,26 @@ const getBusinessProfile = async (req, res) => {
 const updateBusinessProfile = async (req, res) => {
     try {
         const updateData = { ...req.body };
+        let oldProfileImageKey = null;
+        let oldProfileImageUrl = null;
+        // Find the existing business to get the old image URL
+        const existingBusiness = await Business.findById(req.restaurant._id);
+        if (existingBusiness && existingBusiness.images && existingBusiness.images.profileImage) {
+            oldProfileImageUrl = existingBusiness.images.profileImage;
+        }
         if (req.files) {
             if (!updateData.images) {
                 updateData.images = {};
             }
             if (req.files.profileImage?.[0]) {
                 try {
-                    const result = await cloudinary.uploader.upload(req.files.profileImage[0].path);
-                    updateData.images.profileImage = result.secure_url;
+                    const file = req.files.profileImage[0];
+                    const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                    const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
                 } catch (error) {
                     console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
-                    return res.status(500).json({ message: 'Error uploading profile image' });
-                }
-            } else if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
-                try {
-                    const imageUrl = await uploadBase64ToCloudinary(updateData.images.profileImage);
-                    if (imageUrl) {
-                        updateData.images.profileImage = imageUrl;
-                    }
-                } catch (error) {
-                    console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
@@ -229,23 +249,35 @@ const updateBusinessProfile = async (req, res) => {
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
                     try {
-                        const result = await cloudinary.uploader.upload(req.files[imageType][0].path);
-                        updateData.images[imageType] = result.secure_url;
+                        const file = req.files[imageType][0];
+                        const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                        const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                        updateData.images[imageType] = getS3ObjectUrl(s3Key);
                     } catch (error) {
                         console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
-                        return res.status(500).json({ message: `Error uploading ${imageType}` });
-                    }
-                } else if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
-                    try {
-                        const imageUrl = await uploadBase64ToCloudinary(updateData.images[imageType]);
-                        if (imageUrl) {
-                            updateData.images[imageType] = imageUrl;
-                        }
-                    } catch (error) {
-                        console.error(`[businessController.js][updateBusinessProfile-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessProfile-${imageType}] Stack trace:`);
                         return res.status(500).json({ message: `Error uploading ${imageType}` });
                     }
                 }
+            }
+        }
+        // Handle base64 image upload even if req.files is not present
+        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+            try {
+                const s3Key = await uploadBase64ImageToS3(updateData.images.profileImage, 'business');
+                updateData.images.profileImage = getS3ObjectUrl(s3Key);
+            } catch (error) {
+                console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
+                console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
+                return res.status(500).json({ message: 'Error uploading profile image' });
+            }
+        }
+        // If a new profile image was uploaded, delete the old S3 object (fire-and-forget)
+        if (oldProfileImageUrl && updateData.images && updateData.images.profileImage && oldProfileImageUrl !== updateData.images.profileImage) {
+            const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+            if (oldProfileImageUrl.startsWith(s3UrlPrefix)) {
+                oldProfileImageKey = oldProfileImageUrl.replace(s3UrlPrefix, '');
+                require('../utils/awsS3').deleteS3Object(oldProfileImageKey); // don't await
             }
         }
         Object.keys(updateData).forEach(key => {
@@ -268,6 +300,7 @@ const updateBusinessProfile = async (req, res) => {
         res.json(business);
     } catch (error) {
         console.error('[businessController.js][updateBusinessProfile]', error);
+        console.trace('[businessController.js][updateBusinessProfile] Stack trace:');
         res.status(500).json({ message: 'Error updating business profile', error: error.message });
     }
 };
@@ -341,6 +374,7 @@ const getAllPublicBusinesses = async (req, res) => {
         }
     } catch (error) {
         console.error('[businessController.js][getAllPublicBusinesses]', error);
+        console.trace('[businessController.js][getAllPublicBusinesses] Stack trace:');
         res.status(500).json({ message: 'Error getting businesses', error: error.message });
     }
 };
@@ -399,6 +433,7 @@ const getPublicBusinessById = async (req, res) => {
         res.json(formattedBusiness);
     } catch (error) {
         console.error('[businessController.js][getPublicBusinessById]', error);
+        console.trace('[businessController.js][getPublicBusinessById] Stack trace:');
         res.status(500).json({ message: 'Error getting business', error: error.message });
     }
 };

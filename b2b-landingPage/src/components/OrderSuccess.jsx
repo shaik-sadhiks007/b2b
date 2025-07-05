@@ -132,7 +132,7 @@ const OrderSuccess = () => {
                                             <p className="text-sm font-medium">{order.customerAddress.fullName}</p>
                                             <p className="text-sm text-gray-600">{order.customerAddress.street}</p>
                                             <p className="text-sm text-gray-600">
-                                                {order.customerAddress.city}, {order.customerAddress.state} {order.customerAddress.zip}
+                                                {order.customerAddress.city}, {order.customerAddress.state} {order.customerAddress.pincode}
                                             </p>
                                             <p className="text-sm text-gray-600">{order.customerAddress.country}</p>
                                             <p className="text-sm text-gray-600">Phone: {order.customerAddress.phone}</p>

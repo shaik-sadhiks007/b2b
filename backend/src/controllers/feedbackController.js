@@ -1,5 +1,5 @@
 const Feedback = require('../models/feedbackModel');
-const { uploadMultipleBase64Images } = require('../config/cloudinary');
+const { uploadMultipleBase64Images } = require('../utils/awsS3');
 
 // POST /api/feedback
 const submitFeedback = async (req, res) => {
@@ -26,6 +26,7 @@ const submitFeedback = async (req, res) => {
     res.status(201).json({ message: 'Feedback submitted successfully.' });
   } catch (error) {
     console.error('[feedbackController.js][submitFeedback]', error);
+    console.trace('[feedbackController.js][submitFeedback] Stack trace:');
     res.status(500).json({ message: 'Failed to submit feedback.' });
   }
 };

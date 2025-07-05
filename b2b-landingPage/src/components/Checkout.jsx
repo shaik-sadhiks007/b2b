@@ -110,8 +110,8 @@ const Checkout = () => {
         street: '',
         city: '',
         state: '',
-        zip: '',
-        country: '',
+        pincode: '',
+        country: 'India',
         phone: ''
     });
 
@@ -179,7 +179,7 @@ const Checkout = () => {
 
             // Validate form data if showing address form
             if (showAddressForm) {
-                const requiredFields = ['fullName', 'street', 'city', 'state', 'zip', 'country', 'phone'];
+                const requiredFields = ['fullName', 'street', 'city', 'state', 'pincode', 'country', 'phone'];
                 const missingFields = requiredFields.filter(field => !formData[field]);
 
                 if (missingFields.length > 0) {
@@ -189,7 +189,7 @@ const Checkout = () => {
                             case 'street': return 'Street Address';
                             case 'city': return 'City';
                             case 'state': return 'State';
-                            case 'zip': return 'ZIP Code';
+                            case 'pincode': return 'Pincode';
                             case 'country': return 'Country';
                             case 'phone': return 'Phone Number';
                             default: return field;
@@ -302,8 +302,8 @@ const Checkout = () => {
                 street: '',
                 city: '',
                 state: '',
-                zip: '',
-                country: '',
+                pincode: '',
+                country: 'India',
                 phone: ''
             });
             setShowAddressForm(false);
@@ -322,8 +322,8 @@ const Checkout = () => {
             street: '',
             city: '',
             state: '',
-            zip: '',
-            country: '',
+            pincode: '',
+            country: 'India',
             phone: ''
         });
         setShowAddressForm(false);
@@ -422,7 +422,7 @@ const Checkout = () => {
                                                                 )}
                                                             </div>
                                                             <p className="text-gray-600">{address.street}</p>
-                                                            <p className="text-gray-600">{address.city}, {address.state} {address.zip}</p>
+                                                            <p className="text-gray-600">{address.city}, {address.state} {address.pincode}</p>
                                                             <p className="text-gray-600">{address.country}</p>
                                                             <p className="text-gray-600">Phone: {address.phone}</p>
                                                         </div>
@@ -495,12 +495,12 @@ const Checkout = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                ZIP Code <span className="text-red-500">*</span>
+                                                Pincode <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                name="zip"
-                                                value={formData.zip}
+                                                name="pincode"
+                                                value={formData.pincode}
                                                 onChange={handleInputChange}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             />

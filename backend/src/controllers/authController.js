@@ -83,6 +83,7 @@ const register = async (req, res) => {
         });
     } catch (error) {
         console.error('[authController.js][register]', error);
+        console.trace('[authController.js][register] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -109,6 +110,8 @@ const login = async (req, res) => {
             res.status(401).json({ message: 'Invalid credentials' });
         }
     } catch (error) {
+        console.error('[authController.js][login]', error);
+        console.trace('[authController.js][login] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -145,6 +148,8 @@ const googleLogin = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('[authController.js][googleLogin]', error);
+        console.trace('[authController.js][googleLogin] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -179,6 +184,7 @@ const guestLogin = async (req, res) => {
         });
     } catch (error) {
         console.error('[authController.js][guestLogin]', error);
+        console.trace('[authController.js][guestLogin] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -213,6 +219,7 @@ const verifyOTP = async (req, res) => {
         res.json({ token, message: 'Phone number verified successfully' });
     } catch (error) {
         console.error('[authController.js][verifyOTP]', error);
+        console.trace('[authController.js][verifyOTP] Stack trace:');
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -240,6 +247,7 @@ const resendOTP = async (req, res) => {
         res.json({ message: 'OTP resent successfully' });
     } catch (error) {
         console.error('[authController.js][resendOTP]', error);
+        console.trace('[authController.js][resendOTP] Stack trace:');
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -259,6 +267,8 @@ const getProfile = async (req, res) => {
 
         res.json(user);
     } catch (error) {
+        console.error('[authController.js][getProfile]', error);
+        console.trace('[authController.js][getProfile] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -289,6 +299,8 @@ const updateProfile = async (req, res) => {
             res.status(404).json({ message: 'User not found' });
         }
     } catch (error) {
+        console.error('[authController.js][updateProfile]', error);
+        console.trace('[authController.js][updateProfile] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -324,6 +336,7 @@ const uploadImage = async (req, res) => {
         res.json({ imageUrl });
     } catch (error) {
         console.error('[authController.js][uploadImage]', error);
+        console.trace('[authController.js][uploadImage] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };
@@ -353,6 +366,7 @@ const transferToken = async (req, res) => {
         res.json({ message: 'Token transferred successfully' });
     } catch (error) {
         console.error('[authController.js][transferToken]', error);
+        console.trace('[authController.js][transferToken] Stack trace:');
         res.status(500).json({ message: error.message });
     }
 };

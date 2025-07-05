@@ -53,12 +53,11 @@ const Profile = () => {
             website: ''
         },
         address: {
-            shopNo: '',
-            floor: '',
-            locality: '',
-            landmark: '',
+            streetAddress: '',
             city: '',
-            fullAddress: ''
+            state: '',
+            country: 'india',
+            pinCode: ''
         },
         location: {
             lat: 0,
@@ -185,19 +184,17 @@ const Profile = () => {
         setSelectedLocation(result);
         const newCenter = [parseFloat(result.lat), parseFloat(result.lon)];
         setMapCenter(newCenter);
-
         // Auto-fill address fields based on location data
         const address = result.address || {};
         setFormData(prev => ({
             ...prev,
             address: {
                 ...prev.address,
-                fullAddress: result.display_name,
-                locality: address.suburb || address.neighbourhood || '',
-                city: address.village || address.county || '',
-                landmark: address.amenity || '',
-                shopNo: address.house_number || '',
-                floor: ''
+                streetAddress: address.road || address.pedestrian || '',
+                city: address.city || address.state_district || address.state || '',
+                state: address.state || '',
+                country: address.country || 'india',
+                pinCode: address.pincode || address.pinCode || address.postcode || ''
             },
             location: {
                 lat: parseFloat(result.lat),
@@ -239,9 +236,11 @@ const Profile = () => {
                         ...prev,
                         address: {
                             ...prev.address,
-                            fullAddress: data.display_name,
-                            locality: data.address?.suburb || data.address?.neighbourhood || '',
-                            city: data.address?.city || data.address?.state || ''
+                            streetAddress: data.address?.road || data.address?.pedestrian || '',
+                            city: data.address?.city || data.address?.state_district || data.address?.state || '',
+                            state: data.address?.state || '',
+                            country: data.address?.country || 'india',
+                            pinCode: data.address?.pincode || data.address?.pinCode || data.address?.postcode || ''
                         },
                         location: {
                             lat: parseFloat(position.lat),
@@ -312,12 +311,10 @@ const Profile = () => {
         try {
             const response = await axios.get(`${API_URL}/api/restaurants/profile`);
             setRestaurant(response.data);
-
             // Set image preview if profile image exists
             if (response.data.images?.profileImage) {
                 setImagePreview(response.data.images.profileImage);
             }
-
             setFormData({
                 restaurantName: response.data.restaurantName || '',
                 ownerName: response.data.ownerName || '',
@@ -330,34 +327,34 @@ const Profile = () => {
                     website: ''
                 },
                 address: response.data.address || {
-                    shopNo: '',
-                    floor: '',
-                    locality: '',
-                    landmark: '',
+                    streetAddress: '',
                     city: '',
-                    fullAddress: ''
+                    state: '',
+                    country: 'india',
+                    pinCode: ''
                 },
                 location: response.data.location || { lat: 0, lng: 0 },
                 operatingHours: formatOperatingHours(response.data.operatingHours)
             });
-
             // Set location if available
             if (response.data.location && response.data.location.lat && response.data.location.lng) {
                 setMapCenter([response.data.location.lat, response.data.location.lng]);
                 setSelectedLocation({
                     lat: response.data.location.lat.toString(),
                     lon: response.data.location.lng.toString(),
-                    display_name: response.data.address?.fullAddress || '',
+                    display_name: response.data.address?.streetAddress || '',
                     address: {
-                        suburb: response.data.address?.locality || '',
-                        city: response.data.address?.city || ''
+                        streetAddress: response.data.address?.streetAddress || '',
+                        city: response.data.address?.city || '',
+                        state: response.data.address?.state || '',
+                        country: response.data.address?.country || 'india',
+                        pinCode: response.data.address?.pincode || response.data.address?.pinCode || response.data.address?.postcode || ''
                     }
                 });
-                if (response.data.address?.fullAddress) {
-                    setSearchQuery(response.data.address.fullAddress);
+                if (response.data.address?.streetAddress) {
+                    setSearchQuery(response.data.address.streetAddress);
                 }
             }
-
             setLoading(false);
         } catch (error) {
             setError('Error fetching restaurant profile');
@@ -885,9 +882,11 @@ const Profile = () => {
                                                                                         ...prev,
                                                                                         address: {
                                                                                             ...prev.address,
-                                                                                            fullAddress: data.display_name,
-                                                                                            locality: data.address?.suburb || data.address?.neighbourhood || '',
-                                                                                            city: data.address?.city || data.address?.state || ''
+                                                                                            streetAddress: data.address?.road || data.address?.pedestrian || '',
+                                                                                            city: data.address?.city || data.address?.state_district || data.address?.state || '',
+                                                                                            state: data.address?.state || '',
+                                                                                            country: data.address?.country || 'india',
+                                                                                            pinCode: data.address?.pincode || data.address?.pinCode || data.address?.postcode || ''
                                                                                         },
                                                                                         location: {
                                                                                             lat: parseFloat(lat),
@@ -924,42 +923,12 @@ const Profile = () => {
                                                 <h6 className="fw-medium mb-3">Address Details</h6>
                                                 <div className="row g-3">
                                                     <div className="col-md-6">
-                                                        <label className="form-label">Shop No</label>
+                                                        <label className="form-label">Street Address</label>
                                                         <input
                                                             type="text"
                                                             className="form-control"
-                                                            name="address.shopNo"
-                                                            value={formData.address.shopNo}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                    <div className="col-md-6">
-                                                        <label className="form-label">Floor</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="address.floor"
-                                                            value={formData.address.floor}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                    <div className="col-md-6">
-                                                        <label className="form-label">Locality</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="address.locality"
-                                                            value={formData.address.locality}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                    <div className="col-md-6">
-                                                        <label className="form-label">Landmark</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="address.landmark"
-                                                            value={formData.address.landmark}
+                                                            name="address.streetAddress"
+                                                            value={formData.address.streetAddress}
                                                             onChange={handleInputChange}
                                                         />
                                                     </div>
@@ -970,6 +939,36 @@ const Profile = () => {
                                                             className="form-control"
                                                             name="address.city"
                                                             value={formData.address.city}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">State</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.state"
+                                                            value={formData.address.state}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Country</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.country"
+                                                            value={formData.address.country}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label">Pin Code</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="address.pinCode"
+                                                            value={formData.address.pinCode}
                                                             onChange={handleInputChange}
                                                         />
                                                     </div>
@@ -1059,12 +1058,11 @@ const Profile = () => {
                                         <div className="col-12">
                                             <h6 className="text-muted mb-2 fw-medium">Address</h6>
                                             <p className="mb-0">
-                                                {restaurant?.address?.shopNo && `${restaurant.address.shopNo}, `}
-                                                {restaurant?.address?.floor && `${restaurant.address.floor}, `}
-                                                {restaurant?.address?.locality && `${restaurant.address.locality}, `}
-                                                {restaurant?.address?.landmark && `${restaurant.address.landmark}, `}
+                                                {restaurant?.address?.streetAddress && `${restaurant.address.streetAddress}, `}
                                                 {restaurant?.address?.city && `${restaurant.address.city}, `}
-                                                {restaurant?.address?.fullAddress}
+                                                {restaurant?.address?.state && `${restaurant.address.state}, `}
+                                                {restaurant?.address?.country && `${restaurant.address.country}, `}
+                                                {restaurant?.address?.pinCode}
                                             </p>
                                         </div>
                                         {restaurant?.location && (

@@ -64,17 +64,16 @@ const AddRestaurant = () => {
         serviceType: serviceType || '',
         description : '',
         address: {
-            shopNo: '',
-            floor: '',
-            locality: '',
-            landmark: '',
+            streetAddress: '',
             city: '',
-            fullAddress: ''
+            state: '',
+            country: 'india',
+            pinCode: ''
         },
         contact: {
             primaryPhone: '',
             whatsappNumber: '',
-            email: '',  // Initialize as empty string
+            email: '',
             website: ''
         },
         sameAsOwnerPhone: false,
@@ -131,7 +130,6 @@ const AddRestaurant = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
             setFormData(prev => ({
@@ -155,10 +153,12 @@ const AddRestaurant = () => {
             formData.ownerName &&
             formData.contact?.email &&
             formData.contact?.primaryPhone &&
-            formData.contact?.whatsappNumber &&
-            formData.address?.shopNo &&
-            formData.address?.locality &&
-            selectedLocation;
+            formData.address?.streetAddress &&
+            formData.address?.city &&
+            formData.address?.state &&
+            formData.address?.pinCode &&
+            formData.location?.lat &&
+            formData.location?.lng;
         setIsFormValid(isValid);
     };
 
@@ -232,9 +232,11 @@ const AddRestaurant = () => {
             ...prev,
             address: {
                 ...prev.address,
-                fullAddress: result.display_name,
-                locality: result?.address?.suburb || result?.address?.neighbourhood || '',
-                city: result?.address?.city || result?.address?.state || ''
+                streetAddress: result?.address?.road || result?.address?.pedestrian || '',
+                city: result?.address?.city || result?.address?.state_district || result?.address?.state || '',
+                state: result?.address?.state || '',
+                country: result?.address?.country || 'india',
+                pinCode: result?.address?.postcode || ''
             },
             location: {
                 lat: parseFloat(result.lat),
@@ -276,9 +278,11 @@ const AddRestaurant = () => {
                         ...prev,
                         address: {
                             ...prev.address,
-                            fullAddress: data.display_name,
-                            locality: data.address?.suburb || data.address?.neighbourhood || '',
-                            city: data.address?.city || data.address?.state || ''
+                            streetAddress: data.address?.road || data.address?.pedestrian || '',
+                            city: data.address?.city || data.address?.state_district || data.address?.state || '',
+                            state: data.address?.state || '',
+                            country: data.address?.country || 'india',
+                            pinCode: data.address?.postcode || ''
                         },
                         location: {
                             lat: parseFloat(position.lat),
@@ -407,12 +411,11 @@ const AddRestaurant = () => {
                                     website: ''
                                 },
                                 address: formData.address || {
-                                    shopNo: '',
-                                    floor: '',
-                                    locality: '',
-                                    landmark: '',
+                                    streetAddress: '',
                                     city: '',
-                                    fullAddress: ''
+                                    state: '',
+                                    country: 'india',
+                                    pinCode: ''
                                 },
                                 location: formData.location || {
                                     lat: null,
@@ -553,8 +556,10 @@ const AddRestaurant = () => {
                     formData.ownerName &&
                     formData.contact?.email &&
                     formData.contact?.primaryPhone &&
-                    formData.address?.shopNo &&
-                    formData.address?.locality &&
+                    formData.address?.streetAddress &&
+                    formData.address?.city &&
+                    formData.address?.state &&
+                    formData.address?.pinCode &&
                     formData.location?.lat &&
                     formData.location?.lng;
             case 2:
@@ -700,8 +705,10 @@ const AddRestaurant = () => {
             formData.ownerName &&
             formData.contact?.email &&
             formData.contact?.primaryPhone &&
-            formData.address?.shopNo &&
-            formData.address?.locality &&
+            formData.address?.streetAddress &&
+            formData.address?.city &&
+            formData.address?.state &&
+            formData.address?.pinCode &&
             formData.location?.lat &&
             formData.location?.lng;
         setStepValidation(prev => ({ ...prev, step1: isStep1Valid }));
@@ -763,16 +770,19 @@ const AddRestaurant = () => {
                         setSelectedLocation({
                             lat: restaurantData.location.lat.toString(),
                             lon: restaurantData.location.lng.toString(),
-                            display_name: restaurantData.address?.fullAddress || '',
+                            display_name: restaurantData.address?.streetAddress || '',
                             address: {
-                                suburb: restaurantData.address?.locality || '',
-                                city: restaurantData.address?.city || ''
+                                streetAddress: restaurantData.address?.streetAddress || '',
+                                city: restaurantData.address?.city || '',
+                                state: restaurantData.address?.state || '',
+                                country: restaurantData.address?.country || 'india',
+                                pinCode: restaurantData.address?.pinCode || ''
                             }
                         });
 
                         // Set the search query to the full address
-                        if (restaurantData.address?.fullAddress) {
-                            setSearchQuery(restaurantData.address.fullAddress);
+                        if (restaurantData.address?.streetAddress) {
+                            setSearchQuery(restaurantData.address.streetAddress);
                         }
                     }
 

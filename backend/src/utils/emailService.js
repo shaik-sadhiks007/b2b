@@ -25,7 +25,7 @@ const renderShippingDetails = (order) => {
             <p>Address: ${order.customerAddress.street}</p>
             <p>City: ${order.customerAddress.city}</p>
             <p>State: ${order.customerAddress.state}</p>
-            <p>Pincode: ${order.customerAddress.zip}</p>
+            <p>Pincode: ${order.customerAddress.pincode}</p>
             <p>Country: ${order.customerAddress.country}</p>
         `;
     } else if (order.orderType === 'delivery' && order.shippingDetails) {

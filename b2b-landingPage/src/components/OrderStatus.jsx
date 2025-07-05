@@ -71,7 +71,7 @@ const OrderStatus = () => {
 
     const formatAddress = (address) => {
         if (!address) return 'No address provided';
-        return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
+        return `${address.street}, ${address.city}, ${address.state} ${address.p}, ${address.country}`;
     };
 
     const getOrderStatuses = (orderType) => {

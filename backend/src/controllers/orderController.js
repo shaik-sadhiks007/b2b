@@ -83,7 +83,7 @@ exports.placeOrder = async (req, res) => {
                     street: customerAddressData.street,
                     city: customerAddressData.city,
                     state: customerAddressData.state,
-                    zip: customerAddressData.zip,
+                    pincode: customerAddressData.pincode,
                     country: customerAddressData.country,
                     phone: customerAddressData.phone,
                     isDefault: isFirstAddress // Set as default if it's the first address
@@ -110,7 +110,7 @@ exports.placeOrder = async (req, res) => {
                     street: customerAddressData.street,
                     city: customerAddressData.city,
                     state: customerAddressData.state,
-                    zip: customerAddressData.zip,
+                    pincode: customerAddressData.pincode,
                     country: customerAddressData.country,
                     phone: customerAddressData.phone,
                     isDefault: false
@@ -554,7 +554,7 @@ exports.getPublicOrderStatus = async (req, res) => {
             //     street: order.customerAddress.street,
             //     city: order.customerAddress.city,
             //     state: order.customerAddress.state,
-            //     zip: order.customerAddress.zip,
+            //     pincode: order.customerAddress.pincode,
             //     country: order.customerAddress.country,
             //     phone: order.customerAddress.phone
             // } : null

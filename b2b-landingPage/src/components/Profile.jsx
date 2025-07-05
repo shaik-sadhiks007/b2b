@@ -54,8 +54,8 @@ const Profile = () => {
         street: '',
         city: '',
         state: '',
-        zip: '',
-        country: '',
+        pincode: '',
+        country: 'India',
         phone: '',
         isDefault: false
     });
@@ -129,8 +129,8 @@ const Profile = () => {
             errors.state = 'State is required';
         }
 
-        if (!addressForm.zip.trim()) {
-            errors.zip = 'ZIP code is required';
+        if (!addressForm.pincode.trim()) {
+            errors.pincode = 'Pincode is required';
         }
 
         if (!addressForm.country.trim()) {
@@ -189,8 +189,8 @@ const Profile = () => {
                 street: '',
                 city: '',
                 state: '',
-                zip: '',
-                country: '',
+                pincode: '',
+                country: 'India',
                 phone: '',
                 isDefault: false
             });
@@ -207,7 +207,7 @@ const Profile = () => {
             street: address.street,
             city: address.city,
             state: address.state,
-            zip: address.zip,
+            pincode: address.pincode,
             country: address.country,
             phone: address.phone,
             isDefault: address.isDefault
@@ -397,8 +397,8 @@ const Profile = () => {
                                     street: '',
                                     city: '',
                                     state: '',
-                                    zip: '',
-                                    country: '',
+                                    pincode: '',
+                                    country: 'India',
                                     phone: '',
                                     isDefault: false
                                 });
@@ -494,18 +494,18 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        ZIP Code <span className="text-red-500">*</span>
+                                        Pincode <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
-                                        value={addressForm.zip}
-                                        onChange={(e) => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.zip ? 'border-red-500' : 'border-gray-300'
+                                        value={addressForm.pincode}
+                                        onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })}
+                                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${formErrors.pincode ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                         required
                                     />
-                                    {formErrors.zip && (
-                                        <p className="mt-1 text-sm text-red-600">{formErrors.zip}</p>
+                                    {formErrors.pincode && (
+                                        <p className="mt-1 text-sm text-red-600">{formErrors.pincode}</p>
                                     )}
                                 </div>
                                 <div>
@@ -563,7 +563,7 @@ const Profile = () => {
                                     <h4 className="font-semibold">{address.fullName}</h4>
                                     <p className="text-gray-600">{address.street}</p>
                                     <p className="text-gray-600">
-                                        {address.city}, {address.state} {address.zip}
+                                        {address.city}, {address.state} {address.pincode}
                                     </p>
                                     <p className="text-gray-600">{address.country}</p>
                                     <p className="text-gray-600">Phone: {address.phone}</p>

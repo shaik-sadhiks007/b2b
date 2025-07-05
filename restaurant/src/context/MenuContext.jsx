@@ -36,7 +36,6 @@ export const MenuProvider = ({ children }) => {
         try {
             const response = await axios.post(`${API_URL}/api/menu`, itemData);
             const newItem = response.data;
-            
             setMenuItems(prev => {
                 // Find if category exists
                 const categoryIndex = prev.findIndex(cat => cat.category === newItem.category);

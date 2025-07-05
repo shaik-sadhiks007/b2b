@@ -352,7 +352,7 @@ const RestaurantInfo = ({
             </div>
 
             <div className="mb-3">
-                <label className="form-label">Area / Sector / Locality <span className="text-danger">*</span></label>
+                <label className="form-label">Enter your complete address <span className="text-danger">*</span></label>
                 <input
                     type="text"
                     className="form-control"

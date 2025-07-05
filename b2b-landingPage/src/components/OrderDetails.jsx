@@ -6,6 +6,7 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin, Arrow
 import { API_URL } from '../api/api';
 import { HotelContext } from '../contextApi/HotelContextProvider';
 import io from 'socket.io-client';
+import { showNotification } from '../utils/notify';
 
 const OrderDetails = () => {
     const [order, setOrder] = useState(null);
@@ -17,6 +18,19 @@ const OrderDetails = () => {
     const { user } = useContext(HotelContext);
 
     useEffect(() => {
+         // Request notification permission when component mounts
+    const requestNotificationPermission = async () => {
+        if ('Notification' in window) {
+            try {
+                const permission = await Notification.requestPermission();
+                console.log('Notification permission:', permission);
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+            }
+        }
+    };
+
+    requestNotificationPermission();
         // Scroll to top when component mounts
         window.scrollTo(0, 0);
     }, []);
@@ -39,6 +53,30 @@ const OrderDetails = () => {
                 setOrder(updatedOrder);
                 // Show toast notification for status change
                 toast.info(`Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`);
+                showNotification("Order Update", {
+            body: `Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`,
+            
+        });
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                new Notification('Order Update', {
+                    body: `Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`,
+                    icon: '/path-to-your-logo.png', 
+                    tag: 'order-update' 
+                });
+            } catch (error) {
+                console.error('Error showing notification:', error);
+                // Fallback to your existing showNotification function
+                showNotification("Order Update", {
+                    body: `Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`
+                });
+            }
+        } else {
+            // Fallback if notifications aren't supported or permission not granted
+            showNotification("Order Update", {
+                body: `Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`
+            });
+        }
             }
         });
 

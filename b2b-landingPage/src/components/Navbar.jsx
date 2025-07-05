@@ -1,4 +1,4 @@
-import { Search, Mic, Camera, ShoppingBag, Home, User, LogOut, ShoppingCart, CreditCard, Package, UserCircle, X, MessageSquare } from "lucide-react"
+import { Search, Mic, Camera, ShoppingBag, Home, User, LogOut, ShoppingCart, CreditCard, Package, UserCircle, X, MessageSquare, Bell } from "lucide-react"
 import LocationSuggestions from "./LocationSuggestions"
 import { useState, useEffect, useContext, useRef } from "react"
 import { HotelContext } from "../contextApi/HotelContextProvider"
@@ -6,12 +6,15 @@ import { useNavigate, Link } from "react-router-dom"
 import { useLocationContext } from "../context/LocationContext"
 import { useCart } from "../context/CartContext"
 import { toast } from 'react-toastify'
+import { API_URL } from '../api/api';
+import io from 'socket.io-client';
 import logo from '../assets/b2bupdate.png';
-
 
 function Navbar({ alwaysVisible }) {
   const [showLoginOptions, setShowLoginOptions] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState([])
   const { user, logout } = useContext(HotelContext)
   const { cartCount, fetchCart } = useCart()
   const navigate = useNavigate()
@@ -27,6 +30,8 @@ function Navbar({ alwaysVisible }) {
     onLoginClick
   } = useLocationContext();
   const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     // Load saved location from localStorage
@@ -54,21 +59,57 @@ function Navbar({ alwaysVisible }) {
   useEffect(() => {
     if (user) {
       fetchCart();
+      setupSocketConnection();
     }
-  }, [fetchCart, user]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowLoginOptions(false);
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
       }
     };
+  }, [user, fetchCart]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  const setupSocketConnection = () => {
+    if (!user) return;
+
+    // Initialize socket connection
+    const socket = io(API_URL, { withCredentials: true });
+    socketRef.current = socket;
+
+    // Listen for order status updates
+    socket.on('orderStatusUpdate', (updatedOrder) => {
+      addNotification({
+        id: Date.now().toString(),
+        text: `Order #${updatedOrder._id.slice(-6)} status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`,
+        time: new Date().toLocaleTimeString(),
+        read: false,
+        orderId: updatedOrder._id
+      });
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+  };
+
+  const addNotification = (notification) => {
+    setNotifications(prev => [notification, ...prev]);
+    
+    // Show toast notification
+    toast.info(notification.text);
+    
+    // Show browser notification if permission is granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('Order Update', {
+          body: notification.text,
+          tag: 'order-update'
+        });
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -93,7 +134,6 @@ function Navbar({ alwaysVisible }) {
       }
     }
     localStorage.setItem('userLocation', JSON.stringify(locationData))
-    // Dispatch a custom event to notify other components
     window.dispatchEvent(new Event('locationUpdated'))
     setLocation(suggestion.address || suggestion.name)
     setLocationShowSuggestions(false)
@@ -102,7 +142,6 @@ function Navbar({ alwaysVisible }) {
     }
   }
 
-  // Add event listener for custom location update event
   useEffect(() => {
     const handleLocationUpdate = () => {
       const savedLocation = localStorage.getItem('userLocation')
@@ -116,6 +155,26 @@ function Navbar({ alwaysVisible }) {
     window.addEventListener('locationUpdated', handleLocationUpdate)
     return () => window.removeEventListener('locationUpdated', handleLocationUpdate)
   }, [])
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (id) => {
+    setNotifications(notifications.map(n => 
+      n.id === id ? {...n, read: true} : n
+    ));
+  }
+
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(n => ({...n, read: true})));
+  }
+
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    if (notification.orderId) {
+      navigate(`/order-status/${notification.orderId}`);
+    }
+    setShowNotifications(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white z-50 shadow-md py-2">
@@ -144,7 +203,6 @@ function Navbar({ alwaysVisible }) {
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
 
-            {/* Location suggestions for mobile */}
             {locationShowSuggestions && location && (
               <LocationSuggestions
                 suggestions={suggestions}
@@ -185,7 +243,6 @@ function Navbar({ alwaysVisible }) {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
 
-              {/* Location suggestions */}
               {locationShowSuggestions && location && (
                 <LocationSuggestions
                   suggestions={suggestions}
@@ -217,19 +274,74 @@ function Navbar({ alwaysVisible }) {
                 )}
               </button>
             </Link>
-            <Link to="/checkout">
-              <button className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1">
-                <CreditCard size={20} />
-                <span className="text-sm">Checkout</span>
-              </button>
-            </Link>
+
             <Link to="/orders">
               <button className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1">
                 <Package size={20} />
                 <span className="text-sm">Orders</span>
               </button>
             </Link>
-            <div className="relative">
+
+            <Link to="/checkout">
+              <button className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1">
+                <CreditCard size={20} />
+                <span className="text-sm">Checkout</span>
+              </button>
+            </Link>
+
+            {/* Notification Bell with Dropdown */}
+            <div className="relative" ref={notificationsRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 rounded-full hover:bg-gray-100 relative"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto">
+                  <div className="px-4 py-2 border-b flex justify-between items-center">
+                    <h3 className="font-semibold">Notifications</h3>
+                    <button 
+                      onClick={markAllAsRead}
+                      className="text-sm text-blue-500 hover:text-blue-700"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  {notifications.length > 0 ? (
+                    <div className="divide-y">
+                      {notifications.map(notification => (
+                        <div 
+                          key={notification.id} 
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <p className="text-sm">{notification.text}</p>
+                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-8 text-center text-gray-500">
+                      No notifications yet
+                    </div>
+                  )}
+                 
+                </div>
+              )}
+            </div>
+
+            {/* User Profile/Login */}
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowLoginOptions(!showLoginOptions)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center gap-2"
@@ -256,10 +368,8 @@ function Navbar({ alwaysVisible }) {
                 )}
               </button>
 
-              {/* Login options dropdown */}
               {showLoginOptions && (
                 <div
-                  ref={dropdownRef}
                   className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
                 >
                   {user ? (
@@ -380,16 +490,27 @@ function Navbar({ alwaysVisible }) {
                       <span>Cart</span>
                     </button>
                   </Link>
+                  <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
+                      <Package size={20} />
+                      <span>Orders</span>
+                    </button>
+                  </Link>
                   <Link to="/checkout" onClick={() => setIsMobileMenuOpen(false)}>
                     <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
                       <CreditCard size={20} />
                       <span>Checkout</span>
                     </button>
                   </Link>
-                  <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)}>
-                    <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
-                      <Package size={20} />
-                      <span>Orders</span>
+                  <Link to="/notifications" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors relative">
+                      <Bell size={20} />
+                      <span>Notifications</span>
+                      {unreadCount > 0 && (
+                        <span className="absolute right-4 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                          {unreadCount}
+                        </span>
+                      )}
                     </button>
                   </Link>
                   <Link to="/feedback" onClick={() => setIsMobileMenuOpen(false)}>
@@ -463,4 +584,3 @@ function Navbar({ alwaysVisible }) {
 }
 
 export default Navbar
-

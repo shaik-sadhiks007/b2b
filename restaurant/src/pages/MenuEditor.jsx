@@ -117,9 +117,14 @@ function MenuEditor() {
 
   // Handle modal submit for add/edit
   const handleModalSubmit = (formData) => {
+     if (!formData.quantity || isNaN(formData.quantity)) {
+    alert("Quantity is required and must be a number.");
+    return;
+  }
     if (modalData.item) {
       updateMenuItem(modalData.item._id, formData);
     } else {
+      console.log("Adding new item:", formData);
       addMenuItem({ ...formData });
     }
     setModalOpen(false);
@@ -257,6 +262,7 @@ function MenuEditor() {
         description: "",
         foodType: "veg",
         inStock: true,
+        quantity: ""
       });
     }
   };
@@ -264,6 +270,7 @@ function MenuEditor() {
   // Handle accordion form input change
   const handleAccordionInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    console.log("Input changed:", name, value, type, checked);
     setNewItemData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -273,14 +280,19 @@ function MenuEditor() {
   // Handle accordion form submit
   const handleAccordionSubmit = (e) => {
     e.preventDefault();
+     if (!newItemData.quantity || isNaN(newItemData.quantity)) {
+    alert("Quantity is required and must be a number.");
+    return;
+  }
     addMenuItem({
       ...newItemData,
       category: selectedCategory,
       subcategory: accordionSubcategory,
       price: parseFloat(newItemData.price),
       totalPrice: parseFloat(newItemData.price),
-      quantity: parseInt(newItemData.quantity, 100),
+      quantity: parseInt(newItemData.quantity, 10),
     });
+    console.log("New item data:", newItemData);
     setShowAccordionForm(false);
     setAccordionSubcategory("");
   };
@@ -762,7 +774,7 @@ function MenuEditor() {
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1"
                                         htmlFor="quantity-input">
-                                        Quantity
+                                        Quantity*
                                       </label>
                                       <input
                                         type="number"
@@ -1016,7 +1028,7 @@ function MenuEditor() {
               )}
             </div>
           </div>
-          {/* Add/Edit Menu Item Offcanvas Modal */}
+          {/* Add/Edit Menu Item Modal - Now centered */}
           <MenuItemModal
             open={modalOpen}
             onClose={() => {

@@ -42,7 +42,7 @@ function App() {
               <Route path='/login' element={<Login />} />
               <Route path='/register' element={<Register />} />
               <Route path='/forgot-password' element={<ForgotPassword />} />
-              <Route path='/Aboutus' element={<Aboutus />} />
+              <Route path='/Aboutb2b' element={<Aboutus />} />
               <Route path='/Footer' element={<Footer />} />
               <Route path='/contactus' element={<Contactus />} />
               {/* Protected Routes */}

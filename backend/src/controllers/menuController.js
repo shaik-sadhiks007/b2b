@@ -8,7 +8,7 @@ const getAllMenuItems = async (req, res) => {
         // Group by category and subcategory
         const grouped = {};
         menuItems.forEach(item => {
-            const category = item.category || 'uncategorized';
+            const category = item.category || 'uncategorized';  
             const subcategory = item.subcategory || 'general';
             if (!grouped[category]) grouped[category] = {};
             if (!grouped[category][subcategory]) grouped[category][subcategory] = [];

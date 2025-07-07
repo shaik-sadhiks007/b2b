@@ -37,6 +37,7 @@ const buninessRoutes = require('./src/routes/businessRoutes');
 const customerAddressRoutes = require('./src/routes/customerAddressRoutes');
 const searchRoutes = require('./src/routes/searchRoutes');
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
+const subdomainRoutes = require('./src/routes/subdomainRoutes');
 
 
 const app = express();
@@ -129,6 +130,7 @@ app.use('/api/customer-address', customerAddressRoutes);
 app.use('/api/restaurants', buninessRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/subdomain', subdomainRoutes);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)

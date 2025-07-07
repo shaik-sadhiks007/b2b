@@ -18,13 +18,13 @@ const Footer = () => {
                     <div className="col-md-4 mb-4">
                         <h6 className="text-uppercase text-white fw-bold mb-3">Quick Links</h6>
                         <ul className="list-unstyled">
-                            <li><a href="/aboutus" className="text-gray-400 hover:text-white">About b2b</a></li>
+                            <li><a href="/aboutb2b" className="text-gray-400 hover:text-white">About b2b</a></li>
                             <li><a href="/contactus" className="text-gray-400 hover:text-white">Contact Us</a></li>
                         </ul>
                     </div>
 
                     <div className="col-md-4 mb-4">
-                        <h6 className="text-uppercase fw-bold mb-3">Contact Us</h6>
+                        <h6 className="text-uppercase text-white fw-bold mb-3">Contact Us</h6>
                         <ul className="list-unstyled text-white">
                             <li>Email : <a href="mailto:info@shopatb2b.com">info@shopatb2b.com</a>
                             </li>

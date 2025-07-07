@@ -107,7 +107,7 @@ function AppContent() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
-        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/aboutb2b" element={<AboutUs />} />
         <Route path="/contactus" element={<Contactus />} />
         <Route path="/features" element={<Features />} />
         <Route path="/order-status/:orderId" element={<OrderStatus />} />

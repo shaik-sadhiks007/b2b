@@ -170,7 +170,7 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
                         </div>
                         <div className="space-y-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Quantity
+                                Quantity <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
@@ -178,7 +178,8 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
                                 value={form.quantity}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                                min="1"
+                                required
+                                // min="1"
                                 
                             />
                         </div>

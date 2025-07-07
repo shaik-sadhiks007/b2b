@@ -744,7 +744,7 @@ function MenuEditor() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Item Name
+                                          Item Name <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                           type="text"
@@ -757,7 +757,7 @@ function MenuEditor() {
                                       </div>
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Price
+                                          Price<span className="text-red-500">*</span>
                                         </label>
                                         <input
                                           type="number"
@@ -774,7 +774,7 @@ function MenuEditor() {
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1"
                                         htmlFor="quantity-input">
-                                        Quantity*
+                                        Quantity <span className="text-red-500">*</span>
                                       </label>
                                       <input
                                         type="number"

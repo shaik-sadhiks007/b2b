@@ -11,7 +11,7 @@ const Footer = () => {
                     <div className="col-md-4 mb-5">
                         <img src={logo} alt="B2B" style={{ height: '30px', width: '30px' }} className="mb-3" />
                         <h6 className="text-uppercase text-white fw-bold mb-3">
-                            Your one-stop platform for business services.
+                            one-stop solutions for online business services.
                         </h6>
                     </div>
 

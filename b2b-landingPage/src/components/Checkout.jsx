@@ -98,7 +98,7 @@ const Checkout = () => {
     const navigate = useNavigate();
     const { carts, clearCart } = useCart();
     const { user } = useContext(HotelContext);
-
+    const [isProcessing, setIsProcessing] = useState(false);
     useEffect(() => {
         // Scroll to top when component mounts
         window.scrollTo(0, 0);
@@ -176,6 +176,9 @@ const Checkout = () => {
                 toast.error('Please select or add a delivery address to continue');
                 return;
             }
+             if (isProcessing) return; // Prevent double submission
+                 setIsProcessing(true);
+
 
             // Validate form data if showing address form
             if (showAddressForm) {
@@ -260,6 +263,9 @@ const Checkout = () => {
                 toast.error('Failed to place order. Please try again.');
             }
         }
+        finally {
+        setIsProcessing(false); 
+    }
     };
 
     const calculateTotal = () => {
@@ -593,8 +599,9 @@ const Checkout = () => {
                         <button
                             onClick={handleCompletePurchase}
                             className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-lg font-semibold"
+                            disabled={isProcessing}
                         >
-                            Complete Purchase
+                              {isProcessing ? 'Processing...' : 'Place order'}
                         </button>
                     </div>
                 </div>

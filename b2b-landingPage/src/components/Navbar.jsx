@@ -293,9 +293,10 @@ function Navbar({ alwaysVisible }) {
             <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-full hover:bg-gray-100 relative"
+                className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 relative"
               >
                 <Bell size={20} />
+                <span className="text-sm">Notifications</span>
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                     {unreadCount}
@@ -361,7 +362,7 @@ function Navbar({ alwaysVisible }) {
                     <span className="text-md font-medium capitalize ">{user.username || "Hi User"}</span>
                   </>
                 ) : (
-                  <div className="flex">
+                  <div className="flex items-center gap-1">
                     <User size={20} />
                     <span className="text-sm">Login</span>
                   </div>
@@ -513,6 +514,7 @@ function Navbar({ alwaysVisible }) {
                       )}
                     </button>
                   </Link>
+                   
                   <Link to="/feedback" onClick={() => setIsMobileMenuOpen(false)}>
                     <button className="w-full p-3 rounded-lg hover:bg-gray-100 flex items-center gap-3 transition-colors">
                       <MessageSquare size={20} />

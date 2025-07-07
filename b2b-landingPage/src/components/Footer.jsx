@@ -32,14 +32,14 @@ const Footer = () => {
                     {/* Company Info */}
                     <div>
                         <h3 className="text-xl font-bold mb-4">B2B</h3>
-                        <p className="text-gray-400">Your one-stop platform for business services.</p>
+                        <p className="text-gray-400">one-stop solution for online shopping.</p>
                     </div>
 
                     {/* Quick Links */}
                     <div>
                         <h3 className="text-xl font-bold mb-4">Quick Links</h3>
                         <ul className="space-y-2">
-                            <li> <Link to="/about-us" className="text-gray-400 hover:text-white">
+                            <li> <Link to="/aboutb2b" className="text-gray-400 hover:text-white">
                                 About B2B
                             </Link></li>
                             {/* <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li> */}

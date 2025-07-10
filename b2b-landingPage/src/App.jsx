@@ -28,6 +28,7 @@ import Footer from './components/Footer';
 import OrderDetails from './components/OrderDetails';
 import OrderStatus from './components/OrderStatus';
 import Features from './components/Features';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import {
   QueryClient,
   QueryClientProvider,
@@ -128,7 +129,7 @@ function App() {
     }
 
     if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/sw.js')
       .then(reg => console.log('Service Worker registered', reg))
       .catch(err => console.error('Service Worker registration failed', err));
   }
@@ -141,6 +142,7 @@ function App() {
           <CartProvider>
             <LocationProvider>
               <AppContent />
+              <PWAInstallPrompt />
               {/* <ReactQueryDevtools initialIsOpen={false} /> */}
               <ToastContainer
                 position="top-right"

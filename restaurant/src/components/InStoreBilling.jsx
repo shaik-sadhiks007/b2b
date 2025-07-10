@@ -5,7 +5,7 @@ import Sidebar from './Sidebar';
 import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
-
+import { HelpCircle } from 'lucide-react';
 
 const InStoreBilling = () => {
     const { user } = useContext(AuthContext);
@@ -17,6 +17,7 @@ const InStoreBilling = () => {
     const [customerPhone, setCustomerPhone] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [loading, setLoading] = useState(true);
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -27,9 +28,7 @@ const InStoreBilling = () => {
     const fetchMenuItems = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/menu/instore`);
-            // The API now returns a flat array in response.data.menu
             let items = response.data.menu || [];
-            // Only keep items that have a name and price
             items = items.filter(item => item.name && !isNaN(item.totalPrice));
             setMenuItems(items);
             setLoading(false);
@@ -74,8 +73,8 @@ const InStoreBilling = () => {
                     itemId: item._id,
                     name: item.name,
                     quantity: item.quantity,
-                    totalPrice: item.totalPrice, // use totalPrice
-                    photos: item.photos ? [item.photos] : [], // keep as array for compatibility
+                    totalPrice: item.totalPrice,
+                    photos: item.photos ? [item.photos] : [],
                     foodType: item.foodType
                 })),
                 totalAmount: cart.reduce((sum, item) => sum + item.totalPrice * item.quantity, 0),
@@ -114,7 +113,32 @@ const InStoreBilling = () => {
             <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
-                        <h1 className="text-2xl font-bold mb-6">In Store Billing</h1>
+                        <div className="flex items-center gap-2 mb-6">
+                            <h1 className="text-2xl font-bold">In Store Billing</h1>
+                            <button 
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                                onClick={() => setShowHelp(!showHelp)}
+                                aria-label="Help"
+                            >
+                                <HelpCircle size={20} />
+                            </button>
+                        </div>
+                        
+                        {showHelp && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                <h3 className="font-semibold text-blue-800 mb-2">How to use In-Store Billing:</h3>
+                                <ol className="list-decimal pl-5 space-y-1 text-blue-700">
+                                    <li>Search for menu items using the search bar</li>
+                                    <li>Click "Add" button beside an item to add it to your cart</li>
+                                    <li>Adjust quantities using the + and - buttons in the cart</li>
+                                    <li>Remove items using the trash icon if needed</li>
+                                    <li>Click "Proceed" when ready to generate the bill</li>
+                                    <li>Enter customer details and payment method</li>
+                                    <li>Submit to complete the order</li>
+                                </ol>
+                            </div>
+                        )}
+
                         <div className="flex flex-col lg:flex-row gap-8">
                             {/* Menu Table */}
                             <div className="flex-1 bg-white rounded-lg shadow-md p-4">
@@ -217,11 +241,11 @@ const InStoreBilling = () => {
                                             <h3 className="text-xl font-bold mb-4">Customer Details</h3>
                                             <div className="mb-3">
                                                 <label className="form-label">Name</label>
-                                                <input type="text" className="form-control" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                                                <input type="text" className="form-control" value={customerName} onChange={e => setCustomerName(e.target.value)} required />
                                             </div>
                                             <div className="mb-3">
                                                 <label className="form-label">Phone</label>
-                                                <input type="text" className="form-control" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                                                <input type="text" className="form-control" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} required />
                                             </div>
                                             <div className="mb-3">
                                                 <label className="form-label">Payment Method</label>
@@ -242,7 +266,6 @@ const InStoreBilling = () => {
                     </div>
                 </div>
             </div>
-          
         </div>
     );
 };

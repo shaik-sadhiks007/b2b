@@ -69,6 +69,23 @@ function Navbar({ alwaysVisible }) {
     };
   }, [user, fetchCart]);
 
+  // Handle clicks outside dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowLoginOptions(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const setupSocketConnection = () => {
     if (!user) return;
 
@@ -78,12 +95,31 @@ function Navbar({ alwaysVisible }) {
 
     // Listen for order status updates
     socket.on('orderStatusUpdate', (updatedOrder) => {
+      console.log('orderStatusUpdate received:', updatedOrder); // Debug log
+      const isCancelled = updatedOrder.status.toLowerCase().includes('cancel');
+      // Only notify if cancelled by restaurant
+      if (isCancelled) {
+        if (updatedOrder.cancelledBy === 'restaurant') {
+          const notificationText = `Order #${updatedOrder._id.slice(-6)} has been cancelled by the restaurant`;
+          addNotification({
+            id: Date.now().toString(),
+            text: notificationText,
+            time: new Date().toLocaleTimeString(),
+            read: false,
+            orderId: updatedOrder._id,
+            isCancelled: true
+          });
+        }
+        return;
+      }
+      const notificationText = `Order #${updatedOrder._id.slice(-6)} status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`;
       addNotification({
         id: Date.now().toString(),
-        text: `Order #${updatedOrder._id.slice(-6)} status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`,
+        text: notificationText,
         time: new Date().toLocaleTimeString(),
         read: false,
-        orderId: updatedOrder._id
+        orderId: updatedOrder._id,
+        isCancelled: false
       });
     });
 
@@ -95,8 +131,12 @@ function Navbar({ alwaysVisible }) {
   const addNotification = (notification) => {
     setNotifications(prev => [notification, ...prev]);
     
-    // Show toast notification
-    toast.info(notification.text);
+    // Show toast notification with appropriate color
+    // if (notification.isCancelled) {
+    //   toast.error(notification.text);
+    // } else {
+    //   toast.info(notification.text);
+    // }
     
     // Show browser notification if permission is granted
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -305,7 +345,7 @@ function Navbar({ alwaysVisible }) {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto border border-blue-200">
                   <div className="px-4 py-2 border-b flex justify-between items-center">
                     <h3 className="font-semibold">Notifications</h3>
                     <button 
@@ -320,10 +360,18 @@ function Navbar({ alwaysVisible }) {
                       {notifications.map(notification => (
                         <div 
                           key={notification.id} 
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''} ${
+                            notification.isCancelled ? 'border-l-4 border-red-500' : 'border-l-4 border-blue-500'
+                          }`}
                           onClick={() => handleNotificationClick(notification)}
                         >
-                          <p className="text-sm">{notification.text}</p>
+                          <p className="text-sm">
+                            {notification.isCancelled ? (
+                              <span className="text-red-600 font-medium">{notification.text}</span>
+                            ) : (
+                              <span className="text-blue-600 font-medium">{notification.text}</span>
+                            )}
+                          </p>
                           <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
                           {!notification.read && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
@@ -336,7 +384,6 @@ function Navbar({ alwaysVisible }) {
                       No notifications yet
                     </div>
                   )}
-                 
                 </div>
               )}
             </div>

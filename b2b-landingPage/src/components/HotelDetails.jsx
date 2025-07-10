@@ -10,6 +10,8 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { HotelContext } from '../contextApi/HotelContextProvider';
 import { useRestaurantDetails } from '../hooks/useRestaurantDetails';
 import HotelMenu from './HotelMenu';
+import { io } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MenuItemSkeleton = () => (
     <div className="flex gap-4 p-4 border rounded-lg">
@@ -88,8 +90,25 @@ const HotelDetails = () => {
     const [pendingAddItem, setPendingAddItem] = useState(null);
     const { user } = useContext(HotelContext);
     const [expandedSubcategories, setExpandedSubcategories] = useState({});
-
+    const [menuRefresh, setMenuRefresh] = useState(0);
     const { restaurant, menu, isLoading, error } = useRestaurantDetails(id);
+    const queryClient = useQueryClient();
+    useEffect(() => {
+    const socket = io(API_URL, { withCredentials: true });
+
+    socket.on('menuUpdated', (data) => {
+        if (data.businessId === id) {
+            console.log('🔄 WebSocket: menuUpdated received', data);
+            // Force re-fetch the menu query
+            queryClient.invalidateQueries(['menu', id]);
+        }
+    });
+
+    return () => {
+        socket.disconnect();
+    };
+}, [id, queryClient]);
+
 
     useEffect(() => {
         // Scroll to top when component mounts
@@ -102,6 +121,24 @@ const HotelDetails = () => {
             setExpandedCategories([menu[0]._id]);
         }
     }, [menu]);
+
+//     useEffect(() => {
+//     const socket = io(API_URL, { withCredentials: true });
+
+//     socket.on('menuUpdated', (data) => {
+//         if (data.businessId === id) {
+//             // Refetch menu or update menu state here
+//              setMenuRefresh(prev => prev + 1); 
+//             //  if (typeof refetchMenu === 'function') {
+//             //     refetchMenu();
+//             // }
+//         }
+//     });
+
+//     return () => {
+//         socket.disconnect();
+//     };
+// }, [id]);
 
     // Separate useEffect for cart fetching
     useEffect(() => {

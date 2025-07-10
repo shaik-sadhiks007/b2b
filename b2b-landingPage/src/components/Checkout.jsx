@@ -95,14 +95,10 @@ const Checkout = () => {
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [orderType, setOrderType] = useState('delivery');
+    const [isProcessing, setIsProcessing] = useState(false);
     const navigate = useNavigate();
     const { carts, clearCart } = useCart();
     const { user } = useContext(HotelContext);
-    const [isProcessing, setIsProcessing] = useState(false);
-    useEffect(() => {
-        // Scroll to top when component mounts
-        window.scrollTo(0, 0);
-    }, []);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -116,6 +112,11 @@ const Checkout = () => {
     });
 
     useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
         const initializeCheckout = async () => {
             try {
                 if (!user) {
@@ -124,7 +125,7 @@ const Checkout = () => {
                 }
 
                 // Check if cart data exists
-                if (!carts || carts.length === 0) {
+                if (!carts || carts.length === 0 || !carts[0]?.items || carts[0].items.length === 0) {
                     setLoading(false);
                     return;
                 }
@@ -136,7 +137,7 @@ const Checkout = () => {
 
                 // Set default order type based on service type
                 if (cartData?.serviceType === 'pickup') {
-                    setOrderType('pickyp');
+                    setOrderType('pickup');
                 } else if (cartData?.serviceType === 'delivery') {
                     setOrderType('delivery');
                 } else if (cartData?.serviceType === 'both') {
@@ -170,48 +171,49 @@ const Checkout = () => {
     };
 
     const handleCompletePurchase = async () => {
-        // Only validate address for delivery orders
-        if (orderType === 'delivery') {
-            if (!selectedAddress && !showAddressForm) {
-                toast.error('Please select or add a delivery address to continue');
-                return;
-            }
-             if (isProcessing) return; // Prevent double submission
-                 setIsProcessing(true);
-
-
-            // Validate form data if showing address form
-            if (showAddressForm) {
-                const requiredFields = ['fullName', 'street', 'city', 'state', 'pincode', 'country', 'phone'];
-                const missingFields = requiredFields.filter(field => !formData[field]);
-
-                if (missingFields.length > 0) {
-                    const missingFieldNames = missingFields.map(field => {
-                        switch (field) {
-                            case 'fullName': return 'Full Name';
-                            case 'street': return 'Street Address';
-                            case 'city': return 'City';
-                            case 'state': return 'State';
-                            case 'pincode': return 'Pincode';
-                            case 'country': return 'Country';
-                            case 'phone': return 'Phone Number';
-                            default: return field;
-                        }
-                    });
-                    toast.error(`Please fill in all required fields: ${missingFieldNames.join(', ')}`);
-                    return;
-                }
-
-                // Validate phone number format
-                const phoneRegex = /^[0-9]{10}$/;
-                if (!phoneRegex.test(formData.phone)) {
-                    toast.error('Please enter a valid 10-digit phone number');
-                    return;
-                }
-            }
-        }
+        // Prevent double submission
+        if (isProcessing) return;
+        setIsProcessing(true);
 
         try {
+            // Only validate address for delivery orders
+            if (orderType === 'delivery') {
+                if (!selectedAddress && !showAddressForm) {
+                    toast.error('Please select or add a delivery address to continue');
+                    return;
+                }
+
+                // Validate form data if showing address form
+                if (showAddressForm) {
+                    const requiredFields = ['fullName', 'street', 'city', 'state', 'pincode', 'country', 'phone'];
+                    const missingFields = requiredFields.filter(field => !formData[field]);
+
+                    if (missingFields.length > 0) {
+                        const missingFieldNames = missingFields.map(field => {
+                            switch (field) {
+                                case 'fullName': return 'Full Name';
+                                case 'street': return 'Street Address';
+                                case 'city': return 'City';
+                                case 'state': return 'State';
+                                case 'pincode': return 'Pincode';
+                                case 'country': return 'Country';
+                                case 'phone': return 'Phone Number';
+                                default: return field;
+                            }
+                        });
+                        toast.error(`Please fill in all required fields: ${missingFieldNames.join(', ')}`);
+                        return;
+                    }
+
+                    // Validate phone number format
+                    const phoneRegex = /^[0-9]{10}$/;
+                    if (!phoneRegex.test(formData.phone)) {
+                        toast.error('Please enter a valid 10-digit phone number');
+                        return;
+                    }
+                }
+            }
+
             const cartData = carts[0];
             const orderData = {
                 items: cartData.items.map(item => ({
@@ -227,7 +229,7 @@ const Checkout = () => {
                 orderType,
                 restaurantId: cartData.restaurantId._id,
                 restaurantName: cartData.restaurantName,
-                quantity : cartData.quantity
+                quantity: cartData.quantity
             };
 
             // Only include address data for delivery orders
@@ -251,7 +253,6 @@ const Checkout = () => {
                 await clearCart();
             }
         } catch (err) {
-
             if (err.response?.data?.error) {
                 toast.error(err.response.data.error);
             } else if (err.response?.status === 401) {
@@ -262,10 +263,9 @@ const Checkout = () => {
             } else {
                 toast.error('Failed to place order. Please try again.');
             }
+        } finally {
+            setIsProcessing(false);
         }
-        finally {
-        setIsProcessing(false); 
-    }
     };
 
     const calculateTotal = () => {
@@ -601,7 +601,15 @@ const Checkout = () => {
                             className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-lg font-semibold"
                             disabled={isProcessing}
                         >
-                              {isProcessing ? 'Processing...' : 'Place order'}
+                            {isProcessing ? (
+                                <div className="flex items-center justify-center">
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </div>
+                            ) : 'Place order'}
                         </button>
                     </div>
                 </div>
@@ -610,4 +618,4 @@ const Checkout = () => {
     );
 };
 
-export default Checkout; 
+export default Checkout;

@@ -1,4 +1,4 @@
-import { X, Download, Upload, Trash } from 'lucide-react';
+import { X, Download, Upload, Trash, HelpCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
@@ -9,6 +9,7 @@ const BulkAddModal = ({ open, onClose, onBulkAdd, preSelectedCategory = '', preS
     const [isProcessing, setIsProcessing] = useState(false);
     const [parsedItems, setParsedItems] = useState([]);
     const [parseError, setParseError] = useState('');
+    const [showFormatHelp, setShowFormatHelp] = useState(false);
 
     // Define the default header order as a constant
     const DEFAULT_HEADER = ['Name', 'Price', 'Quantity', 'Category', 'Subcategory', 'Food Type', 'Description', 'In Stock'];
@@ -295,9 +296,28 @@ Cold Coffee,70,100,Beverages,Cold Drinks,veg,Chilled coffee with cream,true`;
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Data Input */}
                             <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Menu Items Data (CSV Format)
-                                </label>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <label className="block text-sm font-medium">
+                                        Menu Items Data (CSV Format)
+                                    </label>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowFormatHelp(!showFormatHelp)}
+                                        className="text-gray-500 hover:text-blue-500"
+                                        aria-label="Show format help"
+                                    >
+                                        <HelpCircle size={16} />
+                                    </button>
+                                </div>
+                                {showFormatHelp && (
+                                    <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                                        Add items in the following format:
+                                        <pre className="mt-1 p-2 bg-white border rounded font-mono text-xs overflow-x-auto">
+                                            {DEFAULT_HEADER.join(',') + '\n' + 
+                                            'Item Name,Price,Quantity,Category,Subcategory,Food Type,Description,In Stock'}
+                                        </pre>
+                                    </div>
+                                )}
                                 <textarea
                                     value={bulkData === '' ? DEFAULT_HEADER.join(',') : bulkData}
                                     onChange={(e) => setBulkData(e.target.value)}
@@ -412,4 +432,4 @@ Cold Coffee,70,100,Beverages,Cold Drinks,veg,Chilled coffee with cream,true`;
     );
 };
 
-export default BulkAddModal; 
+export default BulkAddModal;

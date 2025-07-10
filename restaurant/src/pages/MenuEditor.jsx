@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import MenuItemModal from "./MenuItemModal";
 import BulkAddModal from "./BulkAddModal";
 import ImportExcelModal from "./ImportExcelModal";
@@ -49,6 +49,7 @@ function MenuEditor() {
   const [importExcelModalOpen, setImportExcelModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showCategoryHelp, setShowCategoryHelp] = useState(false);
 
   // Bulk delete state
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
@@ -74,9 +75,10 @@ function MenuEditor() {
   const [newItemData, setNewItemData] = useState({
     name: "",
     price: "",
-    quantity: "",
+    description: "",
     foodType: "veg",
     inStock: true,
+    quantity: ""
   });
 
   // Toggle subcategory expansion
@@ -117,10 +119,10 @@ function MenuEditor() {
 
   // Handle modal submit for add/edit
   const handleModalSubmit = (formData) => {
-     if (!formData.quantity || isNaN(formData.quantity)) {
-    alert("Quantity is required and must be a number.");
-    return;
-  }
+    if (!formData.quantity || isNaN(formData.quantity)) {
+      alert("Quantity is required and must be a number.");
+      return;
+    }
     if (modalData.item) {
       updateMenuItem(modalData.item._id, formData);
     } else {
@@ -270,7 +272,6 @@ function MenuEditor() {
   // Handle accordion form input change
   const handleAccordionInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    console.log("Input changed:", name, value, type, checked);
     setNewItemData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -280,10 +281,10 @@ function MenuEditor() {
   // Handle accordion form submit
   const handleAccordionSubmit = (e) => {
     e.preventDefault();
-     if (!newItemData.quantity || isNaN(newItemData.quantity)) {
-    alert("Quantity is required and must be a number.");
-    return;
-  }
+    if (!newItemData.quantity || isNaN(newItemData.quantity)) {
+      alert("Quantity is required and must be a number.");
+      return;
+    }
     addMenuItem({
       ...newItemData,
       category: selectedCategory,
@@ -292,7 +293,6 @@ function MenuEditor() {
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
     });
-    console.log("New item data:", newItemData);
     setShowAccordionForm(false);
     setAccordionSubcategory("");
   };
@@ -306,61 +306,61 @@ function MenuEditor() {
       <div className="col-lg-10 ms-auto" style={{ marginTop: "60px" }}>
         <div className="p-4">
           <style>{`
-                        @media (max-width: 640px) {
-                            .menu-mobile-flex {
-                                flex-direction: column !important;
-                                height: auto !important;
-                            }
-                            .menu-mobile-sidebar {
-                                width: 100% !important;
-                                border-right: none !important;
-                                border-bottom: 1px solid #e5e7eb !important;
-                                padding: 0 !important;
-                                height: auto !important;
-                                background: none !important;
-                            }
-                            .menu-mobile-main {
-                                width: 100% !important;
-                                padding: 1rem 0.5rem !important;
-                                height: auto !important;
-                            }
-                            .menu-mobile-action {
-                                width: 100% !important;
-                                flex-direction: column !important;
-                                gap: 0.5rem !important;
-                            }
-                            .menu-mobile-action button {
-                                width: 100% !important;
-                            }
-                            .menu-mobile-search {
-                                width: 100% !important;
-                            }
-                            .mobile-category-list {
-                                display: flex !important;
-                                flex-wrap: wrap !important;
-                                gap: 0.5rem !important;
-                                padding: 1rem 0.5rem !important;
-                                border-bottom: 1px solid #e5e7eb !important;
-                                background: #fff !important;
-                            }
-                            .mobile-category-btn {
-                                flex: 1 1 40%;
-                                background: #f3f4f6;
-                                border-radius: 9999px;
-                                padding: 0.5rem 1rem;
-                                border: none;
-                                font-size: 1rem;
-                                color: #374151;
-                                font-weight: 500;
-                                text-align: center;
-                                transition: background 0.2s, color 0.2s;
-                            }
-                            .mobile-category-btn.selected {
-                                background: #f59e42;
-                                color: #fff;
-                            }
-                        }
-                    `}</style>
+            @media (max-width: 640px) {
+              .menu-mobile-flex {
+                flex-direction: column !important;
+                height: auto !important;
+              }
+              .menu-mobile-sidebar {
+                width: 100% !important;
+                border-right: none !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                padding: 0 !important;
+                height: auto !important;
+                background: none !important;
+              }
+              .menu-mobile-main {
+                width: 100% !important;
+                padding: 1rem 0.5rem !important;
+                height: auto !important;
+              }
+              .menu-mobile-action {
+                width: 100% !important;
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+              }
+              .menu-mobile-action button {
+                width: 100% !important;
+              }
+              .menu-mobile-search {
+                width: 100% !important;
+              }
+              .mobile-category-list {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                padding: 1rem 0.5rem !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                background: #fff !important;
+              }
+              .mobile-category-btn {
+                flex: 1 1 40%;
+                background: #f3f4f6;
+                border-radius: 9999px;
+                padding: 0.5rem 1rem;
+                border: none;
+                font-size: 1rem;
+                color: #374151;
+                font-weight: 500;
+                text-align: center;
+                transition: background 0.2s, color 0.2s;
+              }
+              .mobile-category-btn.selected {
+                background: #f59e42;
+                color: #fff;
+              }
+            }
+          `}</style>
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 menu-mobile-action">
             {/* Search Input */}
             <div className="relative menu-mobile-search">
@@ -445,10 +445,36 @@ function MenuEditor() {
             {/* Categories Sidebar */}
             <div className="w-64 bg-white p-6 border-r border-gray-200 flex-shrink-0 h-screen menu-mobile-sidebar">
               {/* Desktop/Tablet: Sidebar, Mobile: Horizontal lines */}
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 block sm:block hidden">
-                Categories.
-                <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
-              </h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 block sm:block hidden">
+                  Categories
+                  <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
+                </h2>
+                <button 
+                  type="button" 
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowCategoryHelp(!showCategoryHelp)}
+                  aria-label="Category help"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+                {showCategoryHelp && (
+                  <div className="absolute z-10 mt-8 ml-[-8px] bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
+                    <p className="text-sm text-gray-700">
+                      Here is the list of categories. To create a new category, go to "Add New Item" and enter a new category name in the category field when adding an item, if no category is given item falls under uncategorized .
+                    </p>
+                    <button 
+                      type="button"
+                      className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowCategoryHelp(false)}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="space-y-3 block sm:block hidden">
                 {menuItems.map((categoryObj) => (
                   <div
@@ -923,8 +949,9 @@ function MenuEditor() {
                                             <div className="font-medium text-gray-800">
                                               {item.name}
                                             </div>
-                                            <div className="text-sm text-gray-600">
-                                              ₹{item.price || item.totalPrice}
+                                            <div className="flex gap-4 text-sm text-gray-600">
+                                              <span>₹{item.price || item.totalPrice}</span>
+                                              <span>Qty: {item.quantity}</span>
                                             </div>
                                           </div>
                                         </div>

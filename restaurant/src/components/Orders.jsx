@@ -144,16 +144,13 @@ const Orders = () => {
         try {
             const response = await axios.patch(`${API_URL}/api/orders/status/${orderId}`, { status });
             const updatedOrder = response.data.order;
-            // console.log('Order status updated:', updatedOrder);
-            
-            // Emit the order status update
-            socket.emit('orderStatusUpdate', updatedOrder, (error) => {
-                if (error) {
-                    console.error('Error emitting order status update:', error);
-                } else {
-                    // console.log('Order status update emitted successfully');
-                }
-            });
+            // Emit the order status update with cancelledBy only if status is CANCELLED
+            if (status === 'CANCELLED') {
+                const orderWithCancelledBy = { ...updatedOrder, cancelledBy: 'restaurant' };
+                socket.emit('orderStatusUpdate', orderWithCancelledBy);
+            } else {
+                socket.emit('orderStatusUpdate', updatedOrder);
+            }
 
             toast.success('Order status updated');
             if (status !== activeTab) {
@@ -543,4 +540,4 @@ const Orders = () => {
     );
 };
 
-export default Orders; 
+export default Orders;

@@ -130,6 +130,11 @@ const createMenuItem = async (req, res) => {
             businessId: req.restaurant._id
         });
         const savedItem = await newItem.save();
+        const io = req.app.get('io');
+        io.emit('menuUpdated', {
+            businessId: req.restaurant._id,
+            menuItem: savedItem
+        });
         res.status(201).json(savedItem);
     } catch (error) {
         console.error('[menuController.js][createMenuItem]', error);
@@ -211,7 +216,13 @@ const updateMenuItem = async (req, res) => {
         if (oldPhotoKey) {
             await deleteS3Object(oldPhotoKey);
         }
+       
         if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
+
+         if (updatedItem) {
+    const io = req.app.get('io');
+    io.emit('menuUpdated', { businessId: req.restaurant._id, menuItem: updatedItem });
+}
         res.json(updatedItem);
     } catch (error) {
         console.error('[menuController.js][updateMenuItem]', error);
@@ -233,6 +244,8 @@ const deleteMenuItem = async (req, res) => {
                 deleteS3Object(oldPhotoKey); // don't await
             }
         }
+        const io = req.app.get('io');
+io.emit('menuUpdated', { businessId: req.restaurant._id, deletedItemId: req.params.id });
         res.json({ message: 'Menu item deleted' });
     } catch (error) {
         console.error('[menuController.js][deleteMenuItem]', error);

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, HelpCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 const defaultForm = {
@@ -10,7 +10,7 @@ const defaultForm = {
     photos: '',
     totalPrice: '',
     inStock: true,
-    quantity: 1,
+    quantity: ''
 };
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -29,6 +29,8 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
     const [error, setError] = useState('');
     const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showCategoryHelp, setShowCategoryHelp] = useState(false);
+    const [showSubcategoryHelp, setShowSubcategoryHelp] = useState(false);
 
     useEffect(() => {
         if (item != null) {
@@ -179,17 +181,39 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                 required
-                                // min="1"
-                                
                             />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Category
-                            </label>
+                            <div className="flex items-center gap-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Category
+                                </label>
+                                <button 
+                                    type="button" 
+                                    className="text-gray-400 hover:text-gray-600"
+                                    onClick={() => setShowCategoryHelp(!showCategoryHelp)}
+                                    aria-label="Category help"
+                                >
+                                    <HelpCircle className="w-4 h-4" />
+                                </button>
+                                {showCategoryHelp && (
+                                    <div className="absolute z-10 mt-8 bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
+                                        <p className="text-sm text-gray-700">
+                                            Create a new category here. Categories help organize your menu items (e.g., Breakfast, Lunch, Dinner).
+                                        </p>
+                                        <button 
+                                            type="button"
+                                            className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
+                                            onClick={() => setShowCategoryHelp(false)}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             <input
                                 type="text"
                                 name="category"
@@ -201,9 +225,33 @@ const MenuItemModal = ({ open, onClose, onSubmit, preSelectedCategory = '', preS
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Subcategory
-                            </label>
+                            <div className="flex items-center gap-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Subcategory
+                                </label>
+                                <button 
+                                    type="button" 
+                                    className="text-gray-400 hover:text-gray-600"
+                                    onClick={() => setShowSubcategoryHelp(!showSubcategoryHelp)}
+                                    aria-label="Subcategory help"
+                                >
+                                    <HelpCircle className="w-4 h-4" />
+                                </button>
+                                {showSubcategoryHelp && (
+                                    <div className="absolute z-10 mt-8 bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
+                                        <p className="text-sm text-gray-700">
+                                            Create a new subcategory here. Subcategories help further organize items within a category (e.g., Classic, Special, Combo).
+                                        </p>
+                                        <button 
+                                            type="button"
+                                            className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
+                                            onClick={() => setShowSubcategoryHelp(false)}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             <input
                                 type="text"
                                 name="subcategory"

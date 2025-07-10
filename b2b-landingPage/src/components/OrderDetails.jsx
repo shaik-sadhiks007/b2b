@@ -47,12 +47,34 @@ const OrderDetails = () => {
 
         // Listen for order status updates
         socket.on('orderStatusUpdate', (updatedOrder) => {
+             if (
+            updatedOrder.status === 'CANCELLED' &&
+            updatedOrder.cancelledBy === 'restaurant'
+        ) {
+            showNotification("Order Update", {
+                body: "Your order was cancelled by the restaurant."
+            });
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification('Order Update', {
+                        body: "Your order was cancelled by the restaurant.",
+                        icon: '/path-to-your-logo.png',
+                        tag: 'order-update'
+                    });
+                } catch (error) {
+                    showNotification("Order Update", {
+                        body: "Your order was cancelled by the restaurant."
+                    });
+                }
+            }
+            return;
+        }
             // console.log('Order status update received in OrderDetails:', updatedOrder);
             if (updatedOrder._id === orderId) {
                 // console.log('Updating order details for order:', orderId);
-                setOrder(updatedOrder);
-                // Show toast notification for status change
-                toast.info(`Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`);
+                 setOrder(updatedOrder);
+               //  Show toast notification for status change
+                // toast.info(`Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`);
                 showNotification("Order Update", {
             body: `Order status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`,
             
@@ -112,24 +134,25 @@ const OrderDetails = () => {
                 // Ensure we're sending the order object, not the entire response
                 const orderData = response.data.order || response.data;
                 console.log('Emitting order data:', orderData);
-                
-                // Emit the order status update
-                socket.emit('orderStatusUpdate', orderData, (error) => {
-                    if (error) {
-                        console.error('Error emitting order status update:', error);
-                    } else {
-                        console.log('Order status update emitted successfully');
-                    }
-                    // Disconnect after emitting
-                    socket.disconnect();
-                });
+                // Add cancelledBy property
+            const orderWithCancelledBy = { ...orderData, cancelledBy: 'customer' };
+            console.log('Emitting order data:', orderWithCancelledBy);
+
+            socket.emit('orderStatusUpdate', orderWithCancelledBy, (error) => {
+                if (error) {
+                    console.error('Error emitting order status update:', error);
+                } else {
+                    console.log('Order status update emitted successfully');
+                }
+                socket.disconnect();
+            });
             });
 
             socket.on('connect_error', (error) => {
                 console.error('Socket connection error:', error);
             });
 
-            toast.success('Order cancelled successfully');
+            //toast.success('Order cancelled successfully');
             fetchOrderDetails();
             setShowCancelConfirm(false);
         } catch (error) {
@@ -473,4 +496,4 @@ const OrderDetails = () => {
     );
 };
 
-export default OrderDetails; 
+export default OrderDetails;

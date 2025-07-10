@@ -95,7 +95,7 @@ const Orders = () => {
                 );
             });
             // Show toast notification for status change
-            toast.info(`Order #${updatedOrder._id.slice(-6)} status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`);
+           // toast.info(`Order #${updatedOrder._id.slice(-6)} status updated to: ${updatedOrder.status.replace(/_/g, ' ')}`);
         });
 
         // Cleanup socket connection on component unmount

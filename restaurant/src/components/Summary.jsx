@@ -17,6 +17,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { HelpCircle } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -34,6 +35,8 @@ const Summary = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState('1M'); // Default to 1 month
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showPopularItemsHelp, setShowPopularItemsHelp] = useState(false);
 
   const { user } = useContext(AuthContext);
 
@@ -235,7 +238,34 @@ const Summary = () => {
                 {/* Report Line Chart - now full width */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Report</h2>
+                    <div className="flex items-center">
+                      <h2 className="text-xl font-semibold">Report</h2>
+                      <div className="relative ml-2">
+                        <button 
+                          onClick={() => setShowTooltip(!showTooltip)}
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-help-circle">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <line x1="12" x2="12.01" y1="17" y2="17" />
+                          </svg>
+                        </button>
+                        {showTooltip && (
+                          <div className="absolute z-10 w-64 p-2 mt-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg">
+                            <p>This graph shows revenue data for different time periods:</p>
+                            <ul className="list-disc pl-5 mt-1">
+                              <li>1D: 1 Day</li>
+                              <li>1W: 1 Week</li>
+                              <li>1M: 1 Month</li>
+                              <li>3M: 3 Months</li>
+                              <li>6M: 6 Months</li>
+                            </ul>
+                            <p className="mt-1">Click on the buttons to switch between time frames.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <div className="space-x-2">
                       {['1D', '1W', '1M', '3M', '6M'].map((frame) => (
                         <button
@@ -304,7 +334,32 @@ const Summary = () => {
                 {/* Popular Products */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Popular Products</h2>
+                    <div className="flex items-center">
+                      <h2 className="text-xl font-semibold">Popular Products</h2>
+                      <div className="relative ml-2">
+                        <button 
+                          onClick={() => setShowPopularItemsHelp(!showPopularItemsHelp)}
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          <HelpCircle className="w-5 h-5" />
+                        </button>
+                        {showPopularItemsHelp && (
+                          <div className="absolute z-10 w-64 p-2 mt-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg">
+                            <p>Most ordered items are listed here based on the selected time period.</p>
+                            <p className="mt-1">The table shows the item name, quantity sold, and other details.</p>
+                            <button 
+                              type="button"
+                              className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
+                              onClick={() => setShowPopularItemsHelp(false)}
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <button className="text-gray-500 flex items-center text-sm">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter mr-1">
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />

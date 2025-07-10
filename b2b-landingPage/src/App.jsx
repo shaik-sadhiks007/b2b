@@ -35,6 +35,8 @@ import {
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import Feedback from './pages/Feedback';
+import { getSubdomain } from "./utils/getSubdomain";
+import { API_URL } from "./api/api"
 
 
 function AppContent() {
@@ -48,6 +50,26 @@ function AppContent() {
   // Centralized state for location and suggestions
   const [location, setLocation] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const navigate = useNavigate();
+
+  // Subdomain-based restaurant rendering
+  useEffect(() => {
+    const subdomain = getSubdomain();
+    if (subdomain && subdomain !== "shopatb2b") {
+      // Only run if not already on a restaurant page
+      if (!routerLocation.pathname.startsWith("/restaurant/")) {
+        fetch(`${API_URL}/api/subdomain/resolve-subdomain/${subdomain}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.id && data.category) {
+              // Render the correct restaurant page, but keep the subdomain URL
+              navigate(`/${data.category}/${data.id}`, { replace: true });
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [navigate, routerLocation]);
 
   // Dummy handlers (replace with your actual logic if needed)
   const onLocationSelect = (suggestion) => {

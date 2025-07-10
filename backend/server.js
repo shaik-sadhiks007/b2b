@@ -43,22 +43,39 @@ const subdomainRoutes = require('./src/routes/subdomainRoutes');
 const app = express();
 const server = http.createServer(app);
 
+// Allow all subdomains of shopatb2b.com
+const allowedOriginRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*shopatb2b\.com$/;
+
+// Helper to check allowed origins for Socket.IO
+function isAllowedOrigin(origin) {
+    return allowedOriginRegex.test(origin);
+}
+
+// CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOriginRegex.test(origin)) {
+            return callback(null, true);
+        }
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Initialize Socket.IO
 const io = new Server(server, {
     cors: {
-        origin: [
-            process.env.FRONTEND_URL || 'http://localhost:5173',
-            process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
-            'http://www.shopatb2b.com',
-            'https://www.shopatb2b.com',
-            'http://shopatb2b.com',
-            'https://shopatb2b.com',
-            'http://business.shopatb2b.com',
-            'https://business.shopatb2b.com',
-            'http://www.business.shopatb2b.com',
-            'https://www.business.shopatb2b.com',
-            'https://meet.google.com/xuz-gjpj-yaa'
-        ],
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (isAllowedOrigin(origin)) {
+                return callback(null, true);
+            }
+            return callback('Origin not allowed by Socket.IO CORS', false);
+        },
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -84,37 +101,6 @@ io.on('connection', (socket) => {
         console.log(`Socket disconnected: ${socket.id}`);
     });
 });
-
-// Define allowed origins
-const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:5173',
-    process.env.SECOND_FRONTEND_URL || 'http://localhost:5174',
-    'http://www.shopatb2b.com',
-    'https://www.shopatb2b.com',
-    'http://shopatb2b.com',
-    'https://shopatb2b.com',
-    'http://business.shopatb2b.com',
-    'https://business.shopatb2b.com',
-    'http://www.business.shopatb2b.com',
-    'https://www.business.shopatb2b.com',
-    'https://meet.google.com/xuz-gjpj-yaa'
-];
-
-// CORS configuration
-const corsOptions = {
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
 
 // Middleware
 app.use(cors(corsOptions));

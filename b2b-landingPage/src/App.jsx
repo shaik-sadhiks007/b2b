@@ -35,6 +35,9 @@ import {
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import Feedback from './pages/Feedback';
+import { getSubdomain } from "./utils/getSubdomain";
+import { API_URL } from "./api/api"
+import axios from 'axios';
 
 
 function AppContent() {
@@ -48,6 +51,34 @@ function AppContent() {
   // Centralized state for location and suggestions
   const [location, setLocation] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const navigate = useNavigate();
+
+  // Subdomain-based restaurant rendering
+  useEffect(() => {
+    const subdomain = getSubdomain();
+    console.log('[Subdomain Debug] Detected subdomain:', subdomain);
+    if (subdomain && subdomain !== "shopatb2b") {
+      // Only run if not already on a restaurant page
+      if (!routerLocation.pathname.startsWith("/restaurant/")) {
+        const url = `${API_URL}/api/subdomain/resolve-subdomain/${subdomain}`;
+        console.log('[Subdomain Debug] Fetching subdomain mapping from:', url);
+        axios.get(url)
+          .then(res => {
+            console.log('[Subdomain Debug] Response status:', res.status);
+            console.log('[Subdomain Debug] Backend returned:', res.data);
+            const data = res.data;
+            if (data.id && data.category) {
+              // Render the correct restaurant page, but keep the subdomain URL
+              console.log('[Subdomain Debug] Navigating to:', `/${data.category}/${data.id}`);
+              navigate(`/${data.category}/${data.id}`, { replace: true });
+            }
+          })
+          .catch((err) => {
+            console.error('[Subdomain Debug] Error fetching subdomain mapping:', err);
+          });
+      }
+    }
+  }, [navigate, routerLocation]);
 
   // Dummy handlers (replace with your actual logic if needed)
   const onLocationSelect = (suggestion) => {

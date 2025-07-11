@@ -81,8 +81,11 @@ const RestaurantDetailsSkeleton = () => (
     </div>
 );
 
-const HotelDetails = () => {
-    const { id } = useParams();
+const HotelDetails = (props) => {
+    const params = useParams();
+    // Prefer props.id if provided, else fallback to params.id
+    const id = props.id || params.id;
+    const category = props.category || params.category;
     const navigate = useNavigate();
     const { carts, addToCart, isItemInCart, fetchCart, clearCart } = useCart();
     const [expandedCategories, setExpandedCategories] = useState([]);

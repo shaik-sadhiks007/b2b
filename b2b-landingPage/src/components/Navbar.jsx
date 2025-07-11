@@ -9,6 +9,7 @@ import { toast } from 'react-toastify'
 import { API_URL } from '../api/api';
 import io from 'socket.io-client';
 import logo from '../assets/b2bupdate.png';
+import { getSubdomain } from '../utils/getSubdomain';
 
 function Navbar({ alwaysVisible }) {
   const [showLoginOptions, setShowLoginOptions] = useState(false)
@@ -165,6 +166,22 @@ function Navbar({ alwaysVisible }) {
     navigate('/search')
   }
 
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    
+    const subdomain = getSubdomain();
+    console.log('[Logo Click Debug] Detected subdomain:', subdomain);
+    
+    if (subdomain && subdomain !== "shopatb2b") {
+      // If on a subdomain, navigate to home (main domain)
+      console.log('[Logo Click Debug] On subdomain, navigating to home');
+      navigate('/')
+    } else {
+      // Already on main domain, navigate to home page
+      console.log('[Logo Click Debug] On main domain, navigating to home page');
+    }
+  }
+
   const handleLocationSelect = (suggestion) => {
     const locationData = {
       location: suggestion.address || suggestion.name,
@@ -221,9 +238,9 @@ function Navbar({ alwaysVisible }) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/">
+            <button onClick={handleLogoClick} className="cursor-pointer">
               <img src={logo} loading="lazy" alt="logo" width='40px' />
-            </Link>
+            </button>
           </div>
 
           {/* Mobile Location Input */}

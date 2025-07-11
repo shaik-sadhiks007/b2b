@@ -38,6 +38,7 @@ import Feedback from './pages/Feedback';
 import { getSubdomain } from "./utils/getSubdomain";
 import { API_URL } from "./api/api"
 import axios from 'axios';
+import HomeOrHotelDetails from './components/HomeOrHotelDetails';
 
 
 function AppContent() {
@@ -53,32 +54,11 @@ function AppContent() {
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
-  // Subdomain-based restaurant rendering
-  useEffect(() => {
-    const subdomain = getSubdomain();
-    console.log('[Subdomain Debug] Detected subdomain:', subdomain);
-    if (subdomain && subdomain !== "shopatb2b") {
-      // Only run if not already on a restaurant page
-      if (!routerLocation.pathname.startsWith("/restaurant/")) {
-        const url = `${API_URL}/api/subdomain/resolve-subdomain/${subdomain}`;
-        console.log('[Subdomain Debug] Fetching subdomain mapping from:', url);
-        axios.get(url)
-          .then(res => {
-            console.log('[Subdomain Debug] Response status:', res.status);
-            console.log('[Subdomain Debug] Backend returned:', res.data);
-            const data = res.data;
-            if (data.id && data.category) {
-              // Render the correct restaurant page, but keep the subdomain URL
-              console.log('[Subdomain Debug] Navigating to:', `/${data.category}/${data.id}`);
-              navigate(`/${data.category}/${data.id}`, { replace: true });
-            }
-          })
-          .catch((err) => {
-            console.error('[Subdomain Debug] Error fetching subdomain mapping:', err);
-          });
-      }
-    }
-  }, [navigate, routerLocation]);
+  // Determine if we are on the main domain
+  const subdomain = getSubdomain();
+  const isMainDomain = !subdomain || subdomain === "shopatb2b";
+  // Hide helpers if on subdomain and on home route
+  const hideHelpers = !isMainDomain && isHome;
 
   // Dummy handlers (replace with your actual logic if needed)
   const onLocationSelect = (suggestion) => {
@@ -89,7 +69,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      {!isHome && (
         <Navbar
           alwaysVisible={true}
           location={location}
@@ -99,12 +78,11 @@ function AppContent() {
           onAllowLocation={onAllowLocation}
           onLoginClick={onLoginClick}
         />
-      )}
-      {!isHotelDetails && <Helpbutton />}
-      {!isHotelDetails && <Whatsappbutton />}
+      {!hideHelpers && <Helpbutton />}
+      {!hideHelpers && <Whatsappbutton />}
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeOrHotelDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

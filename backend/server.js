@@ -43,19 +43,20 @@ const subdomainRoutes = require('./src/routes/subdomainRoutes');
 const app = express();
 const server = http.createServer(app);
 
-// Allow all subdomains of shopatb2b.com
+// Allow all subdomains of shopatb2b.com and localhost development ports
 const allowedOriginRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*shopatb2b\.com$/;
+const localhostRegex = /^https?:\/\/localhost:(5173|5174)$/;
 
 // Helper to check allowed origins for Socket.IO
 function isAllowedOrigin(origin) {
-    return allowedOriginRegex.test(origin);
+    return allowedOriginRegex.test(origin) || localhostRegex.test(origin);
 }
 
 // CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOriginRegex.test(origin)) {
+        if (allowedOriginRegex.test(origin) || localhostRegex.test(origin)) {
             return callback(null, true);
         }
         const msg = 'The CORS policy for this site does not allow access from the specified Origin.';

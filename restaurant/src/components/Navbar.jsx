@@ -200,12 +200,22 @@ const Navbar = () => {
             <div className="col-md-12 d-flex justify-content-between align-items-center py-2 px-4">
                 {/* Left side - logo and menu */}
                 <div className="d-flex align-items-center">
-                    <button
-                        className="btn btn-link text-dark p-0 me-3 d-lg-none"
-                        onClick={() => setIsMobileMenuOpen(true)}
-                    >
-                        <i className="bi bi-list fs-4"></i>
-                    </button>
+                    {user && user.role !== 'admin' && (
+                        <button
+                            className="btn btn-link text-dark p-0 me-3 d-lg-none"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <i className="bi bi-list fs-4"></i>
+                        </button>
+                    )}
+                    {user && user.role === 'admin' && (
+                        <button
+                            className="btn btn-link text-dark p-0 me-3 d-lg-none"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <i className="bi bi-list fs-4"></i>
+                        </button>
+                    )}
                     <div className="d-flex flex-column">
                         <Link to="/">
                             <img

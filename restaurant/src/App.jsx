@@ -18,6 +18,7 @@ import Review from './components/Review'
 import Aboutus from './components/Aboutus'
 import { MenuProvider } from './context/MenuContext'
 import PrivateRoute from './components/PrivateRoute'
+import AdminRoute from './adminComp/AdminRoute'
 import AuthProvider from './context/AuthContext'
 import Footer from './components/Footer';
 import Contactus from './components/Contactus';
@@ -27,6 +28,7 @@ import Summary from './components/Summary'
 import Features from './components/Features'
 import MenuEditor from './pages/MenuEditor'
 import Feedback from './pages/Feedback'
+import Business from './adminComp/Business'
 function App() {
   return (
     <MobileMenuProvider>
@@ -110,6 +112,12 @@ function App() {
                 <PrivateRoute>
                   <Feedback />
                 </PrivateRoute>
+              } />
+              {/* Admin Routes */}
+              <Route path='/business' element={
+                <AdminRoute>
+                  <Business />
+                </AdminRoute>
               } />
             </Routes>
           </Router>

@@ -1,0 +1,95 @@
+import React, { useContext } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { MobileMenuContext } from '../context/MobileMenuContext';
+
+export const adminMenuItems = [
+    {
+        icon: "bi-building", label: "Business", path: "/business"
+    }
+];
+
+const AdminSidebar = () => {
+    const location = useLocation();
+    const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(MobileMenuContext);
+
+    const handleClose = () => setIsMobileMenuOpen(false);
+
+    const renderMenuItem = (item, index) => {
+        const isActive = location.pathname === item.path;
+
+        return (
+            <Link
+                key={index}
+                to={item.path}
+                className="text-decoration-none text-dark"
+                onClick={handleClose}
+            >
+                <div className={`p-3 d-flex align-items-center rounded-3 mb-1 ${isActive ? 'bg-blue-50' : ''}`}>
+                    <i className={`bi ${item.icon} me-3`}></i>
+                    <span className="text-nowrap">{item.label}</span>
+                </div>
+            </Link>
+        );
+    };
+
+    return (
+        <>
+            {/* Desktop sidebar (only visible on lg and up) */}
+            <div className="col-lg-2 bg-white shadow-sm vh-100 position-fixed d-none d-lg-block" style={{ marginTop: '25px', zIndex: 1030 }}>
+                <div className="d-flex flex-column h-100">
+                    <div className="overflow-auto flex-grow-1 p-2">
+                        {adminMenuItems.map((item, index) => renderMenuItem(item, index))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Offcanvas sidebar for mobile and tablet (below lg) */}
+            {isMobileMenuOpen && (
+                <div
+                    className="d-lg-none position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+                    style={{ zIndex: 1040 }}
+                    onClick={handleClose}
+                ></div>
+            )}
+            <div
+                className={`d-lg-none position-fixed bg-white shadow-sm ${isMobileMenuOpen ? 'start-0' : 'start-n100'} top-0`}
+                style={{
+                    zIndex: 1050,
+                    width: '280px',
+                    height: '100vh',
+                    top: 0,
+                    left: isMobileMenuOpen ? '0' : '-280px',
+                    transition: 'left 0.3s cubic-bezier(.4,0,.2,1)',
+                    borderTopRightRadius: '12px',
+                    borderBottomRightRadius: '12px',
+                }}
+            >
+                {/* Close button always visible at the top */}
+                <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
+                    <span className="fw-bold">Admin Menu</span>
+                    <button className="btn btn-link text-dark p-0" onClick={handleClose}>
+                        <i className="bi bi-x-lg fs-4"></i>
+                    </button>
+                </div>
+                <div className="d-flex flex-column h-100">
+                    <div className="overflow-auto flex-grow-1 p-2">
+                        {adminMenuItems.map((item, index) => renderMenuItem(item, index))}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
+AdminSidebar.propTypes = {
+    isOnline: PropTypes.bool,
+    onStatusChange: PropTypes.func,
+    user: PropTypes.object
+};
+
+AdminSidebar.defaultProps = {
+    isOnline: false
+};
+
+export default AdminSidebar; 

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { MobileMenuContext } from '../context/MobileMenuContext';
+import { AuthContext } from '../context/AuthContext';
 
 export const menuItems = [
     {
@@ -29,8 +30,14 @@ export const menuItems = [
 const Sidebar = () => {
     const location = useLocation();
     const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(MobileMenuContext);
+    const { user } = useContext(AuthContext);
 
     const handleClose = () => setIsMobileMenuOpen(false);
+
+    // Don't render sidebar for admin users
+    if (user && user.role === 'admin') {
+        return null;
+    }
 
     const renderMenuItem = (item, index) => {
         const isActive = location.pathname === item.path;

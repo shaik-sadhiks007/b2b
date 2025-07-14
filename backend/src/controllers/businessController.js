@@ -438,6 +438,67 @@ const getPublicBusinessById = async (req, res) => {
     }
 };
 
+// Get all businesses for admin
+const getAllBusinessesForAdmin = async (req, res) => {
+    try {
+        const { page = 1, pageSize = 10, status, search } = req.query;
+        const skip = (page - 1) * pageSize;
+        
+        let query = {};
+        
+        // Filter by status if provided
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+        
+        // Search by restaurant name or owner name
+        if (search) {
+            query.$or = [
+                { restaurantName: { $regex: search, $options: 'i' } },
+                { ownerName: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        const businesses = await Business.find(query)
+            .populate('owner', 'username email')
+            .select('restaurantName ownerName serviceType status createdAt currentStep images.profileImage contact address')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(pageSize))
+            .lean();
+            
+        const total = await Business.countDocuments(query);
+        
+        const formattedBusinesses = businesses.map(business => ({
+            _id: business._id,
+            restaurantName: business.restaurantName,
+            ownerName: business.ownerName,
+            owner: business.owner,
+            serviceType: business.serviceType,
+            status: business.status,
+            currentStep: business.currentStep,
+            profileImage: business.images?.profileImage,
+            contact: business.contact,
+            address: business.address,
+            createdAt: business.createdAt
+        }));
+        
+        res.json({
+            businesses: formattedBusinesses,
+            pagination: {
+                total,
+                totalPages: Math.ceil(total / pageSize),
+                page: parseInt(page),
+                pageSize: parseInt(pageSize)
+            }
+        });
+    } catch (error) {
+        console.error('[businessController.js][getAllBusinessesForAdmin]', error);
+        console.trace('[businessController.js][getAllBusinessesForAdmin] Stack trace:');
+        res.status(500).json({ message: 'Error getting businesses', error: error.message });
+    }
+};
+
 module.exports = {
     createBusiness,
     updateBusinessStep,
@@ -445,5 +506,6 @@ module.exports = {
     getBusinessProfile,
     updateBusinessProfile,
     getAllPublicBusinesses,
-    getPublicBusinessById
+    getPublicBusinessById,
+    getAllBusinessesForAdmin
 };

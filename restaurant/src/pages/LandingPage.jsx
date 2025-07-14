@@ -16,6 +16,12 @@ const LandingPage = () => {
     const [showServiceModal, setShowServiceModal] = useState(false);
 
     useEffect(() => {
+        // Check if user is admin and redirect to business page
+        if (user && user.role === 'admin') {
+            navigate('/business');
+            return;
+        }
+        
         // Check if user is logged in and has a published restaurant
         if (user && restaurant && restaurant.status === 'published') {
             navigate('/dashboard');

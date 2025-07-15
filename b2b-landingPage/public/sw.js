@@ -3,9 +3,6 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/src/main.jsx',
-  '/src/App.jsx',
-  '/src/styles.css'
 ];
 
 // Install event - cache resources
@@ -21,14 +18,31 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // Always fetch latest index.html from network
+  if (req.mode === 'navigate' || req.url.endsWith('index.html')) {
+    event.respondWith(
+      fetch(req)
+        .then((response) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(req, response.clone());
+            return response;
+          });
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Cache-first for everything else
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
+    caches.match(req).then((cachedResponse) => {
+      return cachedResponse || fetch(req);
+    })
   );
 });
+
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {

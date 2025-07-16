@@ -1,74 +1,98 @@
-import { useState } from "react"
-import { useEffect } from "react"
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom"
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import Navbar from "./components/Navbar"
-import HotelDataProvider from "./contextApi/HotelContextProvider"
-import Login from "./authentication/Login"
-import Register from "./authentication/Register"
-import ForgotPassword from "./authentication/ForgotPassword"
-import Home from "./components/Home"
-import HotelDetails from "./components/HotelDetails"
-import { CartProvider } from './context/CartContext'
-import CartPage from './components/CartPage'
-import SearchPage from './pages/SearchPage'
-import LocationProvider from "./context/LocationContext"
-import Checkout from "./components/Checkout"
-import OrderSuccess from "./components/OrderSuccess"
-import Orders from "./components/Orders"
-import ProtectedRoute from './components/ProtectedRoute'
-import GuestLogin from "./components/GuestLogin"
-import Profile from "./components/Profile"
-import AboutUs from "./components/About-us"
-import Helpbutton from './components/Helpbutton';
-import Whatsappbutton from './components/Whatsappbutton';
-import Contactus from './components/Contactus';
-import Footer from './components/Footer';
-import OrderDetails from './components/OrderDetails';
-import OrderStatus from './components/OrderStatus';
-import Features from './components/Features';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation as useRouterLocation
+} from "react-router-dom";
+
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import Navbar from "./components/Navbar";
+import HotelDataProvider from "./contextApi/HotelContextProvider";
+import Login from "./authentication/Login";
+import Register from "./authentication/Register";
+import ForgotPassword from "./authentication/ForgotPassword";
+import Home from "./components/Home";
+import HotelDetails from "./components/HotelDetails";
+import { CartProvider } from "./context/CartContext";
+import CartPage from "./components/CartPage";
+import SearchPage from "./pages/SearchPage";
+import LocationProvider from "./context/LocationContext";
+import Checkout from "./components/Checkout";
+import OrderSuccess from "./components/OrderSuccess";
+import Orders from "./components/Orders";
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuestLogin from "./components/GuestLogin";
+import Profile from "./components/Profile";
+import AboutUs from "./components/About-us";
+import Helpbutton from "./components/Helpbutton";
+import Whatsappbutton from "./components/Whatsappbutton";
+import Contactus from "./components/Contactus";
+import Footer from "./components/Footer";
+import Pantulugarifooter from "./components/pantulugarifooter";
+import OrderDetails from "./components/OrderDetails";
+import OrderStatus from "./components/OrderStatus";
+import Features from "./components/Features";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import Feedback from "./pages/Feedback";
+import HomeOrHotelDetails from "./components/HomeOrHotelDetails";
+import Pnavbar from "./components/pnavbar";
+
+import { getSubdomain } from "./utils/getSubdomain";
+
 import {
   QueryClient,
   QueryClientProvider,
-} from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import Feedback from './pages/Feedback';
-import { getSubdomain } from "./utils/getSubdomain";
-import { API_URL } from "./api/api"
-import axios from 'axios';
-import HomeOrHotelDetails from './components/HomeOrHotelDetails';
-
+} from "@tanstack/react-query";
 
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
-  
-  // Check if current path is hotel details page (pattern: /:category/:id)
-  const isHotelDetails = routerLocation.pathname.split('/').length === 3
-                        
 
-  // Centralized state for location and suggestions
   const [location, setLocation] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
-  // Determine if we are on the main domain
   const subdomain = getSubdomain();
   const isMainDomain = !subdomain || subdomain === "shopatb2b";
-  // Hide helpers if on subdomain and on home route
   const hideHelpers = !isMainDomain && isHome;
 
-  // Dummy handlers (replace with your actual logic if needed)
+  const hideFooterRoutes = [
+    '/checkout',
+    '/ordersuccess',
+    '/orders',
+    '/orders/',
+    '/order-status'
+  ];
+
+  const shouldHideFooter = hideFooterRoutes.some((r) =>
+    routerLocation.pathname.startsWith(r)
+  );
+
   const onLocationSelect = (suggestion) => {
     setLocation(suggestion.address || suggestion.name);
   };
-  const onAllowLocation = () => { };
-  const onLoginClick = () => { };
+
+  const onAllowLocation = () => {};
+  const onLoginClick = () => {};
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen"
+      style={
+        subdomain === "pantulugaarimess"
+          ? {
+              backgroundImage: "url('/assets/bgim.jpg')",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "cover",
+            }
+          : { backgroundColor: "white" }
+      }
+    >
+      {isMainDomain ? (
         <Navbar
           alwaysVisible={true}
           location={location}
@@ -78,6 +102,10 @@ function AppContent() {
           onAllowLocation={onAllowLocation}
           onLoginClick={onLoginClick}
         />
+      ) : (
+        <Pnavbar />
+      )}
+
       {!hideHelpers && <Helpbutton />}
       {!hideHelpers && <Whatsappbutton />}
 
@@ -87,33 +115,11 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/:category/:id" element={<HotelDetails />} />
-        <Route path="/cart" element={
-          <ProtectedRoute>
-            <CartPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/checkout" element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        } />
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/orders/:orderId" element={
-          <ProtectedRoute>
-            <OrderDetails />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/ordersuccess/:orderId" element={
-          <ProtectedRoute>
-            <OrderSuccess />
-          </ProtectedRoute>
-        } />
+        <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
+        <Route path="/ordersuccess/:orderId" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
@@ -123,25 +129,26 @@ function AppContent() {
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
         <Route path="/feedback" element={<Feedback />} />
       </Routes>
-      <Footer />
+
+      {!shouldHideFooter && (isMainDomain ? <Footer /> : <Pantulugarifooter />)}
     </div>
-  )
+  );
 }
 
 function App() {
+  const queryClient = new QueryClient();
 
-  const queryClient = new QueryClient()
-
-   useEffect(() => {
+  useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registered', reg))
-      .catch(err => console.error('Service Worker registration failed', err));
-  }
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => console.log("Service Worker registered", reg))
+        .catch((err) => console.error("Service Worker registration failed", err));
+    }
   }, []);
 
   return (
@@ -152,7 +159,6 @@ function App() {
             <LocationProvider>
               <AppContent />
               <PWAInstallPrompt />
-              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
               <ToastContainer
                 position="top-right"
                 autoClose={2000}
@@ -169,10 +175,8 @@ function App() {
           </CartProvider>
         </HotelDataProvider>
       </QueryClientProvider>
-
     </Router>
-  )
+  );
 }
 
-export default App
-
+export default App;

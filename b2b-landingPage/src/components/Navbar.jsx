@@ -179,6 +179,7 @@ function Navbar({ alwaysVisible }) {
     } else {
       // Already on main domain, navigate to home page
       console.log('[Logo Click Debug] On main domain, navigating to home page');
+      navigate('/')
     }
   }
 

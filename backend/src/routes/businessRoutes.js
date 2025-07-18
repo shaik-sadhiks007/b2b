@@ -13,7 +13,9 @@ const {
     updateBusinessProfile,
     getAllPublicBusinesses,
     getPublicBusinessById,
-    getAllBusinessesForAdmin
+    getAllBusinessesForAdmin,
+    getBusinessProfileByOwnerId,
+    updateBusinessProfileByOwnerId
 } = require('../controllers/businessController');
 
 // Configure multer for file uploads
@@ -70,5 +72,11 @@ router.get('/public/:id', getPublicBusinessById);
 
 // Admin routes
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllBusinessesForAdmin);
+
+// Admin: Get business profile by ownerId
+router.get('/admin/profile-by-owner', authMiddleware, adminMiddleware, getBusinessProfileByOwnerId);
+
+// Admin: Update business profile by ownerId
+router.patch('/admin/profile-by-owner', authMiddleware, adminMiddleware, updateBusinessProfileByOwnerId);
 
 module.exports = router; 

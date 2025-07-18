@@ -6,6 +6,7 @@ import AdminSidebar from './AdminSidebar';
 import { Building, Search, Filter, Eye, Phone, Mail, MapPin, Calendar, Clock, CheckCircle, XCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Business = () => {
     const { user } = useContext(AuthContext);
@@ -22,6 +23,10 @@ const Business = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showBusinessHelp, setShowBusinessHelp] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [selectedBusiness, setSelectedBusiness] = useState(null);
+    const [statusToChange, setStatusToChange] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (user) {
@@ -189,6 +194,34 @@ const Business = () => {
         );
     };
 
+    const handleAdminLoginToBusiness = (ownerId) => {
+        navigate(`/admin-business-dashboard/${ownerId}`);
+    };
+
+    const handleOpenStatusModal = (business) => {
+        setSelectedBusiness(business);
+        setStatusToChange(business.status);
+        setShowStatusModal(true);
+    };
+
+    const patchBusinessStatus = async (ownerId, status) => {
+        try {
+            const response = await axios.patch(
+                `${API_URL}/api/restaurants/admin/profile-by-owner`,
+                { status },
+                { params: { ownerId } }
+            );
+            toast.success('Status updated successfully');
+            setBusinesses(prev =>
+                prev.map(b =>
+                    b.owner && b.owner._id === ownerId ? { ...b, status: response.data.status } : b
+                )
+            );
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update status');
+        }
+    };
+
     if (!user) {
         return <div>Please login to view businesses</div>;
     }
@@ -310,6 +343,20 @@ const Business = () => {
                                                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(business.status)}`}>
                                                             {business.status.toUpperCase()}
                                                         </span>
+                                                        <button
+                                                            className="btn btn-sm btn-outline-primary"
+                                                            onClick={() => handleOpenStatusModal(business)}
+                                                        >
+                                                            Change Status
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-sm btn-primary"
+                                                            onClick={() => handleAdminLoginToBusiness(business.owner?._id)}
+                                                            disabled={!business.owner || !business.owner._id}
+                                                            title="Login as Admin to this Business"
+                                                        >
+                                                            View
+                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -381,6 +428,50 @@ const Business = () => {
                     </div>
                 </div>
             </div>
+            {/* Custom modal for status change */}
+            {showStatusModal && (
+                <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Change Business Status</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowStatusModal(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-2">
+                                    Select new status for <b>{selectedBusiness?.restaurantName}</b>:
+                                </div>
+                                <select
+                                    className="form-select"
+                                    value={statusToChange}
+                                    onChange={e => setStatusToChange(e.target.value)}
+                                >
+                                    <option value="draft">Draft</option>
+                                    <option value="review">Review</option>
+                                    <option value="published">Published</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowStatusModal(false)}>
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={async () => {
+                                        await patchBusinessStatus(selectedBusiness.owner?._id, statusToChange);
+                                        setShowStatusModal(false);
+                                    }}
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

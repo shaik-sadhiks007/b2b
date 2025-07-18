@@ -13,6 +13,8 @@ const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [restaurant, setRestaurant] = useState(null);
 
+    console.log(user,'user1')
+
     // Memoize fetchUserData to prevent unnecessary re-renders
     const fetchUserData = useCallback(async () => {
         try {

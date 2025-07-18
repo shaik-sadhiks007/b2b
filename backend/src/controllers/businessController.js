@@ -499,6 +499,129 @@ const getAllBusinessesForAdmin = async (req, res) => {
     }
 };
 
+// Admin: Get business profile by ownerId
+const getBusinessProfileByOwnerId = async (req, res) => {
+    try {
+        // Only admin can access (enforced by middleware)
+        const { ownerId } = req.query;
+        if (!ownerId) {
+            return res.status(400).json({ message: 'ownerId is required' });
+        }
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) {
+            return res.status(404).json({ message: 'Business not found for this owner' });
+        }
+        res.json(business);
+    } catch (error) {
+        console.error('[businessController.js][getBusinessProfileByOwnerId]', error);
+        res.status(500).json({ message: 'Error getting business profile', error: error.message });
+    }
+};
+
+// Admin: Update business profile by ownerId
+const updateBusinessProfileByOwnerId = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+
+        const updateData = { ...req.body };
+        let oldProfileImageKey = null;
+        let oldProfileImageUrl = null;
+        // Find the existing business to get the old image URL
+        if (business && business.images && business.images.profileImage) {
+            oldProfileImageUrl = business.images.profileImage;
+        }
+        if (req.files) {
+            if (!updateData.images) {
+                updateData.images = {};
+            }
+            if (req.files.profileImage?.[0]) {
+                try {
+                    const file = req.files.profileImage[0];
+                    const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                    const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                } catch (error) {
+                    console.error('[businessController.js][updateBusinessProfileByOwnerId-profileImage]', error);
+                    console.trace('[businessController.js][updateBusinessProfileByOwnerId-profileImage] Stack trace:');
+                    return res.status(500).json({ message: 'Error uploading profile image' });
+                }
+            }
+            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            for (const imageType of optionalImages) {
+                if (req.files?.[imageType]?.[0]) {
+                    try {
+                        const file = req.files[imageType][0];
+                        const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                        const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
+                        updateData.images[imageType] = getS3ObjectUrl(s3Key);
+                    } catch (error) {
+                        console.error(`[businessController.js][updateBusinessProfileByOwnerId-${imageType}]`, error);
+                        console.trace(`[businessController.js][updateBusinessProfileByOwnerId-${imageType}] Stack trace:`);
+                        return res.status(500).json({ message: `Error uploading ${imageType}` });
+                    }
+                }
+            }
+        }
+        // Handle base64 image upload even if req.files is not present
+        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+            try {
+                const s3Key = await uploadBase64ImageToS3(updateData.images.profileImage, 'business');
+                updateData.images.profileImage = getS3ObjectUrl(s3Key);
+            } catch (error) {
+                console.error('[businessController.js][updateBusinessProfileByOwnerId-profileImage]', error);
+                console.trace('[businessController.js][updateBusinessProfileByOwnerId-profileImage] Stack trace:');
+                return res.status(500).json({ message: 'Error uploading profile image' });
+            }
+        }
+        const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+        for (const imageType of optionalImages) {
+            if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
+                try {
+                    const s3Key = await uploadBase64ImageToS3(updateData.images[imageType], 'business');
+                    updateData.images[imageType] = getS3ObjectUrl(s3Key);
+                } catch (error) {
+                    console.error(`[businessController.js][updateBusinessProfileByOwnerId-${imageType}]`, error);
+                    console.trace(`[businessController.js][updateBusinessProfileByOwnerId-${imageType}] Stack trace:`);
+                    return res.status(500).json({ message: `Error uploading ${imageType}` });
+                }
+            }
+        }
+        // If a new profile image was uploaded, delete the old S3 object (fire-and-forget)
+        if (oldProfileImageUrl && updateData.images && updateData.images.profileImage && oldProfileImageUrl !== updateData.images.profileImage) {
+            const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+            if (oldProfileImageUrl.startsWith(s3UrlPrefix)) {
+                oldProfileImageKey = oldProfileImageUrl.replace(s3UrlPrefix, '');
+                require('../utils/awsS3').deleteS3Object(oldProfileImageKey); // don't await
+            }
+        }
+        Object.keys(updateData).forEach(key => {
+            if (updateData[key] === undefined || updateData[key] === null) {
+                delete updateData[key];
+            }
+        });
+        const updatedBusiness = await Business.findByIdAndUpdate(
+            business._id,
+            { $set: updateData },
+            {
+                new: true,
+                runValidators: true,
+                select: Object.keys(updateData).join(' ')
+            }
+        );
+        if (!updatedBusiness) {
+            return res.status(404).json({ message: 'Business not found' });
+        }
+        res.json(updatedBusiness);
+    } catch (error) {
+        console.error('[businessController.js][updateBusinessProfileByOwnerId]', error);
+        console.trace('[businessController.js][updateBusinessProfileByOwnerId] Stack trace:');
+        res.status(500).json({ message: 'Error updating business profile', error: error.message });
+    }
+};
+
 module.exports = {
     createBusiness,
     updateBusinessStep,
@@ -507,5 +630,7 @@ module.exports = {
     updateBusinessProfile,
     getAllPublicBusinesses,
     getPublicBusinessById,
-    getAllBusinessesForAdmin
+    getAllBusinessesForAdmin,
+    getBusinessProfileByOwnerId,
+    updateBusinessProfileByOwnerId
 };

@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import Navbar from './Navbar';
-import Sidebar from './Sidebar';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -21,9 +19,11 @@ const customIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-const Profile = () => {
+const BusinessProfile = () => {
     const { user } = useContext(AuthContext);
-    // Remove outletContext and admin logic
+    const outletContext = useOutletContext();
+    // Always admin context
+    const { business, ownerId } = outletContext || {};
 
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -75,7 +75,23 @@ const Profile = () => {
                 saturday: { isOpen: false, openTime: '', closeTime: '' },
                 sunday: { isOpen: false, openTime: '', closeTime: '' }
             }
-        }
+        },
+        images: {
+            profileImage: '',
+            panCardImage: '',
+            gstImage: '',
+            fssaiImage: ''
+        },
+        panDetails: {
+            panNumber: '',
+            name: '',
+            dateOfBirth: '',
+            address: ''
+        },
+        sameAsOwnerPhone: false,
+        whatsappUpdates: false,
+        status: '',
+        category: ''
     });
 
     // Helper function to format time to HH:mm
@@ -302,82 +318,30 @@ const Profile = () => {
     };
 
     useEffect(() => {
-        if (user) {
-            fetchRestaurantProfile();
+        // Always admin: set from outletContext
+        setRestaurant(business);
+        setFormData(business);
+        if (business?.images?.profileImage) {
+            setImagePreview(business.images.profileImage);
         }
-    }, [user]);
-
-    const fetchRestaurantProfile = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/restaurants/profile`);
-            setRestaurant(response.data);
-            // Set image preview if profile image exists
-            if (response.data.images?.profileImage) {
-                setImagePreview(response.data.images.profileImage);
-            }
-            setFormData({
-                restaurantName: response.data.restaurantName || '',
-                ownerName: response.data.ownerName || '',
-                serviceType: response.data.serviceType || '',
-                description: response.data.description || '',
-                contact: response.data.contact || {
-                    primaryPhone: '',
-                    whatsappNumber: '',
-                    email: '',
-                    website: ''
-                },
-                address: response.data.address || {
-                    streetAddress: '',
-                    city: '',
-                    state: '',
-                    country: 'india',
-                    pinCode: ''
-                },
-                location: response.data.location || { lat: 0, lng: 0 },
-                operatingHours: formatOperatingHours(response.data.operatingHours)
-            });
-            // Set location if available
-            if (response.data.location && response.data.location.lat && response.data.location.lng) {
-                setMapCenter([response.data.location.lat, response.data.location.lng]);
-                setSelectedLocation({
-                    lat: response.data.location.lat.toString(),
-                    lon: response.data.location.lng.toString(),
-                    display_name: response.data.address?.streetAddress || '',
-                    address: {
-                        streetAddress: response.data.address?.streetAddress || '',
-                        city: response.data.address?.city || '',
-                        state: response.data.address?.state || '',
-                        country: response.data.address?.country || 'india',
-                        pinCode: response.data.address?.pincode || response.data.address?.pinCode || response.data.address?.postcode || ''
-                    }
-                });
-                if (response.data.address?.streetAddress) {
-                    setSearchQuery(response.data.address.streetAddress);
-                }
-            }
-            setLoading(false);
-        } catch (error) {
-            setError('Error fetching restaurant profile');
-            setLoading(false);
-            toast.error('Failed to load restaurant profile');
-        }
-    };
+        setLoading(false);
+    }, [business]);
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
             setFormData(prev => ({
                 ...prev,
                 [parent]: {
                     ...prev[parent],
-                    [child]: value
+                    [child]: type === 'checkbox' ? checked : value
                 }
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                [name]: value
+                [name]: type === 'checkbox' ? checked : value
             }));
         }
     };
@@ -402,11 +366,13 @@ const Profile = () => {
                 setIsEditing(false);
                 return;
             }
-            const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData);
-            setRestaurant(prev => ({ ...prev, ...response.data }));
-            setFormData(prev => ({ ...prev, ...response.data }));
-            if (response.data.images?.profileImage) {
-                setImagePreview(response.data.images.profileImage);
+            const response = await axios.patch(`${API_URL}/api/restaurants/admin/profile-by-owner`, changedData, { params: { ownerId } });
+            if (response.data && response.data._id) {
+                setRestaurant(prev => ({ ...prev, ...response.data }));
+                setFormData(prev => ({ ...prev, ...response.data }));
+                if (response.data.images?.profileImage) {
+                    setImagePreview(response.data.images.profileImage);
+                }
             }
             setIsEditing(false);
             toast.success('Profile updated successfully');
@@ -450,11 +416,7 @@ const Profile = () => {
 
     return (
         <div className="container-fluid px-0">
-           <div style={{ marginTop: "60px" }}>
-                <Navbar />
-                <Sidebar />
-            </div>
-            <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+            <div className="col-lg-12 ms-auto" style={{ marginTop: '0px' }}>
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="card border-0 shadow-sm rounded-3">
@@ -969,6 +931,152 @@ const Profile = () => {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Contact Fields */}
+                                            <div className="col-12">
+                                                <h6 className="fw-medium mb-3">Contact Information</h6>
+                                                <div className="row g-3">
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Primary Phone</label>
+                                                        <input type="text" className="form-control" name="contact.primaryPhone" value={formData.contact.primaryPhone} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">WhatsApp Number</label>
+                                                        <input type="text" className="form-control" name="contact.whatsappNumber" value={formData.contact.whatsappNumber} onChange={handleInputChange} disabled={formData.sameAsOwnerPhone} />
+                                                    </div>
+                                                    <div className="col-md-3 d-flex align-items-end">
+                                                        <div className="form-check">
+                                                            <input type="checkbox" className="form-check-input" id="sameAsPrimaryPhone" name="sameAsOwnerPhone" checked={formData.sameAsOwnerPhone} onChange={e => {
+                                                                const checked = e.target.checked;
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    sameAsOwnerPhone: checked,
+                                                                    contact: {
+                                                                        ...prev.contact,
+                                                                        whatsappNumber: checked ? prev.contact.primaryPhone : ''
+                                                                    }
+                                                                }));
+                                                            }} />
+                                                            <label className="form-check-label ms-2" htmlFor="sameAsPrimaryPhone">Same as Primary Phone</label>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Email</label>
+                                                        <input type="email" className="form-control" name="contact.email" value={formData.contact.email} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Website</label>
+                                                        <input type="text" className="form-control" name="contact.website" value={formData.contact.website} onChange={handleInputChange} />
+                                                    </div>
+                                                    {/* Image Uploads (except profileImage) */}
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">PAN Card Image</label>
+                                                        <input type="file" className="form-control" accept="image/*" onChange={e => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        images: {
+                                                                            ...prev.images,
+                                                                            panCardImage: reader.result
+                                                                        }
+                                                                    }));
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }} />
+                                                        {formData.images.panCardImage && <img src={formData.images.panCardImage} alt="PAN Card" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">GST Image</label>
+                                                        <input type="file" className="form-control" accept="image/*" onChange={e => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        images: {
+                                                                            ...prev.images,
+                                                                            gstImage: reader.result
+                                                                        }
+                                                                    }));
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }} />
+                                                        {formData.images.gstImage && <img src={formData.images.gstImage} alt="GST" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">FSSAI Image</label>
+                                                        <input type="file" className="form-control" accept="image/*" onChange={e => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        images: {
+                                                                            ...prev.images,
+                                                                            fssaiImage: reader.result
+                                                                        }
+                                                                    }));
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }} />
+                                                        {formData.images.fssaiImage && <img src={formData.images.fssaiImage} alt="FSSAI" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                    </div>
+                                                    {/* PAN Details Fields */}
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">PAN Number</label>
+                                                        <input type="text" className="form-control" name="panDetails.panNumber" value={formData.panDetails.panNumber} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Name on PAN</label>
+                                                        <input type="text" className="form-control" name="panDetails.name" value={formData.panDetails.name} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Date of Birth</label>
+                                                        <input type="date" className="form-control" name="panDetails.dateOfBirth" value={formData.panDetails.dateOfBirth} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">PAN Address</label>
+                                                        <input type="text" className="form-control" name="panDetails.address" value={formData.panDetails.address} onChange={handleInputChange} />
+                                                    </div>
+                                                    {/* Other Fields */}
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">WhatsApp Updates</label>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="form-check-input ms-2"
+                                                            name="whatsappUpdates"
+                                                            checked={formData.whatsappUpdates}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Status</label>
+                                                        <select className="form-select" name="status" value={formData.status} onChange={handleInputChange}>
+                                                            <option value="draft">Draft</option>
+                                                            <option value="review">Review</option>
+                                                            <option value="published">Published</option>
+                                                            <option value="rejected">Rejected</option>
+                                                            <option value="disabled">Disabled</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-md-3">
+                                                        <label className="form-label">Category</label>
+                                                        <select className="form-select" name="category" value={formData.category} onChange={handleInputChange}>
+                                                            <option value="restaurant">Restaurant</option>
+                                                            <option value="grocery">Grocery</option>
+                                                            <option value="pharmacy">Pharmacy</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="d-flex justify-content-end mt-4">
                                             <button type="submit" className="btn btn-primary px-4">
@@ -1131,4 +1239,4 @@ const Profile = () => {
     );
 };
 
-export default Profile;
+export default BusinessProfile;

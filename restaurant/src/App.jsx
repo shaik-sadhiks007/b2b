@@ -29,12 +29,16 @@ import Features from './components/Features'
 import MenuEditor from './pages/MenuEditor'
 import Feedback from './pages/Feedback'
 import Business from './adminComp/Business'
+import AdminBusinessDashboard from './adminComp/AdminBusinessDashboard';
+import BusinessProfile from './adminComp/BusinessProfile'
+import AdminFeedback from './adminComp/AdminFeedback'
+
 function App() {
   return (
     <MobileMenuProvider>
       <AuthProvider>
-        <MenuProvider>
-          <Router>
+        <Router>
+          <MenuProvider>
             <ToastContainer autoClose={1000} />
             <Helpbutton />
             <Whatsappbutton />
@@ -119,9 +123,26 @@ function App() {
                   <Business />
                 </AdminRoute>
               } />
+              <Route path='/admin-feedback'
+                element={
+                  <AdminRoute>
+                    <AdminFeedback />
+                  </AdminRoute>
+                } />
+              <Route path='/admin-business-dashboard/:ownerId/*' element={<AdminBusinessDashboard />}>
+                <Route index element={<Summary adminMode />} />
+                <Route path='orders' element={<Orders adminMode />} />
+                <Route path='orders/item-summary' element={<ItemSummary adminMode />} />
+                <Route path='menu' element={<MenuEditor adminMode />} />
+                <Route path='summary' element={<Summary adminMode />} />
+                <Route path='instore-orders' element={<InStoreBilling adminMode />} />
+                <Route path='order-history' element={<OrderHistory adminMode />} />
+                <Route path='profile' element={<BusinessProfile adminMode />} />
+              </Route>
             </Routes>
-          </Router>
-        </MenuProvider>
+
+          </MenuProvider>
+        </Router>
       </AuthProvider>
     </MobileMenuProvider>
   )

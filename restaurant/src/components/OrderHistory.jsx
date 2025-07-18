@@ -6,9 +6,11 @@ import Sidebar from './Sidebar';
 import { Clock, CheckCircle, XCircle, AlertCircle, Truck, Package, MapPin, HelpCircle } from 'lucide-react';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
+import { useParams } from 'react-router-dom';
 
-const OrderHistory = () => {
+const OrderHistory = ({ adminMode = false }) => {
     const { user } = useContext(AuthContext);
+    const { ownerId } = useParams();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -22,20 +24,21 @@ const OrderHistory = () => {
     const [showOrderHistoryHelp, setShowOrderHistoryHelp] = useState(false);
 
     useEffect(() => {
-        if (user) {
+        if (user && (!adminMode || (adminMode && user.role === 'admin'))) {
             fetchOrders();
         }
-    }, [user, currentPage, pageSize]);
+    }, [user, currentPage, pageSize, adminMode, ownerId]);
 
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/api/orders/order-history/restaurant`, {
-                params: {
-                    page: currentPage,
-                    pageSize: pageSize
-                }
-            });
+            let url = `${API_URL}/api/orders/order-history/restaurant`;
+            let params = { page: currentPage, pageSize };
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/order-history`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.get(url, { params });
             setOrders(response.data.orders);
             setPagination(response.data.pagination);
             setLoading(false);
@@ -47,9 +50,13 @@ const OrderHistory = () => {
 
     const handleCancelOrder = async (orderId) => {
         try {
-            await axios.patch(`${API_URL}/api/orders/${orderId}`, 
-                { status: 'CANCELLED' }
-            );
+            let url = `${API_URL}/api/orders/${orderId}`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/status/${orderId}`;
+                params.ownerId = ownerId;
+            }
+            await axios.patch(url, { status: 'CANCELLED' }, { params });
             toast.success('Order cancelled successfully');
             fetchOrders(); // Refresh the orders list
         } catch (error) {
@@ -202,16 +209,24 @@ const OrderHistory = () => {
 
     return (
         <div className="container-fluid px-0">
-            <div style={{ marginTop: '60px' }}>
-                <Navbar />
-                <Sidebar />
-            </div>
-            <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+            {
+                (user && user?.role !== 'admin') && (
+                    <div style={{ marginTop: "60px" }}>
+                        <Navbar />
+                        <Sidebar />
+                    </div>
+                )
+            }
+
+            <div
+                className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+                style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+            >
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center gap-2 mb-8">
                             <h1 className="text-3xl font-bold text-gray-900">Order History</h1>
-                            <button 
+                            <button
                                 onClick={() => setShowOrderHistoryHelp(!showOrderHistoryHelp)}
                                 className="text-gray-400 hover:text-gray-600"
                                 aria-label="Order history help"
@@ -221,10 +236,10 @@ const OrderHistory = () => {
                             {showOrderHistoryHelp && (
                                 <div className="absolute z-10 mt-10 ml-[-8px] bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
                                     <p className="text-sm text-gray-700">
-                                        This section shows all your past and current orders. You can view order details, 
+                                        This section shows all your past and current orders. You can view order details,
                                         track order status, and cancel orders if they haven't been processed yet.
                                     </p>
-                                    <button 
+                                    <button
                                         type="button"
                                         className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                                         onClick={() => setShowOrderHistoryHelp(false)}

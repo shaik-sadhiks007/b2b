@@ -6,9 +6,11 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import { HelpCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
-const InStoreBilling = () => {
+const InStoreBilling = ({ adminMode = false }) => {
     const { user } = useContext(AuthContext);
+    const { ownerId } = useParams();
     const [menuItems, setMenuItems] = useState([]);
     const [search, setSearch] = useState('');
     const [cart, setCart] = useState([]);
@@ -20,14 +22,20 @@ const InStoreBilling = () => {
     const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
-        if (user) {
+        if (user && (!adminMode || (adminMode && user.role === 'admin'))) {
             fetchMenuItems();
         }
-    }, [user]);
+    }, [user, adminMode, ownerId]);
 
     const fetchMenuItems = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/menu/instore`);
+            let url = `${API_URL}/api/menu/instore`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/menu/admin/instore`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.get(url, { params });
             let items = response.data.menu || [];
             items = items.filter(item => item.name && !isNaN(item.totalPrice));
             setMenuItems(items);
@@ -82,7 +90,13 @@ const InStoreBilling = () => {
                 customerName,
                 customerPhone
             };
-            await axios.post(`${API_URL}/api/orders/instore-order`, payload);
+            let url = `${API_URL}/api/orders/instore-order`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/instore-order`;
+                params.ownerId = ownerId;
+            }
+            await axios.post(url, payload, { params });
             toast.success('In-store order placed successfully');
             setCart([]);
             setShowModal(false);
@@ -106,16 +120,24 @@ const InStoreBilling = () => {
 
     return (
         <div className="container-fluid px-0">
-            <div style={{ marginTop: '60px' }}>
-                <Navbar />
-                <Sidebar />
-            </div>
-            <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+            {
+                (user && user?.role !== 'admin') && (
+                    <div style={{ marginTop: "60px" }}>
+                        <Navbar />
+                        <Sidebar />
+                    </div>
+                )
+            }
+
+            <div
+                className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+                style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+            >
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center gap-2 mb-6">
                             <h1 className="text-2xl font-bold">In Store Billing</h1>
-                            <button 
+                            <button
                                 className="text-gray-500 hover:text-gray-700 transition-colors"
                                 onClick={() => setShowHelp(!showHelp)}
                                 aria-label="Help"
@@ -123,7 +145,7 @@ const InStoreBilling = () => {
                                 <HelpCircle size={20} />
                             </button>
                         </div>
-                        
+
                         {showHelp && (
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                                 <h3 className="font-semibold text-blue-800 mb-2">How to use In-Store Billing:</h3>

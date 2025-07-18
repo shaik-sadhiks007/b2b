@@ -336,6 +336,124 @@ const renameSubcategory = async (req, res) => {
     }
 };
 
+// Admin: Get all menu items for a business by ownerId
+const getAllMenuItemsByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const menuItems = await Menu.find({ businessId: business._id });
+        res.json(menuItems);
+    } catch (error) {
+        console.error('[menuController.js][getAllMenuItemsByAdmin]', error);
+        res.status(500).json({ message: 'Error fetching menu items', error: error.message });
+    }
+};
+
+// Admin: Create menu item for a business by ownerId
+const createMenuItemByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
+        const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
+        let photoUrl = null;
+        if (req.body.photos) {
+            const s3Key = await uploadBase64ImageToS3(req.body.photos);
+            photoUrl = getS3ObjectUrl(s3Key);
+        }
+        const newItem = new Menu({
+            ...req.body,
+            photos: photoUrl,
+            category,
+            subcategory,
+            businessId: business._id
+        });
+        const savedItem = await newItem.save();
+        res.status(201).json(savedItem);
+    } catch (error) {
+        console.error('[menuController.js][createMenuItemByAdmin]', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Admin: Update menu item for a business by ownerId
+const updateMenuItemByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        let updateData = { ...req.body };
+        let oldPhotoKey = null;
+        let oldPhotoUrl = null;
+        if (req.body.photos) {
+            const existingItem = await Menu.findOne({ _id: req.params.id, businessId: business._id });
+            if (existingItem && existingItem.photos) {
+                oldPhotoUrl = existingItem.photos;
+                const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+                if (oldPhotoUrl.startsWith(s3UrlPrefix)) {
+                    oldPhotoKey = oldPhotoUrl.replace(s3UrlPrefix, '');
+                }
+            }
+            const s3Key = await uploadBase64ImageToS3(req.body.photos);
+            updateData.photos = getS3ObjectUrl(s3Key);
+        }
+        const updatedItem = await Menu.findOneAndUpdate(
+            { _id: req.params.id, businessId: business._id },
+            updateData,
+            { new: true }
+        );
+        if (oldPhotoKey) {
+            await deleteS3Object(oldPhotoKey);
+        }
+        if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
+        res.json(updatedItem);
+    } catch (error) {
+        console.error('[menuController.js][updateMenuItemByAdmin]', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Admin: Delete menu item for a business by ownerId
+const deleteMenuItemByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const deleted = await Menu.findOneAndDelete({ _id: req.params.id, businessId: business._id });
+        if (!deleted) return res.status(404).json({ message: 'Menu item not found' });
+        res.json({ message: 'Menu item deleted' });
+    } catch (error) {
+        console.error('[menuController.js][deleteMenuItemByAdmin]', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Admin: Get in-store menu for a business by ownerId
+const getInstoreMenuByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const menuItems = await Menu.find({ businessId: business._id });
+        res.json({ menu: menuItems });
+    } catch (error) {
+        console.error('[menuController.js][getInstoreMenuByAdmin]', error);
+        res.status(500).json({ message: 'Error fetching in-store menu', error: error.message });
+    }
+};
+
 module.exports = {
     getAllMenuItemsOfPublic,
     getAllMenuItems,
@@ -348,4 +466,9 @@ module.exports = {
     bulkDeleteMenuItems,
     renameCategory,
     renameSubcategory,
+    getAllMenuItemsByAdmin,
+    createMenuItemByAdmin,
+    updateMenuItemByAdmin,
+    deleteMenuItemByAdmin,
+    getInstoreMenuByAdmin,
 };

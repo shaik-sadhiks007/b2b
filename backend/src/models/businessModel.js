@@ -93,7 +93,13 @@ const businessSchema = new mongoose.Schema({
         step: Number,
         completedAt: Date,
         data: mongoose.Schema.Types.Mixed
-    }]
+    }],
+    subdomain: {
+        type: String,
+        unique: true,
+        sparse: true,
+        default: null
+    }
 }, {
     timestamps: true
 });

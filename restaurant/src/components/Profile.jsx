@@ -46,6 +46,7 @@ const Profile = () => {
         ownerName: '',
         serviceType: '',
         description: '',
+        subdomain: '',
         contact: {
             primaryPhone: '',
             whatsappNumber: '',
@@ -320,6 +321,7 @@ const Profile = () => {
                 ownerName: response.data.ownerName || '',
                 serviceType: response.data.serviceType || '',
                 description: response.data.description || '',
+                subdomain: response.data.subdomain || '',
                 contact: response.data.contact || {
                     primaryPhone: '',
                     whatsappNumber: '',
@@ -572,6 +574,22 @@ const Profile = () => {
                                                             <option value="delivery">Delivery</option>
                                                             <option value="pickup">Pickup</option>
                                                         </select>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium">Subdomain</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="subdomain"
+                                                            value={formData.subdomain}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Enter unique subdomain"
+                                                        />
+                                                        {formData.subdomain && (
+                                                            <div className="form-text">
+                                                                You can access your business at: <strong>{formData.subdomain}.shopatb2b.com</strong>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="col-12">
                                                         <label className="form-label fw-medium">Description <span className="text-muted">(max 100 characters)</span></label>
@@ -1025,6 +1043,10 @@ const Profile = () => {
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
                                                             <p className="mb-0">{restaurant?.serviceType}</p>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            <h6 className="text-muted mb-2 fw-medium">Subdomain</h6>
+                                                            <p className="mb-0">{restaurant?.subdomain || 'Not set'}</p>
                                                         </div>
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Description</h6>

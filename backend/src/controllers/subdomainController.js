@@ -1,6 +1,9 @@
 const Subdomain = require('../models/subdomainModel');
+const Business = require('../models/businessModel');
 
 // GET /resolve-subdomain/:subdomain
+// Old implementation using Subdomain model:
+/*
 const resolveSubdomain = async (req, res) => {
   try {
     const { subdomain } = req.params;
@@ -9,6 +12,22 @@ const resolveSubdomain = async (req, res) => {
     res.json({
       category: mapping.businessCategory,
       id: mapping.businessId
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+};
+*/
+
+// New implementation using Business model only:
+const resolveSubdomain = async (req, res) => {
+  try {
+    const { subdomain } = req.params;
+    const business = await Business.findOne({ subdomain });
+    if (!business) return res.status(404).json({ error: 'Business not found' });
+    res.json({
+      category: business.category,
+      id: business._id
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error', details: err.message });

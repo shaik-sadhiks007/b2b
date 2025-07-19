@@ -39,7 +39,8 @@ import Features from "./components/Features";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import Feedback from "./pages/Feedback";
 import HomeOrHotelDetails from "./components/HomeOrHotelDetails";
-import Pnavbar from "./components/pnavbar";
+import bgImage from "./assets/bgim.jpg";
+
 
 import { getSubdomain } from "./utils/getSubdomain";
 
@@ -58,6 +59,8 @@ function AppContent() {
 
   const subdomain = getSubdomain();
   const isMainDomain = !subdomain || subdomain === "shopatb2b";
+  const isPantulugaarimess = subdomain === "pantulugaarimess";
+
   const hideHelpers = !isMainDomain && isHome;
 
   const hideFooterRoutes = [
@@ -81,33 +84,20 @@ function AppContent() {
 
   return (
     <div
-      className="min-h-screen"
-      style={
-        subdomain === "pantulugaarimess"
-          ? {
-              backgroundImage: "url('/assets/bgim.jpg')",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "cover",
-            }
-          : { backgroundColor: "white" }
-      }
+      className={`min-h-screen ${isPantulugaarimess ? 'bg-cover bg-no-repeat bg-center' : ''}`}
+  style={isPantulugaarimess ? { backgroundImage: `url(${bgImage})` } : {}}
     >
-      {isMainDomain ? (
-        <Navbar
-          alwaysVisible={true}
-          location={location}
-          setLocation={setLocation}
-          suggestions={suggestions}
-          onLocationSelect={onLocationSelect}
-          onAllowLocation={onAllowLocation}
-          onLoginClick={onLoginClick}
-        />
-      ) : (
-        <Pnavbar />
-      )}
+      <Navbar
+        alwaysVisible={true}
+        location={location}
+        setLocation={setLocation}
+        suggestions={suggestions}
+        onLocationSelect={onLocationSelect}
+        onAllowLocation={onAllowLocation}
+        onLoginClick={onLoginClick}
+      />
 
-      {!hideHelpers && <Helpbutton />}
-      {!hideHelpers && <Whatsappbutton />}
+      
 
       <Routes>
         <Route path="/" element={<HomeOrHotelDetails />} />

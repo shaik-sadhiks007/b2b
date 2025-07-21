@@ -11,8 +11,9 @@ function HomeOrHotelDetails() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // getSubdomain now handles test and prod logic
     const subdomain = getSubdomain();
-    if (!subdomain || subdomain === 'shopatb2b') {
+    if (!subdomain) {
       // Main domain, show Home
       setHotelData(null);
       setLoading(false);

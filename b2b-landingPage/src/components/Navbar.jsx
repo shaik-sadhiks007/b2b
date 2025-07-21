@@ -9,7 +9,6 @@ import { toast } from 'react-toastify'
 import { API_URL } from '../api/api';
 import io from 'socket.io-client';
 import logo from '../assets/b2bupdate.png';
-import { getSubdomain } from '../utils/getSubdomain';
 
 function Navbar({ alwaysVisible }) {
   const [showLoginOptions, setShowLoginOptions] = useState(false)

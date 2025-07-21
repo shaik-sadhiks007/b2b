@@ -56,7 +56,7 @@ function AppContent() {
 
   // Determine if we are on the main domain
   const subdomain = getSubdomain();
-  const isMainDomain = !subdomain || subdomain === "shopatb2b";
+  const isMainDomain = !subdomain;
   // Hide helpers if on subdomain and on home route
   const hideHelpers = !isMainDomain && isHome;
 

@@ -32,6 +32,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import {
   QueryClient,
   QueryClientProvider,
+  focusManager,
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import Feedback from './pages/Feedback';
@@ -44,10 +45,10 @@ import HomeOrHotelDetails from './components/HomeOrHotelDetails';
 function AppContent() {
   const routerLocation = useRouterLocation();
   const isHome = routerLocation.pathname === "/";
-  
+
   // Check if current path is hotel details page (pattern: /:category/:id)
   const isHotelDetails = routerLocation.pathname.split('/').length === 3
-                        
+
 
   // Centralized state for location and suggestions
   const [location, setLocation] = useState("");
@@ -69,15 +70,15 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white">
-        <Navbar
-          alwaysVisible={true}
-          location={location}
-          setLocation={setLocation}
-          suggestions={suggestions}
-          onLocationSelect={onLocationSelect}
-          onAllowLocation={onAllowLocation}
-          onLoginClick={onLoginClick}
-        />
+      <Navbar
+        alwaysVisible={true}
+        location={location}
+        setLocation={setLocation}
+        suggestions={suggestions}
+        onLocationSelect={onLocationSelect}
+        onAllowLocation={onAllowLocation}
+        onLoginClick={onLoginClick}
+      />
       {!hideHelpers && <Helpbutton />}
       {!hideHelpers && <Whatsappbutton />}
 
@@ -130,18 +131,36 @@ function AppContent() {
 
 function App() {
 
-  const queryClient = new QueryClient()
+  // Helper to evict old queries, keeping only the 2 most recent
+  function evictOldQueries(queryClient) {
+    const queries = queryClient.getQueryCache().getAll();
+    // Sort by lastUpdated (descending)
+    const sorted = queries.sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
+    // Keep only the 2 most recent
+    const toEvict = sorted.slice(2);
+    toEvict.forEach(q => queryClient.removeQueries(q.queryKey));
+  }
 
-   useEffect(() => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 2 * 60 * 60 * 1000, // 2 hours
+        cacheTime: 2 * 60 * 60 * 1000, // 2 hours
+        onSuccess: () => evictOldQueries(queryClient),
+      },
+    },
+  });
+
+  useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
     if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registered', reg))
-      .catch(err => console.error('Service Worker registration failed', err));
-  }
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered', reg))
+        .catch(err => console.error('Service Worker registration failed', err));
+    }
   }, []);
 
   return (
@@ -152,7 +171,7 @@ function App() {
             <LocationProvider>
               <AppContent />
               <PWAInstallPrompt />
-              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+              <ReactQueryDevtools initialIsOpen={false} />
               <ToastContainer
                 position="top-right"
                 autoClose={2000}

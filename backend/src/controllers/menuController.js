@@ -1,6 +1,13 @@
 const Menu = require('../models/menuModel');
 const { uploadBase64ImageToS3, getS3ObjectUrl, deleteS3Object } = require('../utils/awsS3');
 
+// Helper to extract base64 from Data URL or return as-is
+function extractBase64(data) {
+    if (typeof data !== 'string') return data;
+    const match = data.match(/^data:.*;base64,(.*)$/);
+    return match ? match[1] : data;
+}
+
 // Get all menu items for a business
 const getAllMenuItems = async (req, res) => {
     try {
@@ -115,10 +122,12 @@ const createMenuItem = async (req, res) => {
 
         // Handle photo upload if photo is provided
         let photoUrl = null;
-        if (req.body.photos) {
-            // Upload single photo to S3
-            const s3Key = await uploadBase64ImageToS3(req.body.photos);
-            photoUrl = getS3ObjectUrl(s3Key);
+        if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
+            const base64 = extractBase64(req.body.photos);
+            if (base64 && base64.length > 0) {
+                const s3Key = await uploadBase64ImageToS3(base64);
+                photoUrl = getS3ObjectUrl(s3Key);
+            }
         }
 
         // Create menu item with uploaded photo URL
@@ -160,10 +169,12 @@ const bulkCreateMenuItems = async (req, res) => {
             const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
             
             let photoUrl = null;
-            if (item.photos) {
-                // Upload single photo to S3
-                const s3Key = await uploadBase64ImageToS3(item.photos);
-                photoUrl = getS3ObjectUrl(s3Key);
+            if (item.photos && typeof item.photos === 'string' && !item.photos.startsWith('http')) {
+                const base64 = extractBase64(item.photos);
+                if (base64 && base64.length > 0) {
+                    const s3Key = await uploadBase64ImageToS3(base64);
+                    photoUrl = getS3ObjectUrl(s3Key);
+                }
             }
             
             menuItemsToCreate.push(new Menu({
@@ -191,7 +202,7 @@ const updateMenuItem = async (req, res) => {
         let updateData = { ...req.body };
         let oldPhotoKey = null;
         let oldPhotoUrl = null;
-        if (req.body.photos) {
+        if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
             // Find the existing item to get the old photo URL
             const existingItem = await Menu.findOne({ _id: req.params.id, businessId: req.restaurant._id });
             if (existingItem && existingItem.photos) {
@@ -203,8 +214,11 @@ const updateMenuItem = async (req, res) => {
                 }
             }
             // Upload single photo to S3
-            const s3Key = await uploadBase64ImageToS3(req.body.photos);
-            updateData.photos = getS3ObjectUrl(s3Key);
+            const base64 = extractBase64(req.body.photos);
+            if (base64 && base64.length > 0) {
+                const s3Key = await uploadBase64ImageToS3(base64);
+                updateData.photos = getS3ObjectUrl(s3Key);
+            }
         }
         
         const updatedItem = await Menu.findOneAndUpdate(
@@ -363,9 +377,12 @@ const createMenuItemByAdmin = async (req, res) => {
         const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
         const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
         let photoUrl = null;
-        if (req.body.photos) {
-            const s3Key = await uploadBase64ImageToS3(req.body.photos);
-            photoUrl = getS3ObjectUrl(s3Key);
+        if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
+            const base64 = extractBase64(req.body.photos);
+            if (base64 && base64.length > 0) {
+                const s3Key = await uploadBase64ImageToS3(base64);
+                photoUrl = getS3ObjectUrl(s3Key);
+            }
         }
         const newItem = new Menu({
             ...req.body,
@@ -393,7 +410,7 @@ const updateMenuItemByAdmin = async (req, res) => {
         let updateData = { ...req.body };
         let oldPhotoKey = null;
         let oldPhotoUrl = null;
-        if (req.body.photos) {
+        if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
             const existingItem = await Menu.findOne({ _id: req.params.id, businessId: business._id });
             if (existingItem && existingItem.photos) {
                 oldPhotoUrl = existingItem.photos;
@@ -402,8 +419,11 @@ const updateMenuItemByAdmin = async (req, res) => {
                     oldPhotoKey = oldPhotoUrl.replace(s3UrlPrefix, '');
                 }
             }
-            const s3Key = await uploadBase64ImageToS3(req.body.photos);
-            updateData.photos = getS3ObjectUrl(s3Key);
+            const base64 = extractBase64(req.body.photos);
+            if (base64 && base64.length > 0) {
+                const s3Key = await uploadBase64ImageToS3(base64);
+                updateData.photos = getS3ObjectUrl(s3Key);
+            }
         }
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, businessId: business._id },
@@ -454,6 +474,89 @@ const getInstoreMenuByAdmin = async (req, res) => {
     }
 };
 
+// Admin: Bulk create menu items for a business by ownerId
+const bulkCreateMenuItemsByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'Items array is required and must not be empty' });
+        }
+        const menuItemsToCreate = [];
+        for (const item of items) {
+            const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
+            const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
+            let photoUrl = null;
+            if (item.photos && typeof item.photos === 'string' && !item.photos.startsWith('http')) {
+                const base64 = extractBase64(item.photos);
+                if (base64 && base64.length > 0) {
+                    const s3Key = await uploadBase64ImageToS3(base64);
+                    photoUrl = getS3ObjectUrl(s3Key);
+                }
+            }
+            menuItemsToCreate.push(new Menu({
+                ...item,
+                photos: photoUrl,
+                category,
+                subcategory,
+                businessId: business._id
+            }));
+        }
+        const savedItems = await Menu.insertMany(menuItemsToCreate);
+        res.status(201).json(savedItems);
+    } catch (error) {
+        console.error('[menuController.js][bulkCreateMenuItemsByAdmin]', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Admin: Bulk delete menu items for a business by ownerId
+const bulkDeleteMenuItemsByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        const { itemIds } = req.body;
+        if (!Array.isArray(itemIds) || itemIds.length === 0) {
+            return res.status(400).json({ message: 'Item IDs array is required and must not be empty' });
+        }
+        // Find all items to be deleted to get their photo URLs
+        const itemsToDelete = await Menu.find({
+            _id: { $in: itemIds },
+            businessId: business._id
+        });
+        const result = await Menu.deleteMany({
+            _id: { $in: itemIds },
+            businessId: business._id
+        });
+        // Fire-and-forget delete of S3 images for each item
+        const { deleteS3Object } = require('../utils/awsS3');
+        const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+        itemsToDelete.forEach(item => {
+            if (item.photos && item.photos.startsWith(s3UrlPrefix)) {
+                const oldPhotoKey = item.photos.replace(s3UrlPrefix, '');
+                deleteS3Object(oldPhotoKey); // don't await
+            }
+        });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'No menu items found to delete' });
+        }
+        res.json({
+            message: `${result.deletedCount} menu items deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('[menuController.js][bulkDeleteMenuItemsByAdmin]', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAllMenuItemsOfPublic,
     getAllMenuItems,
@@ -471,4 +574,6 @@ module.exports = {
     updateMenuItemByAdmin,
     deleteMenuItemByAdmin,
     getInstoreMenuByAdmin,
+    bulkCreateMenuItemsByAdmin,
+    bulkDeleteMenuItemsByAdmin,
 };

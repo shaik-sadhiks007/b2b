@@ -13,7 +13,9 @@ const {
     createMenuItemByAdmin,
     updateMenuItemByAdmin,
     deleteMenuItemByAdmin,
-    getInstoreMenuByAdmin
+    getInstoreMenuByAdmin,
+    bulkCreateMenuItemsByAdmin,
+    bulkDeleteMenuItemsByAdmin
 } = require('../controllers/menuController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
@@ -56,6 +58,10 @@ router.put('/subcategory/rename', authMiddleware, restaurantMiddleware, require(
 
 // Admin menu routes
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllMenuItemsByAdmin);
+// Admin bulk menu routes (must be above /admin/:id)
+router.post('/admin/bulk', authMiddleware, adminMiddleware, bulkCreateMenuItemsByAdmin);
+router.delete('/admin/bulk', authMiddleware, adminMiddleware, bulkDeleteMenuItemsByAdmin);
+// Admin single item routes
 router.post('/admin', authMiddleware, adminMiddleware, createMenuItemByAdmin);
 router.put('/admin/:id', authMiddleware, adminMiddleware, updateMenuItemByAdmin);
 router.delete('/admin/:id', authMiddleware, adminMiddleware, deleteMenuItemByAdmin);

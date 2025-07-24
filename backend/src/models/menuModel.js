@@ -59,8 +59,50 @@ const menuItemSchema = new mongoose.Schema({
     quantity: {
         type: Number,
         default: 100
+    },
 
+     expiryDate: {
+        type: Date,
+        required: false  
+    },
+
+     storageZone: {
+        type: String,
+        enum: ['general', 'refrigerated', 'controlled', 'hazardous'],
+        default: 'general'
+    },
+     rack: {
+        type: String,
+        uppercase: true,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                return /^[A-Z0-9]{1,5}$/.test(v); // Allows formats like A, B12, C-1
+            },
+            message: props => `${props.value} is not a valid rack identifier!`
+        }
+    },
+    shelf: {
+        type: String,
+        uppercase: true,
+        trim: true
+    },
+    bin: {
+        type: String,
+        uppercase: true,
+        trim: true
+    },
+     batchNumber: {
+        type: String,
+        uppercase: true,
+        trim: true
+    },
+    requiresPrescription: {
+        type: Boolean,
+        default: false
     }
+
+
 }, {
     timestamps: true
 });

@@ -44,10 +44,26 @@ const HotelDetails = (props) => {
   const [inputFocused, setInputFocused] = useState(false);
   const [triggerSearchOnTextUpdate, setTriggerSearchOnTextUpdate] = useState(false);
   const [updatingItems, setUpdatingItems] = useState({});
+  const [selectedQuantities, setSelectedQuantities] = useState({});
 
   const isPantulugariMessSubdomain = useMemo(() => {
     return window.location.hostname === "pantulugaarimess.shopatb2b.com";
   }, []);
+  const [showClosingSoonPopup, setShowClosingSoonPopup] = useState(false);
+  
+  // Define available quantity options
+  const quantityOptions = [
+    { value: 100, label: '100 grams' },
+    { value: 150, label: '150 grams' },
+    { value: 250, label: '250 grams' },
+    { value: 300, label: '300 grams' },
+    { value: 500, label: '500 grams' },
+    { value: 750, label: '750 grams' },
+    { value: 1000, label: '1 kg' },
+    { value: 2000, label: '2 kg' },
+    { value: 3000, label: '3 kg' },
+    { value: 5000, label: '5 kg' }
+  ];
 
   const popularItems = useMemo(() => {
     if (!menu || menu.length === 0) return [];
@@ -100,10 +116,40 @@ const HotelDetails = (props) => {
     }
   }, [searchText, menu]);
 
+  useEffect(() => {
+    if (!restaurant?.operatingHours?.closeTime || !restaurant?.online) return;
+
+    const checkClosingTime = () => {
+      const now = new Date();
+      const [closeHour, closeMinute] = restaurant.operatingHours.closeTime.split(":").map(Number);
+      const closingTime = new Date();
+      closingTime.setHours(closeHour, closeMinute, 0, 0);
+
+      const diffInMs = closingTime - now;
+      const diffInMinutes = diffInMs / (1000 * 60);
+
+      if (diffInMinutes > 0 && diffInMinutes <= 30) {
+        setShowClosingSoonPopup(true);
+      }
+    };
+
+    checkClosingTime();
+
+    const interval = setInterval(checkClosingTime, 60000);
+    return () => clearInterval(interval);
+  }, [restaurant]);
+
   const getCartItem = (itemId) => {
     return carts[0]?.items?.find(item => 
       item.itemId === itemId || item.itemId === itemId.toString()
     );
+  };
+
+  const handleQuantitySelect = (itemId, quantity) => {
+    setSelectedQuantities(prev => ({
+      ...prev,
+      [itemId]: quantity
+    }));
   };
 
   const handleAddToCart = async (item) => {
@@ -125,10 +171,15 @@ const HotelDetails = (props) => {
       return;
     }
 
+    const selectedQuantity = selectedQuantities[item._id] || 100; 
+    const quantityLabel = quantityOptions.find(q => q.value === selectedQuantity)?.label || '100 grams';
+
     const items = [{
       itemId: item._id,
       name: item.name,
       quantity: 1,
+      quantityValue: selectedQuantity,
+      quantityLabel: quantityLabel,
       totalPrice: Number(item.totalPrice),
       foodType: item.foodType,
       photos: Array.isArray(item.photos) ? item.photos.filter(p => typeof p === 'string') : [],
@@ -201,54 +252,73 @@ const HotelDetails = (props) => {
     
     if (cartItem) {
       return (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleQuantityChange(item._id, -1);
-            }}
-            disabled={isUpdating}
-            className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            -
-          </button>
-          <span className="w-6 text-center">
-            {isUpdating ? <Skeleton width={20} /> : cartItem.quantity}
-          </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleQuantityChange(item._id, 1);
-            }}
-            disabled={isUpdating}
-            className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            +
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRemoveItem(item._id);
-            }}
-            disabled={isUpdating}
-            className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
-          >
-            Remove
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuantityChange(item._id, -1);
+              }}
+              disabled={isUpdating}
+              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              -
+            </button>
+            <span className="w-6 text-center">
+              {isUpdating ? <Skeleton width={20} /> : cartItem.quantity}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuantityChange(item._id, 1);
+              }}
+              disabled={isUpdating}
+              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              +
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveItem(item._id);
+              }}
+              disabled={isUpdating}
+              className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
+            >
+              Remove
+            </button>
+          </div>
+          {cartItem.quantityLabel && (
+            <span className="text-xs text-gray-500">Size: {cartItem.quantityLabel}</span>
+          )}
         </div>
       );
     }
 
     return (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleAddToCart(item);
-        }}
-        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-      >
-        Add
-      </button>
+      <div className="flex flex-col gap-2">
+        <select
+          value={selectedQuantities[item._id] || 100}
+          onChange={(e) => handleQuantitySelect(item._id, parseInt(e.target.value))}
+          className="text-xs p-1 border rounded"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {quantityOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart(item);
+          }}
+          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+        >
+          Add
+        </button>
+      </div>
     );
   };
 
@@ -300,7 +370,7 @@ const HotelDetails = (props) => {
       {showRestaurantModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Items already in cart</h2>
+            <h2 className="text-xl font-bold mb-4">Items already in Cart</h2>
             <p className="text-gray-600 mb-6">
               Your cart contains items from another restaurant. Would you like
               to reset your cart for adding items from this restaurant?
@@ -393,13 +463,6 @@ const HotelDetails = (props) => {
                           setInputFocused(false);
                         }}
                       >
-                        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-16 h-16 object-cover rounded-full"
-                          />
-                        </div>
                         <span className="text-sm text-center font-medium whitespace-nowrap overflow-hidden overflow-ellipsis max-w-full">
                           {item.name}
                         </span>
@@ -410,6 +473,20 @@ const HotelDetails = (props) => {
               </div>
             )}
           </div>
+          {showClosingSoonPopup && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+              <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-sm w-full mx-4">
+                <h3 className="text-lg font-semibold text-yellow-600 mb-2">Closing Soon</h3>
+                <p className="text-gray-700 mb-4">This restaurant will close in less than 30 minutes. Please place your order soon!</p>
+                <button
+                  onClick={() => setShowClosingSoonPopup(false)}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          )}
 
           {isPantulugariMessSubdomain && randomPopularItems.length > 0 && (
             <div className="mt-16 bg-transprent border border-gray-200 rounded-lg p-4 shadow-sm relative z-10">
@@ -468,7 +545,7 @@ const HotelDetails = (props) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;

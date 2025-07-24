@@ -1,7 +1,14 @@
 import React, { useState, useContext } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+} from "lucide-react";
 import MenuItemModal from "./MenuItemModal";
 import BulkAddModal from "./BulkAddModal";
 import ImportExcelModal from "./ImportExcelModal";
@@ -32,6 +39,10 @@ function MenuEditor() {
     renameCategory,
     renameSubcategory,
     deleteCategory,
+    filterItemsByExpiry,
+
+
+
   } = useContext(MenuContext);
 
   // State for selected category and subcategory (by name)
@@ -78,8 +89,23 @@ function MenuEditor() {
     description: "",
     foodType: "veg",
     inStock: true,
-    quantity: ""
+    quantity: "",
+    expiryDate: "",
   });
+  const [expiryFilter, setExpiryFilter] = useState("");
+  const [showExpiryDropdown, setShowExpiryDropdown] = useState(false);
+ const expiryOptions = [
+    { label: "All Items", value: "" },
+    { label: "Expiring in 1 day", value: "1" },
+    { label: "Expiring in 3 days", value: "3" },
+    { label: "Expiring in 1 week", value: "7" },
+    { label: "Expiring in 15 days", value: "15" },
+    { label: "Expiring in 1 month", value: "30" },
+    { label: "Expiring in 3 months", value: "90" },
+    { label: "Expiring in 6 months", value: "180" },
+    { label: "Expiring in 8 months", value: "240" },
+    { label: "Expiring in 1 year", value: "365" },
+  ];
 
   // Toggle subcategory expansion
   const toggleSubcategory = (subcategoryName) => {
@@ -264,7 +290,8 @@ function MenuEditor() {
         description: "",
         foodType: "veg",
         inStock: true,
-        quantity: ""
+        quantity: "",
+        expiryDate: "",
       });
     }
   };
@@ -292,10 +319,63 @@ function MenuEditor() {
       price: parseFloat(newItemData.price),
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
+      expiryDate: newItemData.expiryDate
+        ? new Date(newItemData.expiryDate)
+        : null,
     });
     setShowAccordionForm(false);
     setAccordionSubcategory("");
   };
+
+     // Improved expiry filter function
+// const filterItemsByExpiry = (items) => {
+//   if (!expiryFilter || expiryFilter === "") {
+//     console.log("No expiry filter applied");
+//     return items;
+//   }
+  
+//   const days = parseInt(expiryFilter);
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+//   console.log(`Filtering for items expiring within ${days} days from ${today}`);
+  
+//   return items.filter(item => {
+//     if (!item.expiryDate) {
+//       console.log(`Item ${item.name} has no expiry date - excluded`);
+//       return false;
+//     }
+    
+//     try {
+//       console.log(`Original expiry date: ${item.expiryDate}, type: ${typeof item.expiryDate}`);
+      
+//       // Handle both string and Date objects
+//       const expiryDate = item.expiryDate instanceof Date 
+//         ? new Date(item.expiryDate.getTime())
+//         : new Date(item.expiryDate);
+      
+//       console.log(`Parsed expiry date: ${expiryDate}`);
+      
+//       if (isNaN(expiryDate.getTime())) {
+//         console.log(`Invalid date for item ${item.name}`);
+//         return false;
+//       }
+      
+//       expiryDate.setHours(0, 0, 0, 0);
+      
+//       const diffTime = expiryDate.getTime() - today.getTime();
+//       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+//       console.log(`Days until expiry: ${diffDays}`);
+      
+//       return diffDays <= days && diffDays >= 0;
+//     } catch (e) {
+//       console.error("Error parsing expiry date:", e, "for item:", item);
+//       return false;
+//     }
+//   });
+// };
+
+
 
   return (
     <div className="container-fluid px-0">
@@ -418,6 +498,42 @@ function MenuEditor() {
                 Show Out of stock
               </label>
             </div>
+    
+    {/* Expiry Date Dropdown */}
+    <div className="relative">
+      <button
+        className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md text-sm transition-colors"
+        onClick={() => setShowExpiryDropdown(!showExpiryDropdown)}
+      >
+        <span>
+          {expiryFilter 
+            ? expiryOptions.find(opt => opt.value === expiryFilter)?.label 
+            : "Filter by Expiry"}
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {showExpiryDropdown && (
+        <div className="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200">
+          {expiryOptions.map((option) => (
+            <button
+              key={option.value}
+              className={`block w-full text-left px-4 py-2 text-sm ${
+                option.value === expiryFilter 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              onClick={() => {
+                setExpiryFilter(option.value);
+                setShowExpiryDropdown(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+
             {/* Action Buttons */}
             <div className="flex gap-2 menu-mobile-action">
               <button
@@ -450,8 +566,8 @@ function MenuEditor() {
                   Categories
                   <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
                 </h2>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="text-gray-400 hover:text-gray-600"
                   onClick={() => setShowCategoryHelp(!showCategoryHelp)}
                   aria-label="Category help"
@@ -461,15 +577,29 @@ function MenuEditor() {
                 {showCategoryHelp && (
                   <div className="absolute z-10 mt-8 ml-[-8px] bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
                     <p className="text-sm text-gray-700">
-                      Here is the list of categories. To create a new category, go to "Add New Item" and enter a new category name in the category field when adding an item, if no category is given item falls under uncategorized .
+                      Here is the list of categories. To create a new category,
+                      go to "Add New Item" and enter a new category name in the
+                      category field when adding an item, if no category is
+                      given item falls under uncategorized .
                     </p>
-                    <button 
+                    <button
                       type="button"
                       className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowCategoryHelp(false)}
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -770,7 +900,10 @@ function MenuEditor() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Item Name <span className="text-red-500">*</span>
+                                          Item Name{" "}
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
                                         </label>
                                         <input
                                           type="text"
@@ -783,7 +916,10 @@ function MenuEditor() {
                                       </div>
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Price<span className="text-red-500">*</span>
+                                          Price
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
                                         </label>
                                         <input
                                           type="number"
@@ -796,22 +932,44 @@ function MenuEditor() {
                                           step="0.01"
                                         />
                                       </div>
-                                      
+
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1"
-                                        htmlFor="quantity-input">
-                                        Quantity <span className="text-red-500">*</span>
-                                      </label>
-                                      <input
-                                        type="number"
-                                        name="quantity"
-                                        value={newItemData.quantity}
-                                        onChange={handleAccordionInputChange}
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                        required
-                                        min="1"
-                                        step="1"
-                                      />
+                                        <label
+                                          className="block text-sm font-medium text-gray-700 mb-1"
+                                          htmlFor="quantity-input"
+                                        >
+                                          Quantity{" "}
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
+                                        </label>
+                                        <input
+                                          type="number"
+                                          name="quantity"
+                                          value={newItemData.quantity}
+                                          onChange={handleAccordionInputChange}
+                                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                          required
+                                          min="1"
+                                          step="1"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label
+                                          className="block text-sm font-medium text-gray-700 mb-1"
+                                          htmlFor="expiry-date-input"
+                                        >
+                                          Expiry Date{" "}
+                                          
+                                        </label>
+                                        <input
+                                          type="date"
+                                          name="expiryDate"
+                                          value={newItemData.expiryDate}
+                                          onChange={handleAccordionInputChange}
+                                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                          
+                                        />
                                       </div>
                                       <div className="flex items-center gap-4">
                                         <div>
@@ -903,6 +1061,10 @@ function MenuEditor() {
                                         (!showOutOfStock ||
                                           item.inStock === false)
                                     )
+                                     .filter(item => {
+  if (!expiryFilter) return true; // No filter applied
+  return filterItemsByExpiry([item], expiryFilter).length > 0;
+})
                                     .map((item, index) => (
                                       <div
                                         key={item._id || index}
@@ -950,7 +1112,9 @@ function MenuEditor() {
                                               {item.name}
                                             </div>
                                             <div className="flex gap-4 text-sm text-gray-600">
-                                              <span>₹{item.price || item.totalPrice}</span>
+                                              <span>
+                                                ₹{item.price || item.totalPrice}
+                                              </span>
                                               <span>Qty: {item.quantity}</span>
                                             </div>
                                           </div>

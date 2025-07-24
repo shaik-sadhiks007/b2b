@@ -21,8 +21,7 @@ import PrivateRoute from './components/PrivateRoute'
 import AuthProvider from './context/AuthContext'
 import Footer from './components/Footer';
 import Contactus from './components/Contactus';
-import Helpbutton from './components/Helpbutton';
-import Whatsappbutton from './components/Whatsappbutton';
+import Lowstock from './components/LowStock';
 import Summary from './components/Summary'
 import Features from './components/Features'
 import MenuEditor from './pages/MenuEditor'
@@ -34,8 +33,7 @@ function App() {
         <MenuProvider>
           <Router>
             <ToastContainer autoClose={1000} />
-            <Helpbutton />
-            <Whatsappbutton />
+            
             <Routes>
               {/* Public Routes */}
               <Route path='/' element={<LandingPage />} />
@@ -45,6 +43,7 @@ function App() {
               <Route path='/Aboutb2b' element={<Aboutus />} />
               <Route path='/Footer' element={<Footer />} />
               <Route path='/contactus' element={<Contactus />} />
+              <Route path='/features' element={<Features />} />
               {/* Protected Routes */}
               <Route path='/orders' element={
                 <PrivateRoute>
@@ -109,6 +108,11 @@ function App() {
               <Route path='/feedback' element={
                 <PrivateRoute>
                   <Feedback />
+                </PrivateRoute>
+              } /> 
+              <Route path='/menu/lowstock' element={
+                <PrivateRoute>
+                  <Lowstock />
                 </PrivateRoute>
               } />
             </Routes>

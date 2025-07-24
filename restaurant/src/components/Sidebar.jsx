@@ -5,15 +5,19 @@ import { MobileMenuContext } from '../context/MobileMenuContext';
 
 export const menuItems = [
     {
-        icon: "bi-box", label: "Orders", path: "/orders",
+        icon: "bi-box", label: "Online Orders", path: "/orders",
         children: [
             // { label: "All Orders", path: "/orders" },
             { label: "Summary", path: "/orders/item-summary" },
         ]
     },
-    { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
+    { icon: "bi-list", label: "Menu", path: "/menu", isNew: true,
+        children: [
+            { label: "Low Stock", path: "/menu/lowstock" },
+        ]
+     },
     { icon: "bi-bar-chart", label: "Dashboard", path: "/summary" },
-    { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
+    { icon: "bi-cash-coin", label: "Order In Store", path: "/instore-orders" },
     { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
 
     // { icon: "bi-gift", label: "Offers", path: "/offers" },

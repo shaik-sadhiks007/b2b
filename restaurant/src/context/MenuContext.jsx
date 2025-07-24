@@ -11,6 +11,8 @@ export const MenuProvider = ({ children }) => {
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [expiryFilter, setExpiryFilter] = useState(''); 
+     const [lowStockThreshold, setLowStockThreshold] = useState(30);
 
     useEffect(() => {
         if (user) {
@@ -30,6 +32,53 @@ export const MenuProvider = ({ children }) => {
             setLoading(false);
         }
     };
+
+    // Filter items by expiry date
+const filterItemsByExpiry = (items, filterDays) => {
+  if (!filterDays || filterDays === "") return items;
+  
+  const days = parseInt(filterDays);
+  if (isNaN(days)) return items;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return items.filter(item => {
+    if (!item.expiryDate) return false;
+    
+    try {
+      let expiryDate;
+      
+      // Handle Firebase Timestamp if needed
+      if (item.expiryDate?.toDate) {
+        expiryDate = item.expiryDate.toDate();
+      } 
+      // Handle string dates
+      else if (typeof item.expiryDate === 'string') {
+        expiryDate = new Date(item.expiryDate);
+      }
+      // Handle Date objects
+      else if (item.expiryDate instanceof Date) {
+        expiryDate = new Date(item.expiryDate.getTime());
+      }
+      
+      if (!expiryDate || isNaN(expiryDate.getTime())) {
+        console.warn('Invalid expiry date for item:', item);
+        return false;
+      }
+      
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = expiryDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays <= days && diffDays >= 0;
+    } catch (e) {
+      console.error("Error parsing expiry date:", e, "for item:", item);
+      return false;
+    }
+  });
+};
 
     // Add a new menu item
     const addMenuItem = async (itemData) => {
@@ -180,7 +229,6 @@ export const MenuProvider = ({ children }) => {
     // Add multiple menu items in bulk
     const bulkAddMenuItems = async (itemsData) => {
         try {
-            // Use the new bulk endpoint instead of multiple individual calls
             const response = await axios.post(`${API_URL}/api/menu/bulk`, {
                 items: itemsData
             });
@@ -329,11 +377,45 @@ export const MenuProvider = ({ children }) => {
             throw error;
         }
     };
+    // Get low stock items
+  const getLowStockItems = (customThreshold) => {
+        const threshold = customThreshold !== undefined ? customThreshold : lowStockThreshold;
+        const lowStockItems = [];
+        
+        menuItems.forEach(category => {
+            category.subcategories.forEach(subcategory => {
+                subcategory.items.forEach(item => {
+                    if (item.quantity < threshold) {
+                        lowStockItems.push({
+                            ...item,
+                            category: category.category,
+                            subcategory: subcategory.subcategory
+                        });
+                    }
+                });
+            });
+        });
+          // Sort by quantity (lowest first)
+        lowStockItems.sort((a, b) => a.quantity - b.quantity);
+        return lowStockItems;
+    };
+
+     // Set low stock threshold (added this function)
+    const setLowStockThresholdValue = (threshold) => {
+        if (threshold >= 0) {
+            setLowStockThreshold(threshold);
+            toast.success(`Low stock threshold set to ${threshold}`);
+        } else {
+            toast.error('Threshold must be a positive number');
+        }
+    };
 
     const value = {
         menuItems,
         loading,
         error,
+        expiryFilter, // Add expiryFilter to context value
+        setExpiryFilter, // Add setter function
         fetchMenu,
         addMenuItem,
         updateMenuItem,
@@ -345,6 +427,10 @@ export const MenuProvider = ({ children }) => {
         renameCategory,
         renameSubcategory,
         deleteCategory,
+        filterItemsByExpiry,
+         getLowStockItems, 
+        lowStockThreshold,
+        setLowStockThreshold: setLowStockThresholdValue
     };
 
     return (
@@ -352,4 +438,4 @@ export const MenuProvider = ({ children }) => {
             {children}
         </MenuContext.Provider>
     );
-}; 
+};

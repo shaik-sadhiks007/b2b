@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Pill, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ImportExcelModal = ({ open, onClose, onImport }) => {
@@ -47,43 +47,56 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 const headers = filteredData[0] || [];
                 const rows = filteredData.slice(1);
 
-                // Validate headers (quantity is optional)
-                const requiredHeaders = ['name', 'price', 'category', 'subcategory', 'description', 'foodType', 'inStock'];
+                // Validate headers
+                const requiredHeaders = ['name', 'price', 'quantity'];
                 const missingHeaders = requiredHeaders.filter(header => 
                     !headers.some(h => h?.toString().toLowerCase().includes(header.toLowerCase()))
                 );
 
                 if (missingHeaders.length > 0) {
-                    setError(`Missing required columns: ${missingHeaders.join(', ')}. Please ensure your Excel file has these columns.`);
+                    setError(`Missing required columns: ${missingHeaders.join(', ')}`);
                     setPreviewData([]);
                     return;
                 }
 
-                // Map data to preview format (include quantity if present)
+                // Map data to preview format
                 const mappedData = rows.map((row, index) => {
                     const rowData = {};
                     headers.forEach((header, colIndex) => {
-                        rowData[header.toString().toLowerCase()] = row[colIndex] || '';
+                        const headerKey = header.toString().toLowerCase();
+                        rowData[headerKey] = row[colIndex] !== undefined ? row[colIndex] : '';
                     });
+
                     return {
                         id: index + 1,
                         name: rowData.name || '',
                         price: rowData.price || 0,
+                        quantity: rowData.quantity || '',
                         category: rowData.category || '',
                         subcategory: rowData.subcategory || 'general',
                         description: rowData.description || '',
                         foodType: rowData.foodtype || 'veg',
                         inStock: rowData.instock === 'true' || rowData.instock === true || rowData.instock === 1,
                         photos: rowData.photos || '',
-                        quantity: rowData.quantity || ''
+                        expiryDate: rowData.expirydate || '',
+                        storageZone: rowData.storagezone || 'general',
+                        rack: rowData.rack || '',
+                        shelf: rowData.shelf || '',
+                        bin: rowData.bin || '',
+                        batchNumber: rowData.batchnumber || '',
+                        requiresPrescription: rowData.requiresprescription === 'true' || 
+                                           rowData.requiresprescription === true || 
+                                           rowData.requiresprescription === 1 || 
+                                           false
                     };
                 });
 
                 setPreviewData(mappedData);
-                setSuccess(`Successfully parsed ${mappedData.length} items from Excel file`);
+                setSuccess(`Successfully parsed ${mappedData.length} items`);
             } catch (err) {
-                setError('Error parsing Excel file. Please check the file format.');
+                setError('Error parsing file. Please check the format.');
                 setPreviewData([]);
+                console.error('Error parsing file:', err);
             }
         };
         reader.readAsArrayBuffer(uploadedFile);
@@ -100,27 +113,31 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
         setSuccess('');
 
         try {
-            // Map previewData to the required flat format
             const items = previewData.map(item => ({
                 name: item.name,
                 totalPrice: parseFloat(item.price) || 0,
+                quantity: parseInt(item.quantity) || 0,
                 category: item.category,
                 subcategory: item.subcategory,
-                quantity: item.quantity || '',
+                description: item.description,
                 foodType: item.foodType,
                 inStock: item.inStock,
-                photos: item.photos || '',
-                description: item.description || ''
+                photos: item.photos,
+                expiryDate: item.expiryDate,
+                storageZone: item.storageZone,
+                rack: item.rack,
+                shelf: item.shelf,
+                bin: item.bin,
+                batchNumber: item.batchNumber,
+                requiresPrescription: item.requiresPrescription
             }));
 
             await onImport(items);
             setSuccess(`Successfully imported ${items.length} items`);
-
-            setTimeout(() => {
-                handleClose();
-            }, 2000);
+            setTimeout(handleClose, 1500);
         } catch (err) {
-            setError('Error importing data. Please try again.');
+            setError('Error importing data: ' + err.message);
+            console.error('Import error:', err);
         } finally {
             setLoading(false);
         }
@@ -140,58 +157,66 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
 
     const downloadTemplate = () => {
         const templateData = [
-            ['name', 'price', 'category', 'subcategory', 'description', 'foodType', 'inStock', 'photos'],
-            ['Chicken Biryani', '250', 'Main Course', 'Biryani', 'Delicious chicken biryani', 'non-veg', 'true', ''],
-            ['Paneer Tikka', '180', 'Starters', 'Tandoor', 'Grilled paneer tikka', 'veg', 'true', ''],
-            ['Butter Chicken', '300', 'Main Course', 'Curries', 'Creamy butter chicken', 'non-veg', 'true', '']
+            [
+                'name', 'price', 'quantity', 'category', 'subcategory', 'description',
+                'foodType', 'inStock', 'expiryDate', 'storageZone', 'rack',
+                'shelf', 'bin', 'batchNumber', 'requiresPrescription'
+            ],
+            [
+                'Paracetamol 500mg', '5.00', '100', 'Medicines', 'Tablets', 'Pain reliever',
+                'veg', 'true', '2024-12-31', 'general', 'A',
+                '2', '3', 'BATCH001', 'false'
+            ],
+            [
+                'Amoxicillin 250mg', '8.50', '50', 'Medicines', 'Capsules', 'Antibiotic',
+                'veg', 'true', '2024-10-15', 'general', 'B',
+                '1', '5', 'BATCH002', 'true'
+            ],
+            [
+                'Insulin Vial', '450.00', '20', 'Medicines', 'Injections', 'Diabetes medication',
+                'veg', 'true', '2024-06-30', 'refrigerated', 'C',
+                '1', '1', 'BATCH003', 'true'
+            ]
         ];
 
         const ws = XLSX.utils.aoa_to_sheet(templateData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Menu Template');
-        XLSX.writeFile(wb, 'menu_template.xlsx');
+        XLSX.utils.book_append_sheet(wb, ws, 'Medical Inventory');
+        XLSX.writeFile(wb, 'inventory_template.xlsx');
     };
 
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-                {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                         <FileSpreadsheet className="w-6 h-6 text-blue-600" />
-                        <h2 className="text-xl font-semibold text-gray-800">Import Menu from Excel</h2>
+                        <h2 className="text-xl font-semibold text-gray-800">Import Medical Inventory</h2>
                     </div>
-                    <button
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
                         <X size={24} />
                     </button>
                 </div>
 
-                {/* Content */}
                 <div className="p-6 overflow-y-auto flex-1">
-                    {/* Instructions */}
                     <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <h3 className="font-semibold text-blue-800 mb-2">Instructions:</h3>
                         <ul className="text-sm text-blue-700 space-y-1">
-                            <li>• Upload an Excel file (.xlsx, .xls) or CSV file (.csv)</li>
-                            <li>• Required columns: name, price, category, subcategory, description, foodType, inStock</li>
-                            <li>• foodType should be 'veg' or 'non-veg'</li>
-                            <li>• inStock should be 'true' or 'false'</li>
-                            <li>• Preview your data before importing</li>
+                            <li>• Upload Excel (.xlsx, .xls) or CSV (.csv) file</li>
+                            <li>• Required columns: name, price, quantity</li>
+                            <li>• Medical fields: storageZone, rack, shelf, bin, batchNumber, requiresPrescription</li>
+                            <li>• storageZone options: general, refrigerated, controlled, hazardous</li>
                         </ul>
                         <button
                             onClick={downloadTemplate}
-                            className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium underline"
+                            className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
                         >
-                            Download Template
+                            <Download size={16} /> Download Template
                         </button>
                     </div>
 
-                    {/* File Upload */}
                     <div className="mb-6">
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                             <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -204,7 +229,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium"
                             >
                                 Choose File
                             </button>
@@ -214,7 +239,6 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         </div>
                     </div>
 
-                    {/* Error/Success Messages */}
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-red-500" />
@@ -229,48 +253,59 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         </div>
                     )}
 
-                    {/* Preview Data */}
                     {previewData.length > 0 && (
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">
                                 Preview ({previewData.length} items)
                             </h3>
-                            <div className="overflow-x-auto">
-                                <table className="w-full border border-gray-200 rounded-lg">
+                            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                                <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Price</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Category</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Subcategory</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Food Type</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">In Stock</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Storage</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rx</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {previewData.slice(0, 10).map((item, index) => (
-                                            <tr key={index} className="border-t border-gray-200">
-                                                <td className="px-4 py-2 text-sm text-gray-800">{item.name}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-800">₹{item.price}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-800">{item.category}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-800">{item.subcategory}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-800">{item.foodType}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-800">
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {previewData.slice(0, 5).map((item) => (
+                                            <tr key={item.id}>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">₹{item.price}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
                                                     <span className={`px-2 py-1 rounded-full text-xs ${
-                                                        item.inStock 
-                                                            ? 'bg-green-100 text-green-800' 
-                                                            : 'bg-red-100 text-red-800'
+                                                        item.storageZone === 'refrigerated' ? 'bg-blue-100 text-blue-800' :
+                                                        item.storageZone === 'controlled' ? 'bg-purple-100 text-purple-800' :
+                                                        'bg-gray-100 text-gray-800'
                                                     }`}>
-                                                        {item.inStock ? 'Yes' : 'No'}
+                                                        {item.storageZone}
                                                     </span>
                                                 </td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                    {item.rack && `${item.rack}-${item.shelf}-${item.bin}`}
+                                                </td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.batchNumber}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                                    {item.requiresPrescription ? (
+                                                        <span className="flex items-center gap-1 text-red-600">
+                                                            <Pill size={14} /> Yes
+                                                        </span>
+                                                    ) : 'No'}
+                                                </td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.expiryDate}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                {previewData.length > 10 && (
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        Showing first 10 items. Total: {previewData.length} items
+                                {previewData.length > 5 && (
+                                    <p className="text-sm text-gray-500 p-2">
+                                        Showing first 5 of {previewData.length} items
                                     </p>
                                 )}
                             </div>
@@ -278,20 +313,29 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
                     <button
                         onClick={handleClose}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleImport}
                         disabled={!previewData.length || loading}
-                        className="px-6 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
+                        className="px-6 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium flex items-center gap-2"
                     >
-                        {loading ? 'Importing...' : 'Import Data'}
+                        {loading ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Importing...
+                            </>
+                        ) : (
+                            <>
+                                <Upload size={16} />
+                                Import Items
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -299,4 +343,4 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
     );
 };
 
-export default ImportExcelModal; 
+export default ImportExcelModal;

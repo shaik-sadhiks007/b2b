@@ -55,21 +55,37 @@ function AppContent() {
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
-  // Determine if we are on the main domain
   const subdomain = getSubdomain();
-  const isMainDomain = !subdomain;
+  const isMainDomain = !subdomain || subdomain === "shopatb2b";
+  const isPantulugaarimess = subdomain === "pantulugaarimess";
+
   // Hide helpers if on subdomain and on home route
   const hideHelpers = !isMainDomain && isHome;
 
-  // Dummy handlers (replace with your actual logic if needed)
+  const hideFooterRoutes = [
+    '/checkout',
+    '/ordersuccess',
+    '/orders',
+    '/orders/',
+    '/order-status'
+  ];
+
+  const shouldHideFooter = hideFooterRoutes.some((r) =>
+    routerLocation.pathname.startsWith(r)
+  );
+
   const onLocationSelect = (suggestion) => {
     setLocation(suggestion.address || suggestion.name);
   };
+
   const onAllowLocation = () => { };
   const onLoginClick = () => { };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className={`min-h-screen ${isPantulugaarimess ? 'bg-cover bg-no-repeat bg-center' : ''}`}
+      style={isPantulugaarimess ? { backgroundImage: `url(${bgImage})` } : {}}
+    >
       <Navbar
         alwaysVisible={true}
         location={location}
@@ -79,8 +95,7 @@ function AppContent() {
         onAllowLocation={onAllowLocation}
         onLoginClick={onLoginClick}
       />
-      {!hideHelpers && <Helpbutton />}
-      {!hideHelpers && <Whatsappbutton />}
+
 
       <Routes>
         <Route path="/" element={<HomeOrHotelDetails />} />
@@ -88,33 +103,11 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/:category/:id" element={<HotelDetails />} />
-        <Route path="/cart" element={
-          <ProtectedRoute>
-            <CartPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/checkout" element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        } />
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/orders/:orderId" element={
-          <ProtectedRoute>
-            <OrderDetails />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/ordersuccess/:orderId" element={
-          <ProtectedRoute>
-            <OrderSuccess />
-          </ProtectedRoute>
-        } />
+        <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
+        <Route path="/ordersuccess/:orderId" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guest-login" element={<GuestLogin />} />
@@ -124,32 +117,15 @@ function AppContent() {
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
         <Route path="/feedback" element={<Feedback />} />
       </Routes>
-      <Footer />
+
+      {!shouldHideFooter && (isMainDomain ? <Footer /> : <Pantulugarifooter />)}
     </div>
-  )
+  );
 }
 
 function App() {
 
-  // Helper to evict old queries, keeping only the 2 most recent
-  function evictOldQueries(queryClient) {
-    const queries = queryClient.getQueryCache().getAll();
-    // Sort by lastUpdated (descending)
-    const sorted = queries.sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
-    // Keep only the 2 most recent
-    const toEvict = sorted.slice(2);
-    toEvict.forEach(q => queryClient.removeQueries(q.queryKey));
-  }
-
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 2 * 60 * 60 * 1000, // 2 hours
-        cacheTime: 2 * 60 * 60 * 1000, // 2 hours
-        onSuccess: () => evictOldQueries(queryClient),
-      },
-    },
-  });
+  const queryClient = new QueryClient()
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -171,7 +147,7 @@ function App() {
             <LocationProvider>
               <AppContent />
               <PWAInstallPrompt />
-              <ReactQueryDevtools initialIsOpen={false} />
+              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
               <ToastContainer
                 position="top-right"
                 autoClose={2000}
@@ -188,10 +164,8 @@ function App() {
           </CartProvider>
         </HotelDataProvider>
       </QueryClientProvider>
-
     </Router>
-  )
+  );
 }
 
-export default App
-
+export default App;

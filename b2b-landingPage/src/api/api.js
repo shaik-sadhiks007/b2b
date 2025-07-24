@@ -1,5 +1,3 @@
-
-
 // for local
 
 // Use environment variables and fallback to localhost/production based on location

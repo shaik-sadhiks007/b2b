@@ -15,7 +15,6 @@ import logo from '../assets/b2bupdate.png'
 import { useRestaurantDetails } from '../hooks/useRestaurantDetails'
 import { useAllBusinesses } from '../hooks/useAllBusinesses'
 
-
 const categories = [
     { name: "All", value: "all", icon: "🌐", color: "bg-indigo-100" },
     { name: "Restaurant", value: "restaurant", icon: "🏨", color: "bg-red-100" },
@@ -31,15 +30,15 @@ const categories = [
 
 const RestaurantCardSkeleton = () => (
     <div className="bg-white rounded-lg shadow-md overflow-hidden mt-10">
-        <div className="relative h-48 w-full">
-            <Skeleton height={192} />
+        <div className="relative h-32 md:h-48 w-full">
+            <Skeleton height="100%" />
         </div>
-        <div className="p-4">
-            <Skeleton height={24} width="70%" className="mb-2" />
-            <Skeleton height={16} count={2} className="mb-2" />
+        <div className="p-3 md:p-4">
+            <Skeleton height={20} width="70%" className="mb-2" />
+            <Skeleton height={14} count={2} className="mb-2" />
             <div className="flex items-center justify-between">
-                <Skeleton height={16} width={80} />
-                <Skeleton height={16} width={60} />
+                <Skeleton height={14} width={80} />
+                <Skeleton height={14} width={60} />
             </div>
         </div>
     </div>
@@ -254,7 +253,7 @@ const Home = () => {
                 onTouchStart={() => setHoveredRestaurantId(restaurant._id)}
                 onTouchEnd={() => setHoveredRestaurantId(null)}
             >
-                <div className="relative h-48 w-full">
+                <div className="relative h-32 md:h-48 w-full">
                     <img
                         src={restaurant.imageUrl || 'https://via.placeholder.com/300x200'}
                         loading="lazy"
@@ -265,37 +264,36 @@ const Home = () => {
                         {restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : restaurant.serviceType}
                     </span>
                 </div>
-                <div className="p-4">
-                    <h2 className="text-xl font-semibold mb-2">{restaurant.name}</h2>
-                    {/* <p className="text-gray-600 mb-3 line-clamp-2">{restaurant.description}</p> */}
+                <div className="p-3 md:p-4">
+                    <h2 className="text-lg md:text-xl font-semibold mb-2">{restaurant.name}</h2>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             {restaurant.distance !== null && (
                                 <div className="flex items-center gap-1.5 text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 md:h-4 w-3 md:w-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                                     </svg>
-                                    <span className="text-sm">{restaurant.distance} km away</span>
+                                    <span className="text-xs md:text-sm">{restaurant.distance} km away</span>
                                 </div>
                             )}
-                            <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            <span className={`px-2 py-0.5 md:px-2.5 md:py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${restaurant.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
                                 {restaurant.online ? 'Open' : 'Closed'}
                             </span>
                         </div>
                         {restaurant.operatingHours?.openTime && restaurant.operatingHours?.closeTime ? (
                             <div className="flex items-center gap-1.5 text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 md:h-4 w-3 md:w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                                 </svg>
-                                <span className="text-sm">{restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}</span>
+                                <span className="text-xs md:text-sm">{restaurant.operatingHours.openTime} - {restaurant.operatingHours.closeTime}</span>
                             </div>
                         ) : (
                             <div className="flex items-center gap-1.5 text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 md:h-4 w-3 md:w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                                 </svg>
-                                <span className="text-sm">Business opens on next day</span>
+                                <span className="text-xs md:text-sm">Business opens on next day</span>
                             </div>
                         )}
                     </div>
@@ -305,7 +303,13 @@ const Home = () => {
     };
 
     return (
-        <div>
+        <div className="font-sans" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <style>
+                {`
+                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+                `}
+            </style>
+            
             <Navbar
                 location={location}
                 setLocation={setLocation}
@@ -318,10 +322,6 @@ const Home = () => {
             <main className="container mx-auto pt-5 pb-20 flex flex-col items-center justify-center flex-grow">
                 <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8 mt-16">
                     {/* Logo */}
-                    {/* <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
-                        B2B
-                    </h1> */}
-
                     <img
                         src={logo}
                         loading="lazy"
@@ -380,20 +380,21 @@ const Home = () => {
                             />
                         </div>
                     </div>
-
                 </div>
 
                 {/* Additional content to enable scrolling */}
-                <div className="mt-8 w-full">
+                <div className="mt-8 w-full px-4">
                     <div className="w-full max-w-4xl mx-auto">
                         {/* Category shortcuts */}
-                        <CategoryShortcuts
-                            categories={categories}
-                            selectedCategory={selectedCategory}
-                            onCategorySelect={(category) => setSelectedCategory(category.value)}
-                        />
+                        <div className="overflow-x-auto md:overflow-visible">
+                            <CategoryShortcuts
+                                categories={categories}
+                                selectedCategory={selectedCategory}
+                                onCategorySelect={(category) => setSelectedCategory(category.value)}
+                            />
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-5">
                             {renderRestaurants()}
                         </div>
                     </div>
@@ -408,9 +409,6 @@ const Home = () => {
                 onManualAddress={handleManualAddress}
                 isLoading={isLoading}
             />
-
-            {/* Footer */}
-
         </div>
     )
 }

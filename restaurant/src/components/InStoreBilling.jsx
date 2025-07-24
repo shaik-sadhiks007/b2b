@@ -136,8 +136,8 @@ const InStoreBilling = ({ adminMode = false }) => {
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center gap-2 mb-6">
-                            <h1 className="text-2xl font-bold">In Store Billing</h1>
-                            <button
+                            <h1 className="text-2xl font-bold">Order In store</h1>
+                            <button 
                                 className="text-gray-500 hover:text-gray-700 transition-colors"
                                 onClick={() => setShowHelp(!showHelp)}
                                 aria-label="Help"
@@ -151,7 +151,7 @@ const InStoreBilling = ({ adminMode = false }) => {
                                 <h3 className="font-semibold text-blue-800 mb-2">How to use In-Store Billing:</h3>
                                 <ol className="list-decimal pl-5 space-y-1 text-blue-700">
                                     <li>Search for menu items using the search bar</li>
-                                    <li>Click "Add" button beside an item to add it to your cart</li>
+                                    <li>Click "Order" button beside an item to add it to your cart</li>
                                     <li>Adjust quantities using the + and - buttons in the cart</li>
                                     <li>Remove items using the trash icon if needed</li>
                                     <li>Click "Proceed" when ready to generate the bill</li>
@@ -208,7 +208,7 @@ const InStoreBilling = ({ adminMode = false }) => {
                                                         <td>₹{item.totalPrice}</td>
                                                         <td>
                                                             <button className="btn btn-primary btn-sm" onClick={() => handleAddToCart(item)}>
-                                                                Add
+                                                                Order
                                                             </button>
                                                         </td>
                                                     </tr>

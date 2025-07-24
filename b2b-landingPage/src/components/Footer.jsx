@@ -4,7 +4,7 @@ import { openWindowWithToken } from '../utils/windowUtils';
 import { ORIGIN_URL, RESTAURANT_URL } from '../api/api';
 import { Link } from 'react-router-dom';
 
-console.log('ORIGIN_URL in Footer:', ORIGIN_URL);
+
 
 const Footer = () => {
     const navigate = useNavigate();

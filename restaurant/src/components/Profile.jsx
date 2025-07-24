@@ -167,17 +167,23 @@ const Profile = () => {
         }
     };
 
-    // Add image upload handler
+    // Add image upload handler with size validation
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            setSelectedImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Check file size (1MB = 1,048,576 bytes)
+        if (file.size > 1048576) {
+            toast.error('Image size should be less than 1MB');
+            return;
         }
+
+        setSelectedImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
     };
 
     // Update location select handler to auto-fill address
@@ -528,6 +534,7 @@ const Profile = () => {
                                                                     accept="image/*"
                                                                     onChange={handleImageUpload}
                                                                 />
+                                                                <small className="text-muted">Max file size: 1MB</small>
                                                             </div>
                                                         </div>
                                                     </div>

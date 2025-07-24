@@ -47,27 +47,28 @@ const server = http.createServer(app);
 const allowedOriginRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*shopatb2b\.com$/;
 const localhostRegex = /^https?:\/\/localhost:(5173|5174)$/;
 
-// Helper to check allowed origins for Socket.IO
+// Helper function for origin validation
 function isAllowedOrigin(origin) {
+    return allowedOriginRegex.test(origin) || localhostRegex.test(origin);
     return allowedOriginRegex.test(origin) || localhostRegex.test(origin);
 }
 
-// CORS configuration
+// CORS options with logging
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
         if (allowedOriginRegex.test(origin) || localhostRegex.test(origin)) {
             return callback(null, true);
         }
-        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-        return callback(new Error(msg), false);
+        console.error(` CORS blocked origin: ${origin}`);
+        return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Initialize Socket.IO
+// Initialize Socket.IO with same origin check
 const io = new Server(server, {
     cors: {
         origin: (origin, callback) => {
@@ -75,6 +76,7 @@ const io = new Server(server, {
             if (isAllowedOrigin(origin)) {
                 return callback(null, true);
             }
+            console.error(` Socket.IO CORS blocked origin: ${origin}`);
             return callback('Origin not allowed by Socket.IO CORS', false);
         },
         methods: ["GET", "POST"],
@@ -82,20 +84,19 @@ const io = new Server(server, {
     }
 });
 app.set('io', io);
-// Socket.IO connection handling
+
+// Socket.IO events
 io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    console.log(` Socket connected: ${socket.id}`);
 
     socket.on('newOrder', (orderData) => {
-        console.log('New order received:', orderData);
+        console.log('🛒 New order received:', orderData);
         io.emit('newOrder', orderData);
     });
 
     socket.on('orderStatusUpdate', (orderData) => {
-        console.log('Order status update received:', orderData);
-        // Broadcast to all connected clients
+        console.log(' Order status update received:', orderData);
         io.emit('orderStatusUpdate', orderData);
-        console.log('Order status update broadcasted to all clients');
     });
 
     socket.on('disconnect', () => {
@@ -122,13 +123,13 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/subdomain', subdomainRoutes);
 app.use('/api/delivery-partner', deliveryPartnerRoutes);
 
-// MongoDB connection
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// Start server
+// Start the server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-}); 
+    console.log(` Server running on port ${PORT}`);
+});

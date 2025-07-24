@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const authMiddleware = require('../middleware/authMiddleware');
 const businessMiddleware = require('../middleware/restaurantMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 const {
     createBusiness,
     updateBusinessStep,
@@ -11,7 +12,10 @@ const {
     getBusinessProfile,
     updateBusinessProfile,
     getAllPublicBusinesses,
-    getPublicBusinessById
+    getPublicBusinessById,
+    getAllBusinessesForAdmin,
+    getBusinessProfileByOwnerId,
+    updateBusinessProfileByOwnerId
 } = require('../controllers/businessController');
 
 // Configure multer for file uploads
@@ -65,5 +69,14 @@ router.get('/public/all', getAllPublicBusinesses);
 
 // Get a specific business's public details
 router.get('/public/:id', getPublicBusinessById);
+
+// Admin routes
+router.get('/admin/all', authMiddleware, adminMiddleware, getAllBusinessesForAdmin);
+
+// Admin: Get business profile by ownerId
+router.get('/admin/profile-by-owner', authMiddleware, adminMiddleware, getBusinessProfileByOwnerId);
+
+// Admin: Update business profile by ownerId
+router.patch('/admin/profile-by-owner', authMiddleware, adminMiddleware, updateBusinessProfileByOwnerId);
 
 module.exports = router; 

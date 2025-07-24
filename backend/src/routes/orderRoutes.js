@@ -12,10 +12,18 @@ const {
     getAcceptedItemsSummary,
     getOrderDetails,
     getPublicOrderStatus,
-    getOrdersSummary
+    getOrdersSummary,
+    getOrdersSummaryByAdmin,
+    getOrderCountsByAdmin,
+    getOrderHistoryByAdmin,
+    getRestaurantOrderStatusByAdmin,
+    postRestaurantOrderStatusByAdmin,
+    getAcceptedItemsSummaryByAdmin,
+    postInstoreOrderByAdmin
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 const { testEmailConfiguration } = require('../utils/emailService');
 const router = express.Router();
 
@@ -32,6 +40,19 @@ router.post('/instore-order', authMiddleware, restaurantMiddleware, instoreOrder
 router.get('/:orderId', authMiddleware, orderSuccess);
 router.get('/status/:status', authMiddleware, restaurantMiddleware, getRestaurantOrderStatus);
 router.get('/order-status/:orderId', getPublicOrderStatus);
+
+// Admin order routes
+router.get('/admin/summary', authMiddleware, adminMiddleware, getOrdersSummaryByAdmin);
+router.get('/admin/counts', authMiddleware, adminMiddleware, getOrderCountsByAdmin);
+router.get('/admin/order-history', authMiddleware, adminMiddleware, getOrderHistoryByAdmin);
+// Admin: Get orders by status for a business by ownerId
+router.get('/admin/status/:status', authMiddleware, adminMiddleware, getRestaurantOrderStatusByAdmin);
+// Admin: Update order status for a business by ownerId
+router.patch('/admin/status/:orderId', authMiddleware, adminMiddleware, postRestaurantOrderStatusByAdmin);
+// Admin: Get accepted items summary for a business by ownerId
+router.get('/admin/accepted-items-summary', authMiddleware, adminMiddleware, getAcceptedItemsSummaryByAdmin);
+// Admin: Place in-store order for a business by ownerId
+router.post('/admin/instore-order', authMiddleware, adminMiddleware, postInstoreOrderByAdmin);
 
 // Test email route
 router.post('/test-email', async (req, res) => {

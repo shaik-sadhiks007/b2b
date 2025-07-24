@@ -7,6 +7,7 @@ import { API_URL } from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 import io from 'socket.io-client';
 import ConfirmModal from '../reusable/ConfirmModal';
+import { useParams } from 'react-router-dom';
 
 // Initialize socket connection
 const socket = io(API_URL, { withCredentials: true });
@@ -31,8 +32,9 @@ const statusTabs = [
     { id: 'ORDER_PICKED_UP', label: 'Completed', icon: 'bi-check2-all' }
 ];
 
-const Orders = () => {
+const Orders = ({ adminMode = false }) => {
     const { user } = useContext(AuthContext);
+    const { ownerId } = useParams();
     const [activeTab, setActiveTab] = useState('ORDER_PLACED');
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ const Orders = () => {
     const [cancelOrderId, setCancelOrderId] = useState(null);
 
     useEffect(() => {
-        if (user) {
+        if (user && (!adminMode || (adminMode && user.role === 'admin'))) {
             fetchOrders();
             fetchOrderCounts();
 
@@ -75,7 +77,7 @@ const Orders = () => {
             socket.on('orderStatusUpdate', (updatedOrder) => {
                 console.log('Order status update received in Orders component:', updatedOrder);
                 console.log('Current user restaurantId:', user?.restaurantId);
-                
+
                 // Ensure we have valid data
                 if (!updatedOrder || !updatedOrder.restaurantId) {
                     console.error('Invalid order data received:', updatedOrder);
@@ -93,7 +95,7 @@ const Orders = () => {
                             return filteredOrders;
                         }
                         // For other status updates, update the order if it exists in current tab
-                        const updatedOrders = prevOrders.map(order => 
+                        const updatedOrders = prevOrders.map(order =>
                             order._id === updatedOrder._id ? updatedOrder : order
                         );
                         const filteredOrders = updatedOrders.filter(order => order.status === activeTab);
@@ -111,11 +113,17 @@ const Orders = () => {
                 socket.off('orderStatusUpdate');
             };
         }
-    }, [activeTab, user, currentPage, pageSize]);
+    }, [activeTab, user, currentPage, pageSize, adminMode, ownerId]);
 
     const fetchOrderCounts = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/orders/counts`);
+            let url = `${API_URL}/api/orders/counts`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/counts`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.get(url, { params });
             setOrderCounts(response.data);
         } catch (error) {
             console.error('Failed to fetch order counts:', error);
@@ -125,12 +133,13 @@ const Orders = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/api/orders/status/${activeTab}`, {
-                params: {
-                    page: currentPage,
-                    pageSize: pageSize
-                }
-            });
+            let url = `${API_URL}/api/orders/status/${activeTab}`;
+            let params = { page: currentPage, pageSize };
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/status/${activeTab}`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.get(url, { params });
             setOrders(response.data.orders);
             setPagination(response.data.pagination);
         } catch (error) {
@@ -142,7 +151,13 @@ const Orders = () => {
 
     const handleStatusChange = async (orderId, status) => {
         try {
-            const response = await axios.patch(`${API_URL}/api/orders/status/${orderId}`, { status });
+            let url = `${API_URL}/api/orders/status/${orderId}`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/status/${orderId}`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.patch(url, { status }, { params });
             const updatedOrder = response.data.order;
             // Emit the order status update with cancelledBy only if status is CANCELLED
             if (status === 'CANCELLED') {
@@ -237,15 +252,15 @@ const Orders = () => {
             case 'ORDER_PLACED':
                 return (
                     <>
-                        <button 
-                            className="btn btn-success w-100 mb-2" 
+                        <button
+                            className="btn btn-success w-100 mb-2"
                             onClick={() => handleStatusChange(order._id, 'ACCEPTED')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
                             Accept Order
                         </button>
-                        <button 
-                            className="btn btn-outline-danger w-100" 
+                        <button
+                            className="btn btn-outline-danger w-100"
                             onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
@@ -256,15 +271,15 @@ const Orders = () => {
             case 'ACCEPTED':
                 return (
                     <>
-                        <button 
-                            className="btn btn-success w-100 mb-2" 
+                        <button
+                            className="btn btn-success w-100 mb-2"
                             onClick={() => handleStatusChange(order._id, 'ORDER_READY')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
                             Mark as Ready
                         </button>
-                        <button 
-                            className="btn btn-outline-danger w-100" 
+                        <button
+                            className="btn btn-outline-danger w-100"
                             onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
@@ -275,15 +290,15 @@ const Orders = () => {
             case 'ORDER_READY':
                 return (
                     <>
-                        <button 
-                            className="btn btn-success w-100 mb-2" 
+                        <button
+                            className="btn btn-success w-100 mb-2"
                             onClick={() => handleStatusChange(order._id, order.orderType === 'delivery' ? 'ORDER_DELIVERED' : 'ORDER_PICKED_UP')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
                             Mark as {order.orderType === 'delivery' ? 'Delivered' : 'Picked Up'}
                         </button>
-                        <button 
-                            className="btn btn-outline-danger w-100" 
+                        <button
+                            className="btn btn-outline-danger w-100"
                             onClick={() => handleCancelClick(order._id)}
                         >
                             <i className="bi bi-x-circle me-2"></i>
@@ -356,8 +371,8 @@ const Orders = () => {
             <div className="d-flex justify-content-between align-items-center mt-4 flex-wrap">
                 <div className="d-flex align-items-center gap-2 mb-2 mb-md-0">
                     <span className="me-2">Show:</span>
-                    <select 
-                        className="form-select" 
+                    <select
+                        className="form-select"
                         style={{ width: 'auto' }}
                         value={pageSize}
                         onChange={(e) => {
@@ -398,18 +413,26 @@ const Orders = () => {
 
     return (
         <div className="container-fluid px-0">
-            <div style={{ marginTop: '60px' }}>
-                <Navbar />
-                <Sidebar />
-            </div>
-            <div className="col-lg-10 ms-auto px-0" style={{ marginTop: '60px' }}>
+            {
+                (user && user?.role !== 'admin') && (
+                    <div style={{ marginTop: "60px" }}>
+                        <Navbar />
+                        <Sidebar />
+                    </div>
+                )
+            }
+
+            <div
+                className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+                style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+            >
                 <div className="d-flex justify-content-between align-items-center p-4 bg-white shadow-sm">
                     <div className="d-flex gap-4 flex-wrap">
                         {statusTabs.map(tab => (
                             <button
                                 key={tab.id}
-                                className={`btn ${activeTab === tab.id 
-                                    ? 'btn-primary' 
+                                className={`btn ${activeTab === tab.id
+                                    ? 'btn-primary'
                                     : 'btn-outline-primary'} position-relative d-flex align-items-center gap-2`}
                                 onClick={() => setActiveTab(tab.id)}
                             >
@@ -449,7 +472,7 @@ const Orders = () => {
                                                 <div className="row g-4">
                                                     <div className="col-12 col-md-4 border-end">
                                                         <div className="d-flex justify-content-between align-items-center mb-3">
-                                                            
+
                                                             <span className="badge me-2 fs-6 fw-semibold" style={{
                                                                 backgroundColor: order.orderType && order.orderType.toLowerCase() === 'delivery' ? '#e6ffe6' : '#fff3e0',
                                                                 color: '#333333',
@@ -485,7 +508,7 @@ const Orders = () => {
                                                             {order.items.map((item, index) => (
                                                                 <div key={index} className="d-flex justify-content-between align-items-center mb-2 p-2 rounded border border-info" style={{ backgroundColor: '#e0f7fa' }}>
                                                                     <div>
-                                                                        <i className={`bi bi-circle-fill ${item.foodType='veg' ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '8px' }}></i>
+                                                                        <i className={`bi bi-circle-fill ${item.foodType = 'veg' ? 'text-success' : 'text-danger'} me-2`} style={{ fontSize: '8px' }}></i>
                                                                         <span className="fw-medium">{item.quantity} x {item.name}</span>
                                                                     </div>
                                                                     <div className="fw-bold">{formatCurrency(item.totalPrice)}</div>
@@ -496,7 +519,7 @@ const Orders = () => {
                                                             <span>Total Items: {order.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
                                                         </div>
                                                         <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="mb-0">Total Amount</h6> 
+                                                            <h6 className="mb-0">Total Amount</h6>
                                                             <div className="d-flex align-items-center gap-2">
                                                                 <h6 className="mb-0">{formatCurrency(order.totalAmount)}</h6>
                                                                 <span className={`badge ${order.paymentStatus === 'COMPLETED' ? 'bg-success' : 'bg-warning'}`}>
@@ -504,7 +527,7 @@ const Orders = () => {
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        {order.items.every(item => item.foodType='veg') && (
+                                                        {order.items.every(item => item.foodType = 'veg') && (
                                                             <div className="text-success mt-2">
                                                                 <i className="bi bi-circle-fill me-2"></i>
                                                                 VEG ONLY ORDER

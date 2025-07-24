@@ -16,7 +16,7 @@ import { API_URL } from '../api/api';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { AuthContext } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
 
 ChartJS.register(
@@ -30,7 +30,7 @@ ChartJS.register(
   ArcElement
 );
 
-const Summary = () => {
+const Summary = ({ adminMode = false }) => {
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,13 +39,21 @@ const Summary = () => {
   const [showPopularItemsHelp, setShowPopularItemsHelp] = useState(false);
 
   const { user } = useContext(AuthContext);
+  const { ownerId } = useParams();
 
   useEffect(() => {
     const fetchSummaryData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${API_URL}/api/orders/summary?timeFrame=${selectedTimeFrame}`);
+        let url = `${API_URL}/api/orders/summary?timeFrame=${selectedTimeFrame}`;
+        let params = {};
+        if (adminMode && ownerId) {
+          url = `${API_URL}/api/orders/admin/summary`;
+          params.ownerId = ownerId;
+          params.timeFrame = selectedTimeFrame;
+        }
+        const response = await axios.get(url, { params });
         setSummaryData(response.data);
       } catch (err) {
         console.error('Error fetching summary data:', err);
@@ -56,7 +64,7 @@ const Summary = () => {
     };
 
     fetchSummaryData();
-  }, [selectedTimeFrame]);
+  }, [selectedTimeFrame, adminMode, ownerId]);
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
@@ -190,11 +198,19 @@ const Summary = () => {
 
   return (
     <div className="container-fluid px-0">
-      <div style={{ marginTop: '60px' }}>
-        <Navbar />
-        <Sidebar />
-      </div>
-      <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+      {
+        (user && user?.role !== 'admin') && (
+          <div style={{ marginTop: "60px" }}>
+            <Navbar />
+            <Sidebar />
+          </div>
+        )
+      }
+
+      <div
+        className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+        style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+      >
         {
           loading ? (
             <div className="p-4 text-center">Loading summary data...</div>
@@ -241,7 +257,7 @@ const Summary = () => {
                     <div className="flex items-center">
                       <h2 className="text-xl font-semibold">Report</h2>
                       <div className="relative ml-2">
-                        <button 
+                        <button
                           onClick={() => setShowTooltip(!showTooltip)}
                           className="text-gray-400 hover:text-gray-600 focus:outline-none"
                         >
@@ -337,7 +353,7 @@ const Summary = () => {
                     <div className="flex items-center">
                       <h2 className="text-xl font-semibold">Popular Products</h2>
                       <div className="relative ml-2">
-                        <button 
+                        <button
                           onClick={() => setShowPopularItemsHelp(!showPopularItemsHelp)}
                           className="text-gray-400 hover:text-gray-600 focus:outline-none"
                         >
@@ -347,7 +363,7 @@ const Summary = () => {
                           <div className="absolute z-10 w-64 p-2 mt-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg">
                             <p>Most ordered items are listed here based on the selected time period.</p>
                             <p className="mt-1">The table shows the item name, quantity sold, and other details.</p>
-                            <button 
+                            <button
                               type="button"
                               className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                               onClick={() => setShowPopularItemsHelp(false)}

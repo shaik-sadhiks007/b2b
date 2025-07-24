@@ -28,3 +28,13 @@ backend/serviceAccountKey.json
 .env
 
 backend/.env
+
+rules.md
+
+userinput.py
+
+.cursor
+
+.cursor/rules/rules.mdc
+
+.cursor/rules/

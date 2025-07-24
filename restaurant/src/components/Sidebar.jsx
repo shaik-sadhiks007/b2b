@@ -2,18 +2,23 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { MobileMenuContext } from '../context/MobileMenuContext';
+import { AuthContext } from '../context/AuthContext';
 
 export const menuItems = [
     {
-        icon: "bi-box", label: "Orders", path: "/orders",
+        icon: "bi-box", label: "Online Orders", path: "/orders",
         children: [
             // { label: "All Orders", path: "/orders" },
             { label: "Summary", path: "/orders/item-summary" },
         ]
     },
-    { icon: "bi-list", label: "Menu", path: "/menu", isNew: true },
+    { icon: "bi-list", label: "Menu", path: "/menu", isNew: true,
+        children: [
+            { label: "Low Stock", path: "/menu/lowstock" },
+        ]
+     },
     { icon: "bi-bar-chart", label: "Dashboard", path: "/summary" },
-    { icon: "bi-cash-coin", label: "InStore billing", path: "/instore-orders" },
+    { icon: "bi-cash-coin", label: "Order In Store", path: "/instore-orders" },
     { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
 
     // { icon: "bi-gift", label: "Offers", path: "/offers" },
@@ -29,8 +34,14 @@ export const menuItems = [
 const Sidebar = () => {
     const location = useLocation();
     const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(MobileMenuContext);
+    const { user } = useContext(AuthContext);
 
     const handleClose = () => setIsMobileMenuOpen(false);
+
+    // Don't render sidebar for admin users
+    if (user && user.role === 'admin') {
+        return null;
+    }
 
     const renderMenuItem = (item, index) => {
         const isActive = location.pathname === item.path;

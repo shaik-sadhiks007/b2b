@@ -7,11 +7,9 @@ import Sidebar from './Sidebar';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Search, MapPin, Clock, Image as ImageIcon, CloudCog } from 'lucide-react';
 import { API_URL } from '../api/api';
+import { useOutletContext } from 'react-router-dom';
 
 // Custom marker icon
 const customIcon = new L.Icon({
@@ -25,6 +23,8 @@ const customIcon = new L.Icon({
 
 const Profile = () => {
     const { user } = useContext(AuthContext);
+    // Remove outletContext and admin logic
+
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -46,6 +46,7 @@ const Profile = () => {
         ownerName: '',
         serviceType: '',
         description: '',
+        subdomain: '',
         contact: {
             primaryPhone: '',
             whatsappNumber: '',
@@ -166,17 +167,23 @@ const Profile = () => {
         }
     };
 
-    // Add image upload handler
+    // Add image upload handler with size validation
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            setSelectedImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Check file size (1MB = 1,048,576 bytes)
+        if (file.size > 1048576) {
+            toast.error('Image size should be less than 1MB');
+            return;
         }
+
+        setSelectedImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
     };
 
     // Update location select handler to auto-fill address
@@ -320,6 +327,7 @@ const Profile = () => {
                 ownerName: response.data.ownerName || '',
                 serviceType: response.data.serviceType || '',
                 description: response.data.description || '',
+                subdomain: response.data.subdomain || '',
                 contact: response.data.contact || {
                     primaryPhone: '',
                     whatsappNumber: '',
@@ -385,38 +393,29 @@ const Profile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Create an object to store only changed fields
+            // Only send changed fields
             const changedData = {};
-
-            // Compare each field with the original restaurant data
             Object.keys(formData).forEach(key => {
                 if (JSON.stringify(formData[key]) !== JSON.stringify(restaurant[key])) {
                     changedData[key] = formData[key];
                 }
             });
-
-            // Add image if it's changed
             if (imagePreview && imagePreview !== restaurant.images?.profileImage) {
                 changedData.images = {
                     profileImage: imagePreview
                 };
             }
-
-            // Only proceed if there are changes
             if (Object.keys(changedData).length === 0) {
                 toast.info('No changes to save');
                 setIsEditing(false);
                 return;
             }
-
             const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData);
-
-            // Update the restaurant state with the response
-            setRestaurant(prev => ({
-                ...prev,
-                ...response.data
-            }));
-
+            setRestaurant(prev => ({ ...prev, ...response.data }));
+            setFormData(prev => ({ ...prev, ...response.data }));
+            if (response.data.images?.profileImage) {
+                setImagePreview(response.data.images.profileImage);
+            }
             setIsEditing(false);
             toast.success('Profile updated successfully');
         } catch (error) {
@@ -459,12 +458,11 @@ const Profile = () => {
 
     return (
         <div className="container-fluid px-0">
-            <div style={{ marginTop: '60px' }}>
+           <div style={{ marginTop: "60px" }}>
                 <Navbar />
                 <Sidebar />
             </div>
-
-            <div className="col-12 col-lg-10 ms-auto" >
+            <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="card border-0 shadow-sm rounded-3">
@@ -473,7 +471,12 @@ const Profile = () => {
                                     <h5 className="mb-0 fw-bold">Business Profile</h5>
                                     <button
                                         className="btn btn-primary px-4"
-                                        onClick={() => setIsEditing(!isEditing)}
+                                        onClick={() => {
+                                            setIsEditing(!isEditing);
+                                            if (!imagePreview && restaurant?.images?.profileImage) {
+                                                setImagePreview(restaurant.images.profileImage);
+                                            }
+                                        }}
                                     >
                                         {isEditing ? 'Cancel' : 'Edit Profile'}
                                     </button>
@@ -531,6 +534,7 @@ const Profile = () => {
                                                                     accept="image/*"
                                                                     onChange={handleImageUpload}
                                                                 />
+                                                                <small className="text-muted">Max file size: 1MB</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -577,6 +581,22 @@ const Profile = () => {
                                                             <option value="delivery">Delivery</option>
                                                             <option value="pickup">Pickup</option>
                                                         </select>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium">Subdomain</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            name="subdomain"
+                                                            value={formData.subdomain}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Enter unique subdomain"
+                                                        />
+                                                        {formData.subdomain && (
+                                                            <div className="form-text">
+                                                                You can access your business at: <strong>{formData.subdomain}.shopatb2b.com</strong>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="col-12">
                                                         <label className="form-label fw-medium">Description <span className="text-muted">(max 100 characters)</span></label>
@@ -1030,6 +1050,10 @@ const Profile = () => {
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Service Type</h6>
                                                             <p className="mb-0">{restaurant?.serviceType}</p>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            <h6 className="text-muted mb-2 fw-medium">Subdomain</h6>
+                                                            <p className="mb-0">{restaurant?.subdomain || 'Not set'}</p>
                                                         </div>
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Description</h6>

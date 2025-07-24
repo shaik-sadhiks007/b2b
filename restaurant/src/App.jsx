@@ -18,24 +18,28 @@ import Review from './components/Review'
 import Aboutus from './components/Aboutus'
 import { MenuProvider } from './context/MenuContext'
 import PrivateRoute from './components/PrivateRoute'
+import AdminRoute from './adminComp/AdminRoute'
 import AuthProvider from './context/AuthContext'
 import Footer from './components/Footer';
 import Contactus from './components/Contactus';
-import Helpbutton from './components/Helpbutton';
-import Whatsappbutton from './components/Whatsappbutton';
+import Lowstock from './components/LowStock';
 import Summary from './components/Summary'
 import Features from './components/Features'
 import MenuEditor from './pages/MenuEditor'
 import Feedback from './pages/Feedback'
+import Business from './adminComp/Business'
+import AdminBusinessDashboard from './adminComp/AdminBusinessDashboard';
+import BusinessProfile from './adminComp/BusinessProfile'
+import AdminFeedback from './adminComp/AdminFeedback'
+
 function App() {
   return (
     <MobileMenuProvider>
       <AuthProvider>
-        <MenuProvider>
-          <Router>
+        <Router>
+          <MenuProvider>
             <ToastContainer autoClose={1000} />
-            <Helpbutton />
-            <Whatsappbutton />
+            
             <Routes>
               {/* Public Routes */}
               <Route path='/' element={<LandingPage />} />
@@ -45,6 +49,7 @@ function App() {
               <Route path='/Aboutb2b' element={<Aboutus />} />
               <Route path='/Footer' element={<Footer />} />
               <Route path='/contactus' element={<Contactus />} />
+              <Route path='/features' element={<Features />} />
               {/* Protected Routes */}
               <Route path='/orders' element={
                 <PrivateRoute>
@@ -110,10 +115,38 @@ function App() {
                 <PrivateRoute>
                   <Feedback />
                 </PrivateRoute>
+              } /> 
+              <Route path='/menu/lowstock' element={
+                <PrivateRoute>
+                  <Lowstock />
+                </PrivateRoute>
               } />
+              {/* Admin Routes */}
+              <Route path='/business' element={
+                <AdminRoute>
+                  <Business />
+                </AdminRoute>
+              } />
+              <Route path='/admin-feedback'
+                element={
+                  <AdminRoute>
+                    <AdminFeedback />
+                  </AdminRoute>
+                } />
+              <Route path='/admin-business-dashboard/:ownerId/*' element={<AdminBusinessDashboard />}>
+                <Route index element={<Summary adminMode />} />
+                <Route path='orders' element={<Orders adminMode />} />
+                <Route path='orders/item-summary' element={<ItemSummary adminMode />} />
+                <Route path='menu' element={<MenuEditor adminMode />} />
+                <Route path='summary' element={<Summary adminMode />} />
+                <Route path='instore-orders' element={<InStoreBilling adminMode />} />
+                <Route path='order-history' element={<OrderHistory adminMode />} />
+                <Route path='profile' element={<BusinessProfile adminMode />} />
+              </Route>
             </Routes>
-          </Router>
-        </MenuProvider>
+
+          </MenuProvider>
+        </Router>
       </AuthProvider>
     </MobileMenuProvider>
   )

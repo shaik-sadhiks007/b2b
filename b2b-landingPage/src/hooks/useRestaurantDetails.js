@@ -21,7 +21,7 @@ export const useRestaurantDetails = (restaurantId, menuRefresh = 0) => {
     enabled: !!restaurantId,
   });
 
-  // 👇 Add menuRefresh to the queryKey so that when it changes, query refetches
+  //  Add menuRefresh to the queryKey so that when it changes, query refetches
   const { data: menuData, isLoading: isMenuLoading, error: menuError } = useQuery({
     queryKey: ['menu', restaurantId, menuRefresh], // <- This triggers re-fetch
     queryFn: async () => {

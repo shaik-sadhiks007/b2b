@@ -13,6 +13,11 @@ const feedbackSchema = new mongoose.Schema({
     type: [String],
     validate: [arr => arr.length <= 3, 'You can upload a maximum of 3 images.']
   },
+  status: {
+    type: String,
+    enum: ['new', 'inprogress', 'resolved', 'rejected'],
+    default: 'new'
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Feedback', feedbackSchema);

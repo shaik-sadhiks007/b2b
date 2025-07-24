@@ -13,11 +13,13 @@ import {
 } from 'chart.js';
 import { AuthContext } from '../context/AuthContext';
 import { API_URL } from '../api/api';
+import { useParams } from 'react-router-dom';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const ItemSummary = () => {
+const ItemSummary = ({ adminMode = false }) => {
     const { user } = useContext(AuthContext);
+    const { ownerId } = useParams();
     const [itemSummary, setItemSummary] = useState([]);
     const [loadingSummary, setLoadingSummary] = useState(false);
     const [totalItemsToPack, setTotalItemsToPack] = useState(0);
@@ -27,7 +29,13 @@ const ItemSummary = () => {
     const fetchItemSummary = async () => {
         setLoadingSummary(true);
         try {
-            const response = await axios.get(`${API_URL}/api/orders/accepted-items-summary`);
+            let url = `${API_URL}/api/orders/accepted-items-summary`;
+            let params = {};
+            if (adminMode && ownerId) {
+                url = `${API_URL}/api/orders/admin/accepted-items-summary`;
+                params.ownerId = ownerId;
+            }
+            const response = await axios.get(url, { params });
             setItemSummary(response.data.itemDetails);
             setTotalItemsToPack(response.data.totalItems);
         } catch (err) {
@@ -40,10 +48,10 @@ const ItemSummary = () => {
     };
 
     useEffect(() => {
-        if (user) {
+        if (user && (!adminMode || (adminMode && user.role === 'admin'))) {
             fetchItemSummary();
         }
-    }, [user]);
+    }, [user, adminMode, ownerId]);
 
     if (!user) {
         return <div>Please login to access the item summary</div>;
@@ -51,18 +59,25 @@ const ItemSummary = () => {
 
     return (
         <div className="container-fluid px-0">
-            <div style={{ marginTop: '60px' }}>
-                <Navbar />
-                <Sidebar />
-            </div>
+            {
+                (user && user?.role !== 'admin') && (
+                    <div style={{ marginTop: "60px" }}>
+                        <Navbar />
+                        <Sidebar />
+                    </div>
+                )
+            }
 
-            <div className="col-lg-10 ms-auto" style={{ marginTop: '60px' }}>
+            <div
+                className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+                style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+            >
                 <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center gap-2 mb-2">
                             <h1 className="text-3xl font-bold text-gray-900">Summary</h1>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className="text-gray-400 hover:text-gray-600"
                                 onClick={() => setShowSummaryHelp(!showSummaryHelp)}
                                 aria-label="Summary help"
@@ -74,7 +89,7 @@ const ItemSummary = () => {
                                     <p className="text-sm text-gray-700">
                                         This summary displays the breakdown of items from accepted orders that need to be packed. The pie chart shows the distribution of different items and their quantities.
                                     </p>
-                                    <button 
+                                    <button
                                         type="button"
                                         className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                                         onClick={() => setShowSummaryHelp(false)}

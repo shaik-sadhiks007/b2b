@@ -8,8 +8,11 @@ import io from 'socket.io-client';
 import { API_URL } from '../api/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useOutletContext } from 'react-router-dom';
 
 const Navbar = () => {
+    const outletContext = useOutletContext();
+    const {business} = outletContext || {}
     const [isOnline, setIsOnline] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const { user, handleLogout } = useContext(AuthContext);
@@ -19,7 +22,7 @@ const Navbar = () => {
     const [cancelledOrders, setCancelledOrders] = useState([]);
     const notificationsRef = useRef(null);
     const socketRef = useRef(null);
-
+    
     // Close notifications when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -200,12 +203,22 @@ const Navbar = () => {
             <div className="col-md-12 d-flex justify-content-between align-items-center py-2 px-4">
                 {/* Left side - logo and menu */}
                 <div className="d-flex align-items-center">
-                    <button
-                        className="btn btn-link text-dark p-0 me-3 d-lg-none"
-                        onClick={() => setIsMobileMenuOpen(true)}
-                    >
-                        <i className="bi bi-list fs-4"></i>
-                    </button>
+                    {user && user.role !== 'admin' && (
+                        <button
+                            className="btn btn-link text-dark p-0 me-3 d-lg-none"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <i className="bi bi-list fs-4"></i>
+                        </button>
+                    )}
+                    {user && user.role === 'admin' && (
+                        <button
+                            className="btn btn-link text-dark p-0 me-3 d-lg-none"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <i className="bi bi-list fs-4"></i>
+                        </button>
+                    )}
                     <div className="d-flex flex-column">
                         <Link to="/">
                             <img
@@ -332,6 +345,18 @@ const Navbar = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* Admin: Show restaurant name and category */}
+                    {user && user.role === 'admin' && business && (
+                        <div className="d-flex flex-column align-items-end me-3">
+                            {business.restaurantName && (
+                                <span className="fw-bold">{business.restaurantName}</span>
+                            )}
+                            {business.category && (
+                                <span className="text-muted small text-capitalize">{business.category}</span>
+                            )}
+                        </div>
+                    )}
 
                     {/* User dropdown */}
                     <div className="d-flex align-items-center gap-2">

@@ -31,4 +31,36 @@ const submitFeedback = async (req, res) => {
   }
 };
 
-module.exports = { submitFeedback };
+// GET /api/feedback (admin)
+const getAllFeedback = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    res.json(feedbacks);
+  } catch (error) {
+    console.error('[feedbackController.js][getAllFeedback]', error);
+    res.status(500).json({ message: 'Failed to fetch feedback.' });
+  }
+};
+
+// PATCH /api/feedback/:id/status
+const updateFeedbackStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowed = ['new', 'inprogress', 'resolved', 'rejected'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const feedback = await Feedback.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+    if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update status' });
+  }
+};
+
+module.exports = { submitFeedback, getAllFeedback, updateFeedbackStatus };

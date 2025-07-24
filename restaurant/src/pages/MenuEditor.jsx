@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
@@ -7,6 +7,7 @@ import BulkAddModal from "./BulkAddModal";
 import ImportExcelModal from "./ImportExcelModal";
 import { MenuContext } from "../context/MenuContext";
 import ConfirmModal from "../reusable/ConfirmModal";
+import { AuthContext } from "../context/AuthContext";
 
 // Veg/NonVeg icons for menu items
 const VegIcon = () => (
@@ -33,6 +34,7 @@ function MenuEditor() {
     renameSubcategory,
     deleteCategory,
   } = useContext(MenuContext);
+  const { user } = useContext(AuthContext);
 
   // State for selected category and subcategory (by name)
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -90,7 +92,7 @@ function MenuEditor() {
   };
 
   // Set default selected category and subcategory on load
-  React.useEffect(() => {
+  useEffect(() => {
     if (menuItems.length > 0 && !selectedCategory) {
       setSelectedCategory(menuItems[0].category);
       if (menuItems[0].subcategories.length > 0) {
@@ -104,7 +106,7 @@ function MenuEditor() {
   }, [menuItems, selectedCategory]);
 
   // When selectedCategory changes, reset selectedSubcategory
-  React.useEffect(() => {
+  useEffect(() => {
     const catObj = menuItems.find((cat) => cat.category === selectedCategory);
     if (catObj && catObj.subcategories.length > 0) {
       setSelectedSubcategory(catObj.subcategories[0].subcategory);
@@ -299,11 +301,20 @@ function MenuEditor() {
 
   return (
     <div className="container-fluid px-0">
-      <div style={{ marginTop: "60px" }}>
-        <Navbar />
-        <Sidebar />
-      </div>
-      <div className="col-lg-10 ms-auto" style={{ marginTop: "60px" }}>
+
+      {
+        (user && user?.role !== 'admin') && (
+          <div style={{ marginTop: "60px" }}>
+            <Navbar />
+            <Sidebar />
+          </div>
+        )
+      }
+
+      <div
+        className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+        style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+      >
         <div className="p-4">
           <style>{`
             @media (max-width: 640px) {
@@ -450,8 +461,8 @@ function MenuEditor() {
                   Categories
                   <div className="w-8 h-0.5 bg-gray-800 mt-1"></div>
                 </h2>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="text-gray-400 hover:text-gray-600"
                   onClick={() => setShowCategoryHelp(!showCategoryHelp)}
                   aria-label="Category help"
@@ -463,7 +474,7 @@ function MenuEditor() {
                     <p className="text-sm text-gray-700">
                       Here is the list of categories. To create a new category, go to "Add New Item" and enter a new category name in the category field when adding an item, if no category is given item falls under uncategorized .
                     </p>
-                    <button 
+                    <button
                       type="button"
                       className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowCategoryHelp(false)}
@@ -479,11 +490,10 @@ function MenuEditor() {
                 {menuItems.map((categoryObj) => (
                   <div
                     key={categoryObj.category}
-                    className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${
-                      selectedCategory === categoryObj.category
-                        ? "font-bold text-orange-500"
-                        : ""
-                    }`}
+                    className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${selectedCategory === categoryObj.category
+                      ? "font-bold text-orange-500"
+                      : ""
+                      }`}
                     onClick={() => setSelectedCategory(categoryObj.category)}
                   >
                     <span>{categoryObj.category}</span>
@@ -520,11 +530,10 @@ function MenuEditor() {
                     className="flex items-center gap-2 w-full"
                   >
                     <button
-                      className={`mobile-category-btn${
-                        selectedCategory === categoryObj.category
-                          ? " selected"
-                          : ""
-                      }`}
+                      className={`mobile-category-btn${selectedCategory === categoryObj.category
+                        ? " selected"
+                        : ""
+                        }`}
                       onClick={() => setSelectedCategory(categoryObj.category)}
                     >
                       {categoryObj.category}
@@ -588,21 +597,21 @@ function MenuEditor() {
                         subcategories.length === 1 &&
                         subcategories[0].subcategory === "general"
                       ) && (
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-lg font-semibold">
-                            Subcategories
-                          </span>
-                          <button
-                            className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
-                            onClick={() =>
-                              handleOpenModal(selectedCategory, "", null)
-                            }
-                          >
-                            <Plus size={20} />
-                            Add Subcategory
-                          </button>
-                        </div>
-                      )}
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-lg font-semibold">
+                              Subcategories
+                            </span>
+                            <button
+                              className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
+                              onClick={() =>
+                                handleOpenModal(selectedCategory, "", null)
+                              }
+                            >
+                              <Plus size={20} />
+                              Add Subcategory
+                            </button>
+                          </div>
+                        )}
                       <div className="flex flex-column gap-4">
                         {/* Bulk Delete Controls */}
                         {bulkDeleteMode && (
@@ -665,25 +674,24 @@ function MenuEditor() {
                         {/* Filter subcategories based on search and out-of-stock */}
                         {(searchTerm || showOutOfStock
                           ? subcategories.filter((subcat) =>
-                              subcat.items.some(
-                                (item) =>
-                                  item.name
-                                    .toLowerCase()
-                                    .includes(searchTerm.toLowerCase()) &&
-                                  (!showOutOfStock || item.inStock === false)
-                              )
+                            subcat.items.some(
+                              (item) =>
+                                item.name
+                                  .toLowerCase()
+                                  .includes(searchTerm.toLowerCase()) &&
+                                (!showOutOfStock || item.inStock === false)
                             )
+                          )
                           : subcategories
                         ).map((subcat) => (
                           <div key={subcat.subcategory}>
                             <div
-                              className={`flex items-center justify-between gap-4 px-3 py-3 rounded-md border ${
-                                bulkDeleteMode
-                                  ? selectedSubcategories[subcat.subcategory]
-                                    ? "border-red-300 bg-red-50"
-                                    : "border-gray-200 bg-white"
+                              className={`flex items-center justify-between gap-4 px-3 py-3 rounded-md border ${bulkDeleteMode
+                                ? selectedSubcategories[subcat.subcategory]
+                                  ? "border-red-300 bg-red-50"
                                   : "border-gray-200 bg-white"
-                              }`}
+                                : "border-gray-200 bg-white"
+                                }`}
                             >
                               <div className="flex items-center gap-3">
                                 {/* Subcategory checkbox - only show in bulk delete mode */}
@@ -692,7 +700,7 @@ function MenuEditor() {
                                     type="checkbox"
                                     checked={
                                       selectedSubcategories[
-                                        subcat.subcategory
+                                      subcat.subcategory
                                       ] || false
                                     }
                                     onChange={(e) =>
@@ -796,22 +804,22 @@ function MenuEditor() {
                                           step="0.01"
                                         />
                                       </div>
-                                      
+
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1"
-                                        htmlFor="quantity-input">
-                                        Quantity <span className="text-red-500">*</span>
-                                      </label>
-                                      <input
-                                        type="number"
-                                        name="quantity"
-                                        value={newItemData.quantity}
-                                        onChange={handleAccordionInputChange}
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                        required
-                                        min="1"
-                                        step="1"
-                                      />
+                                          htmlFor="quantity-input">
+                                          Quantity <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                          type="number"
+                                          name="quantity"
+                                          value={newItemData.quantity}
+                                          onChange={handleAccordionInputChange}
+                                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                          required
+                                          min="1"
+                                          step="1"
+                                        />
                                       </div>
                                       <div className="flex items-center gap-4">
                                         <div>
@@ -892,160 +900,157 @@ function MenuEditor() {
                             {(expandedSubcategories[subcat.subcategory] ||
                               searchTerm ||
                               showOutOfStock) && (
-                              <div className="space-y-8">
-                                <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
-                                  {subcat.items
-                                    .filter(
-                                      (item) =>
-                                        item.name
-                                          .toLowerCase()
-                                          .includes(searchTerm.toLowerCase()) &&
-                                        (!showOutOfStock ||
-                                          item.inStock === false)
-                                    )
-                                    .map((item, index) => (
-                                      <div
-                                        key={item._id || index}
-                                        className={`flex items-center justify-between rounded-md p-3 ${
-                                          bulkDeleteMode &&
-                                          selectedItems[item._id]
+                                <div className="space-y-8">
+                                  <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
+                                    {subcat.items
+                                      .filter(
+                                        (item) =>
+                                          item.name
+                                            .toLowerCase()
+                                            .includes(searchTerm.toLowerCase()) &&
+                                          (!showOutOfStock ||
+                                            item.inStock === false)
+                                      )
+                                      .map((item, index) => (
+                                        <div
+                                          key={item._id || index}
+                                          className={`flex items-center justify-between rounded-md p-3 ${bulkDeleteMode &&
+                                            selectedItems[item._id]
                                             ? "bg-red-50 border border-red-200"
                                             : "bg-white"
-                                        }`}
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          {/* Item checkbox - only show in bulk delete mode */}
-                                          {bulkDeleteMode && (
-                                            <input
-                                              type="checkbox"
-                                              checked={
-                                                selectedItems[item._id] || false
-                                              }
-                                              onChange={(e) =>
-                                                handleItemSelection(
-                                                  item._id,
-                                                  e.target.checked
-                                                )
-                                              }
-                                              className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
-                                            />
-                                          )}
-                                          {/* Veg/Non-Veg Icon */}
-                                          <span
-                                            title={
-                                              item.foodType === "veg"
-                                                ? "Veg"
-                                                : "Non-Veg"
-                                            }
-                                            className="inline-block align-middle"
-                                          >
-                                            {item.foodType === "veg" ? (
-                                              <VegIcon />
-                                            ) : (
-                                              <NonVegIcon />
-                                            )}
-                                          </span>
-                                          <div>
-                                            <div className="font-medium text-gray-800">
-                                              {item.name}
-                                            </div>
-                                            <div className="flex gap-4 text-sm text-gray-600">
-                                              <span>₹{item.price || item.totalPrice}</span>
-                                              <span>Qty: {item.quantity}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                          {/* InStock Toggle */}
-                                          <label className="flex items-center cursor-pointer">
-                                            <div className="relative">
+                                            }`}
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            {/* Item checkbox - only show in bulk delete mode */}
+                                            {bulkDeleteMode && (
                                               <input
                                                 type="checkbox"
-                                                checked={item.inStock}
-                                                onChange={() =>
-                                                  updateMenuItem(item._id, {
-                                                    ...item,
-                                                    inStock: !item.inStock,
-                                                  })
+                                                checked={
+                                                  selectedItems[item._id] || false
                                                 }
-                                                className="sr-only"
+                                                onChange={(e) =>
+                                                  handleItemSelection(
+                                                    item._id,
+                                                    e.target.checked
+                                                  )
+                                                }
+                                                className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
                                               />
-                                              <div
-                                                className={`block w-10 h-6 rounded-full ${
-                                                  item.inStock
+                                            )}
+                                            {/* Veg/Non-Veg Icon */}
+                                            <span
+                                              title={
+                                                item.foodType === "veg"
+                                                  ? "Veg"
+                                                  : "Non-Veg"
+                                              }
+                                              className="inline-block align-middle"
+                                            >
+                                              {item.foodType === "veg" ? (
+                                                <VegIcon />
+                                              ) : (
+                                                <NonVegIcon />
+                                              )}
+                                            </span>
+                                            <div>
+                                              <div className="font-medium text-gray-800">
+                                                {item.name}
+                                              </div>
+                                              <div className="flex gap-4 text-sm text-gray-600">
+                                                <span>₹{item.price || item.totalPrice}</span>
+                                                <span>Qty: {item.quantity}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center space-x-4">
+                                            {/* InStock Toggle */}
+                                            <label className="flex items-center cursor-pointer">
+                                              <div className="relative">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={item.inStock}
+                                                  onChange={() =>
+                                                    updateMenuItem(item._id, {
+                                                      ...item,
+                                                      inStock: !item.inStock,
+                                                    })
+                                                  }
+                                                  className="sr-only"
+                                                />
+                                                <div
+                                                  className={`block w-10 h-6 rounded-full ${item.inStock
                                                     ? "bg-green-500"
                                                     : "bg-red-500"
-                                                }`}
-                                              ></div>
-                                              <div
-                                                className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-                                                  item.inStock
+                                                    }`}
+                                                ></div>
+                                                <div
+                                                  className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock
                                                     ? "translate-x-4"
                                                     : ""
-                                                }`}
-                                              ></div>
-                                            </div>
-                                          </label>
-                                          {/* Edit/Delete - Hide in bulk delete mode */}
-                                          {/* Mobile: show only icons, Desktop: show text */}
-                                          {!bulkDeleteMode && (
-                                            <>
-                                              <span className="hidden sm:inline">
-                                                <button
-                                                  className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                  onClick={() =>
-                                                    handleOpenModal(
-                                                      selectedCategory,
-                                                      selectedSubcategory,
-                                                      item
-                                                    )
-                                                  }
-                                                >
-                                                  Edit
-                                                </button>
-                                                <button
-                                                  className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                  onClick={() => {
-                                                    setItemToDelete(item);
-                                                    setDeleteConfirmOpen(true);
-                                                  }}
-                                                >
-                                                  Delete
-                                                </button>
-                                              </span>
-                                              <span className="sm:hidden flex gap-2">
-                                                <button
-                                                  className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
-                                                  onClick={() =>
-                                                    handleOpenModal(
-                                                      selectedCategory,
-                                                      selectedSubcategory,
-                                                      item
-                                                    )
-                                                  }
-                                                  title="Edit"
-                                                >
-                                                  <Pencil size={18} />
-                                                </button>
-                                                <button
-                                                  className="text-red-600 hover:text-red-800 p-2 rounded-full"
-                                                  onClick={() => {
-                                                    setItemToDelete(item);
-                                                    setDeleteConfirmOpen(true);
-                                                  }}
-                                                  title="Delete"
-                                                >
-                                                  <Trash2 size={18} />
-                                                </button>
-                                              </span>
-                                            </>
-                                          )}
+                                                    }`}
+                                                ></div>
+                                              </div>
+                                            </label>
+                                            {/* Edit/Delete - Hide in bulk delete mode */}
+                                            {/* Mobile: show only icons, Desktop: show text */}
+                                            {!bulkDeleteMode && (
+                                              <>
+                                                <span className="hidden sm:inline">
+                                                  <button
+                                                    className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                    onClick={() =>
+                                                      handleOpenModal(
+                                                        selectedCategory,
+                                                        selectedSubcategory,
+                                                        item
+                                                      )
+                                                    }
+                                                  >
+                                                    Edit
+                                                  </button>
+                                                  <button
+                                                    className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                    onClick={() => {
+                                                      setItemToDelete(item);
+                                                      setDeleteConfirmOpen(true);
+                                                    }}
+                                                  >
+                                                    Delete
+                                                  </button>
+                                                </span>
+                                                <span className="sm:hidden flex gap-2">
+                                                  <button
+                                                    className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
+                                                    onClick={() =>
+                                                      handleOpenModal(
+                                                        selectedCategory,
+                                                        selectedSubcategory,
+                                                        item
+                                                      )
+                                                    }
+                                                    title="Edit"
+                                                  >
+                                                    <Pencil size={18} />
+                                                  </button>
+                                                  <button
+                                                    className="text-red-600 hover:text-red-800 p-2 rounded-full"
+                                                    onClick={() => {
+                                                      setItemToDelete(item);
+                                                      setDeleteConfirmOpen(true);
+                                                    }}
+                                                    title="Delete"
+                                                  >
+                                                    <Trash2 size={18} />
+                                                  </button>
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
                           </div>
                         ))}
                       </div>

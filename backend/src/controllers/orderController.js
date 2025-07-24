@@ -698,3 +698,118 @@ exports.getOrdersSummary = async (req, res) => {
     }
 };
 
+// Admin: Get order summary for a business by ownerId
+exports.getOrdersSummaryByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business; // for reuse of existing logic
+        return exports.getOrdersSummary({ ...req, restaurant: business }, res);
+    } catch (error) {
+        console.error('[orderController.js][getOrdersSummaryByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get order summary', message: error.message });
+    }
+};
+
+// Admin: Get order counts for a business by ownerId
+exports.getOrderCountsByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        return exports.getRestaurantOrderCounts({ ...req, restaurant: business }, res);
+    } catch (error) {
+        console.error('[orderController.js][getOrderCountsByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get order counts', message: error.message });
+    }
+};
+
+// Admin: Get order history for a business by ownerId
+exports.getOrderHistoryByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        return exports.orderHistory({ ...req, restaurant: business }, res);
+    } catch (error) {
+        console.error('[orderController.js][getOrderHistoryByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get order history', message: error.message });
+    }
+};
+
+// Admin: Get orders by status for a business by ownerId
+exports.getRestaurantOrderStatusByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        const { status } = req.params;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        return exports.getRestaurantOrderStatus({ ...req, restaurant: business, params: { status } }, res);
+    } catch (error) {
+        console.error('[orderController.js][getRestaurantOrderStatusByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get orders by status', message: error.message });
+    }
+};
+
+// Admin: Update order status for a business by ownerId
+exports.postRestaurantOrderStatusByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        const { orderId } = req.params;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        return exports.postRestaurantOrderStatus({ ...req, restaurant: business, params: { orderId } }, res);
+    } catch (error) {
+        console.error('[orderController.js][postRestaurantOrderStatusByAdmin]', error);
+        res.status(500).json({ error: 'Failed to update order status', message: error.message });
+    }
+};
+
+// Admin: Get accepted items summary for a business by ownerId
+exports.getAcceptedItemsSummaryByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        return exports.getAcceptedItemsSummary({ ...req, restaurant: business }, res);
+    } catch (error) {
+        console.error('[orderController.js][getAcceptedItemsSummaryByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get accepted items summary', message: error.message });
+    }
+};
+
+// Admin: Place in-store order for a business by ownerId
+exports.postInstoreOrderByAdmin = async (req, res) => {
+    try {
+        const { ownerId } = req.query;
+        if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+        const Business = require('../models/businessModel');
+        const business = await Business.findOne({ owner: ownerId });
+        if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+        req.restaurant = business;
+        // Reuse the existing instoreOrder logic
+        return exports.instoreOrder({ ...req, restaurant: business }, res);
+    } catch (error) {
+        console.error('[orderController.js][postInstoreOrderByAdmin]', error);
+        res.status(500).json({ error: 'Failed to place in-store order', message: error.message });
+    }
+};
+

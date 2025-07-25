@@ -15,6 +15,7 @@ export const menuItems = [
     { icon: "bi-list", label: "Menu", path: "/menu", isNew: true,
         children: [
             { label: "Low Stock", path: "/menu/lowstock" },
+            { label: "Expiry check", path: "/menu/expiry" },
         ]
      },
     { icon: "bi-bar-chart", label: "Dashboard", path: "/summary" },

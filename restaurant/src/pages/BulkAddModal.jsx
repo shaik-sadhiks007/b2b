@@ -13,16 +13,16 @@ const BulkAddModal = ({ open, onClose, onBulkAdd, preSelectedCategory = '', preS
 
     // Define the default header order as a constant
     const DEFAULT_HEADER = [
-        'Name', 'Price', 'Quantity', 'Category', 'Subcategory', 'Food Type', 
+        'Name', 'Price', 'Quantity', 'Unit', 'Category', 'Subcategory', 'Food Type', 
         'Description', 'In Stock', 'Expiry Date', 'Storage Zone', 'Rack', 
         'Shelf', 'Bin', 'Batch Number', 'Requires Prescription'
     ];
 
     // Sample data format for reference
     const sampleData = `${DEFAULT_HEADER.join(',')}
-Paracetamol 500mg,5.00,100,Medicines,Tablets,veg,Pain reliever,true,2024-12-31,general,A,2,3,BX2023-045,false
-Amoxicillin 250mg,8.50,50,Medicines,Capsules,veg,Antibiotic,true,2024-10-15,general,B,1,5,AMX2023-102,true
-Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06-30,refrigerated,C,1,1,INS2024-001,true`;
+Paracetamol 500mg,5.00,100,piece,Medicines,Tablets,veg,Pain reliever,true,2024-12-31,general,A,2,3,BX2023-045,false
+Amoxicillin 250mg,8.50,50,box,Medicines,Capsules,veg,Antibiotic,true,2024-10-15,general,B,1,5,AMX2023-102,true
+Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,2024-06-30,refrigerated,C,1,1,INS2024-001,true`;
 
     // Parse CSV to items whenever bulkData changes
     useEffect(() => {
@@ -33,11 +33,12 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                 {
                     name: '',
                     totalPrice: '',
+                    quantity: null,
+                    unit: 'piece',
                     category: category || '',
                     subcategory: subcategory || '',
                     foodType: 'veg',
                     description: '',
-                    quantity: null,
                     inStock: true,
                     expiryDate: '',
                     storageZone: 'general',
@@ -72,11 +73,12 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
             {
                 name: '',
                 totalPrice: '',
-                category: category || 'uncategorized',
-                subcategory: subcategory || 'general',
+                quantity: null,
+                unit: 'piece',
+                category: category || '',
+                subcategory: subcategory || '',
                 foodType: 'veg',
                 description: '',
-                quantity: null,
                 inStock: true,
                 expiryDate: '',
                 storageZone: 'general',
@@ -105,6 +107,7 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
             // Add category and subcategory to items if not specified
             const processedItems = parsedItems.map(item => ({
                 ...item,
+                unit: item.unit || 'piece',
                 category: item.category || category || 'uncategorized',
                 subcategory: item.subcategory || subcategory || 'general',
                 foodType: item.foodType || 'veg',
@@ -162,9 +165,10 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
             let item = {
                 name: '',
                 totalPrice: '',
+                quantity: null,
+                unit: 'piece',
                 category: '',
                 subcategory: '',
-                quantity: null,
                 foodType: 'veg',
                 description: '',
                 inStock: true,
@@ -189,15 +193,18 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                         case 'totalprice':
                             item.totalPrice = value;
                             break;
+                        case 'quantity':
+                        case 'qty':
+                            item.quantity = value ? parseInt(value) : null;
+                            break;
+                        case 'unit':
+                            item.unit = value || 'piece';
+                            break;
                         case 'category':
                             item.category = value;
                             break;
                         case 'subcategory':
                             item.subcategory = value;
-                            break;
-                        case 'quantity':
-                        case 'qty':
-                            item.quantity = value ? parseInt(value) : null;
                             break;
                         case 'food type':
                         case 'foodtype':
@@ -245,18 +252,19 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                     name: values[0] || '',
                     totalPrice: values[1] || '',
                     quantity: values[2] ? parseInt(values[2]) : null,
-                    category: values[3] || '',
-                    subcategory: values[4] || '',
-                    foodType: (values[5] || 'veg').toLowerCase(),
-                    description: values[6] || '',
-                    inStock: typeof values[7] !== 'undefined' ? (values[7].toLowerCase() === 'true' || values[7].toLowerCase() === 'yes' || values[7] === '1') : true,
-                    expiryDate: values[8] || '',
-                    storageZone: values[9] || 'general',
-                    rack: values[10] || '',
-                    shelf: values[11] || '',
-                    bin: values[12] || '',
-                    batchNumber: values[13] || '',
-                    requiresPrescription: typeof values[14] !== 'undefined' ? (values[14].toLowerCase() === 'true' || values[14].toLowerCase() === 'yes' || values[14] === '1') : false
+                    unit: values[3] || 'piece',
+                    category: values[4] || '',
+                    subcategory: values[5] || '',
+                    foodType: (values[6] || 'veg').toLowerCase(),
+                    description: values[7] || '',
+                    inStock: typeof values[8] !== 'undefined' ? (values[8].toLowerCase() === 'true' || values[8].toLowerCase() === 'yes' || values[8] === '1') : true,
+                    expiryDate: values[9] || '',
+                    storageZone: values[10] || 'general',
+                    rack: values[11] || '',
+                    shelf: values[12] || '',
+                    bin: values[13] || '',
+                    batchNumber: values[14] || '',
+                    requiresPrescription: typeof values[15] !== 'undefined' ? (values[15].toLowerCase() === 'true' || values[15].toLowerCase() === 'yes' || values[15] === '1') : false
                 };
             }
             if (item.name && item.totalPrice) {
@@ -278,11 +286,12 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
             {
                 name: '',
                 totalPrice: '',
+                quantity: null,
+                unit: 'piece',
                 category: category || '',
                 subcategory: subcategory || '',
                 foodType: 'veg',
                 description: '',
-                quantity: null,
                 inStock: true,
                 expiryDate: '',
                 storageZone: 'general',
@@ -300,7 +309,7 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'medical_inventory_template.csv';
+        a.download = 'inventory_template.csv';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -320,7 +329,7 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                     <X />
                 </button>
                 
-                <h2 className="text-2xl font-semibold mb-6">Bulk Add Medical Inventory</h2>
+                <h2 className="text-2xl font-semibold mb-6">Bulk Add Inventory</h2>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Instructions Panel */}
@@ -331,7 +340,7 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                                 <p>• Enter items in CSV format</p>
                                 <p>• First row should be headers</p>
                                 <p>• <strong>Required fields: Name, Price, Quantity</strong></p>
-                                <p>• Optional fields: Category, Subcategory, Food Type, Description, In Stock, Expiry Date</p>
+                                <p>• Optional fields: Unit, Category, Subcategory, Food Type, Description, In Stock, Expiry Date</p>
                                 <p>• Storage Zone: general, refrigerated, controlled, hazardous</p>
                                 <p>• Rack/Shelf/Bin: Location identifiers</p>
                                 <p>• Batch Number: Medication batch ID</p>
@@ -407,6 +416,7 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                                                 <th className="border px-2 py-1">Name*</th>
                                                 <th className="border px-2 py-1">Price*</th>
                                                 <th className="border px-2 py-1">Qty*</th>
+                                                <th className="border px-2 py-1">Unit</th>
                                                 <th className="border px-2 py-1">Category</th>
                                                 <th className="border px-2 py-1">Subcat</th>
                                                 <th className="border px-2 py-1">Type</th>
@@ -435,6 +445,22 @@ Insulin Vial,450.00,20,Medicines,Injections,veg,Diabetes medication,true,2024-06
                                                     </td>
                                                     <td className="border px-2 py-1">
                                                         <input type="number" value={item.quantity || ''} onChange={e => handleItemChange(idx, 'quantity', e.target.value)} className="w-12 border rounded px-1 py-0.5" required min="1" />
+                                                    </td>
+                                                    <td className="border px-2 py-1">
+                                                        <select 
+                                                            value={item.unit || 'piece'} 
+                                                            onChange={e => handleItemChange(idx, 'unit', e.target.value)}
+                                                            className="w-16 border rounded px-1 py-0.5"
+                                                        >
+                                                            <option value="kg">kg</option>
+                                                            <option value="ltr">ltr</option>
+                                                            <option value="piece">piece</option>
+                                                            <option value="box">box</option>
+                                                            <option value="plate">plate</option>
+                                                            <option value="bottle">bottle</option>
+                                                            <option value="cup">cup</option>
+                                                            <option value="packet">packet</option>
+                                                        </select>
                                                     </td>
                                                     <td className="border px-2 py-1">
                                                         <input type="text" value={item.category || ''} onChange={e => handleItemChange(idx, 'category', e.target.value)} className="w-20 border rounded px-1 py-0.5" />

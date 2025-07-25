@@ -49,6 +49,11 @@ const menuItemSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    unit: {
+        type: String,
+        enum: ['kg', 'ltr', 'piece', 'box', 'plate', 'bottle', 'cup', 'packet'],
+        default: 'piece'
+    },
     // packagingCharges: {
     //     type: String,
     // },
@@ -71,16 +76,17 @@ const menuItemSchema = new mongoose.Schema({
         enum: ['general', 'refrigerated', 'controlled', 'hazardous'],
         default: 'general'
     },
-     rack: {
+    rack: {
         type: String,
         uppercase: true,
         trim: true,
-        validate: {
-            validator: function(v) {
-                return /^[A-Z0-9]{1,5}$/.test(v); // Allows formats like A, B12, C-1
-            },
-            message: props => `${props.value} is not a valid rack identifier!`
-        }
+        required: false, // Add this
+  validate: {
+    validator: function(v) {
+      return !v || /^[A-Z0-9-]{1,5}$/.test(v); // Allow empty or valid format
+    },
+    message: props => `${props.value} is not a valid rack identifier!`
+  }
     },
     shelf: {
         type: String,

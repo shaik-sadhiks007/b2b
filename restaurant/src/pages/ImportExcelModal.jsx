@@ -72,6 +72,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         name: rowData.name || '',
                         price: rowData.price || 0,
                         quantity: rowData.quantity || '',
+                        unit: rowData.unit || 'piece',
                         category: rowData.category || '',
                         subcategory: rowData.subcategory || 'general',
                         description: rowData.description || '',
@@ -117,6 +118,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 name: item.name,
                 totalPrice: parseFloat(item.price) || 0,
                 quantity: parseInt(item.quantity) || 0,
+                unit: item.unit || 'piece',
                 category: item.category,
                 subcategory: item.subcategory,
                 description: item.description,
@@ -158,22 +160,22 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
     const downloadTemplate = () => {
         const templateData = [
             [
-                'name', 'price', 'quantity', 'category', 'subcategory', 'description',
+                'name', 'price', 'quantity', 'unit', 'category', 'subcategory', 'description',
                 'foodType', 'inStock', 'expiryDate', 'storageZone', 'rack',
                 'shelf', 'bin', 'batchNumber', 'requiresPrescription'
             ],
             [
-                'Paracetamol 500mg', '5.00', '100', 'Medicines', 'Tablets', 'Pain reliever',
+                'Paracetamol 500mg', '5.00', '100', 'piece', 'Medicines', 'Tablets', 'Pain reliever',
                 'veg', 'true', '2024-12-31', 'general', 'A',
                 '2', '3', 'BATCH001', 'false'
             ],
             [
-                'Amoxicillin 250mg', '8.50', '50', 'Medicines', 'Capsules', 'Antibiotic',
+                'Amoxicillin 250mg', '8.50', '50', 'box', 'Medicines', 'Capsules', 'Antibiotic',
                 'veg', 'true', '2024-10-15', 'general', 'B',
                 '1', '5', 'BATCH002', 'true'
             ],
             [
-                'Insulin Vial', '450.00', '20', 'Medicines', 'Injections', 'Diabetes medication',
+                'Insulin Vial', '450.00', '20', 'bottle', 'Medicines', 'Injections', 'Diabetes medication',
                 'veg', 'true', '2024-06-30', 'refrigerated', 'C',
                 '1', '1', 'BATCH003', 'true'
             ]
@@ -181,7 +183,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
 
         const ws = XLSX.utils.aoa_to_sheet(templateData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Medical Inventory');
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
         XLSX.writeFile(wb, 'inventory_template.xlsx');
     };
 
@@ -193,7 +195,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                         <FileSpreadsheet className="w-6 h-6 text-blue-600" />
-                        <h2 className="text-xl font-semibold text-gray-800">Import Medical Inventory</h2>
+                        <h2 className="text-xl font-semibold text-gray-800">Import Inventory</h2>
                     </div>
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
                         <X size={24} />
@@ -206,6 +208,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         <ul className="text-sm text-blue-700 space-y-1">
                             <li>• Upload Excel (.xlsx, .xls) or CSV (.csv) file</li>
                             <li>• Required columns: name, price, quantity</li>
+                            <li>• Unit options: kg, ltr,  piece, box, bottle, packet, etc.</li>
                             <li>• Medical fields: storageZone, rack, shelf, bin, batchNumber, requiresPrescription</li>
                             <li>• storageZone options: general, refrigerated, controlled, hazardous</li>
                         </ul>
@@ -265,6 +268,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Storage</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
@@ -278,6 +282,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">₹{item.price}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unit}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm">
                                                     <span className={`px-2 py-1 rounded-full text-xs ${
                                                         item.storageZone === 'refrigerated' ? 'bg-blue-100 text-blue-800' :

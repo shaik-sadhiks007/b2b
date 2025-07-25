@@ -175,14 +175,38 @@ const OrderDetails = () => {
         setShowShareOptions(false);
     };
 
+    const getOrderStatuses = (orderType) => {
+        if (!orderType) return [];
+        if (orderType === 'delivery' || orderType === 'DELIVERY') {
+            return [
+                { status: 'ORDER_PLACED', label: 'Order Placed', icon: ShoppingBag },
+                { status: 'ACCEPTED', label: 'Accepted', icon: Package },
+                { status: 'ORDER_DELIVERY_READY', label: 'Delivery Ready', icon: Truck },
+                { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: Truck },
+                { status: 'ORDER_DELIVERED', label: 'Delivered', icon: CheckCircle },
+            ];
+        } else {
+            return [
+                { status: 'ORDER_PLACED', label: 'Order Placed', icon: ShoppingBag },
+                { status: 'ACCEPTED', label: 'Accepted', icon: Package },
+                { status: 'ORDER_PICKUP_READY', label: 'Pickup Ready', icon: Truck },
+                { status: 'ORDER_PICKED_UP', label: 'Picked Up', icon: CheckCircle },
+            ];
+        }
+    };
+
     const getStatusIcon = (status) => {
         switch (status) {
             case 'ORDER_PLACED':
                 return <ShoppingBag className="h-5 w-5 text-blue-500" />;
             case 'ACCEPTED':
                 return <Package className="h-5 w-5 text-green-500" />;
-            case 'ORDER_READY':
+            case 'ORDER_DELIVERY_READY':
                 return <Truck className="h-5 w-5 text-green-500" />;
+            case 'ORDER_PICKUP_READY':
+                return <Truck className="h-5 w-5 text-green-500" />;
+            case 'OUT_FOR_DELIVERY':
+                return <Truck className="h-5 w-5 text-orange-500" />;
             case 'ORDER_DELIVERED':
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             case 'ORDER_PICKED_UP':
@@ -200,10 +224,12 @@ const OrderDetails = () => {
                 return 'bg-blue-100 text-blue-800';
             case 'ACCEPTED':
                 return 'bg-green-100 text-green-800';
-            case 'ORDER_READY':
+            case 'ORDER_DELIVERY_READY':
+            case 'ORDER_PICKUP_READY':
                 return 'bg-green-100 text-green-800';
+            case 'OUT_FOR_DELIVERY':
+                return 'bg-orange-100 text-orange-800';
             case 'ORDER_DELIVERED':
-                return 'bg-green-100 text-green-800';
             case 'ORDER_PICKED_UP':
                 return 'bg-green-100 text-green-800';
             case 'CANCELLED':
@@ -216,22 +242,6 @@ const OrderDetails = () => {
     const formatAddress = (address) => {
         if (!address) return 'No address provided';
         return `${address.street}, ${address.city}, ${address.state} ${address.pincode}, ${address.country}`;
-    };
-
-    const getOrderStatuses = (orderType) => {
-        const baseStatuses = [
-            { status: 'ORDER_PLACED', label: 'Order Placed', icon: ShoppingBag },
-            { status: 'ACCEPTED', label: 'Accepted', icon: Package },
-            { status: 'ORDER_READY', label: 'Ready', icon: Truck }
-        ];
-
-        if (orderType === 'DELIVERY') {
-            baseStatuses.push({ status: 'ORDER_DELIVERED', label: 'Delivered', icon: CheckCircle });
-        } else {
-            baseStatuses.push({ status: 'ORDER_PICKED_UP', label: 'Picked Up', icon: CheckCircle });
-        }
-
-        return baseStatuses;
     };
 
     const getStatusIndex = (status) => {

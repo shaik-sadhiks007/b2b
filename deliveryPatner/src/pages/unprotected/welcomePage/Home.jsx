@@ -13,9 +13,21 @@ const Home = () => {
     if (isAuthenticated) {
       // Try to fetch profile
       const result = await dispatch(getDeliveryPartnerProfile());
-      if (result.meta.requestStatus === 'fulfilled' && result.payload && result.payload.step) {
+      if (result.meta.requestStatus === 'fulfilled' && result.payload) {
+        const { step, status } = result.payload;
+        if (status === 'active') {
+          navigate('/dashboard');
+          return;
+        } else if (status === 'review') {
+          navigate('/review');
+          return;
+        }
         // Continue from saved step
-        dispatch(setStep(result.payload.step));
+        if (step) {
+          dispatch(setStep(step));
+        } else {
+          dispatch(setStep(1));
+        }
       } else {
         // Start from step 1
         dispatch(setStep(1));

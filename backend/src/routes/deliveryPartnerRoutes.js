@@ -12,8 +12,6 @@ const deliveryPartnerMiddleware = require('../middleware/deliveryPartnerMiddlewa
 const authMiddleware = require('../middleware/authMiddleware.js');
 
 
-
-
 router.get('/profile', authMiddleware, deliveryPartnerMiddleware, getProfile);
 
 // Register a new delivery partner
@@ -26,7 +24,7 @@ router.patch('/:id/step', authMiddleware, deliveryPartnerMiddleware, updateStep)
 router.patch('/:id/status', authMiddleware, deliveryPartnerMiddleware, updateStatus);
 
 // Toggle online/offline
-router.patch('/:id/online', authMiddleware, deliveryPartnerMiddleware, toggleOnline);
+router.patch('/online', authMiddleware, deliveryPartnerMiddleware, toggleOnline);
 
 // Get all delivery partners (admin)
 router.get('/', authMiddleware, deliveryPartnerMiddleware, getAll);

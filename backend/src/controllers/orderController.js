@@ -445,7 +445,7 @@ exports.getRestaurantOrderStatus = async (req, res) => {
 
 exports.getRestaurantOrderCounts = async (req, res) => {
     try {
-        const statuses = ['ORDER_PLACED', 'ACCEPTED', 'ORDER_READY', 'ORDER_PICKED_UP'];
+        const statuses = ['ORDER_PLACED', 'ACCEPTED', 'ORDER_DELIVERY_READY', 'ORDER_PICKUP_READY', 'ORDER_PICKED_UP'];
         const counts = await Promise.all(
             statuses.map(async (status) => {
                 const count = await Order.countDocuments({
@@ -813,3 +813,90 @@ exports.postInstoreOrderByAdmin = async (req, res) => {
     }
 };
 
+
+
+
+// Delivery partner: Get orders
+exports.getDeliveryPartnerOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ deliveryPartnerId: req.deliveryPartner._id })
+            .populate('customerAddress');
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('[orderController.js][getDeliveryPartnerOrders]', error);
+        res.status(500).json({ error: 'Failed to get delivery partner orders', message: error.message });
+    }
+};
+
+// Delivery partner: Update order status
+exports.postDeliveryPartnerOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body;
+        const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
+        res.status(200).json(order);
+    } catch (error) {
+        console.error('[orderController.js][postDeliveryPartnerOrderStatus]', error);
+        res.status(500).json({ error: 'Failed to update order status', message: error.message });
+    }
+};
+
+// Delivery partner: Get available orders to accept
+exports.getAvailableDeliveryOrders = async (req, res) => {
+    try {
+        // Check if delivery partner is online and active
+        if (!req.deliveryPartner.online || req.deliveryPartner.status !== 'active') {
+            return res.status(403).json({ 
+                error: 'You must be online and have active status to view available orders' 
+            });
+        }
+
+        const orders = await Order.find({
+            status: 'ORDER_DELIVERY_READY',
+            deliveryPartnerId: { $exists: false }
+        }).populate('customerAddress');
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('[orderController.js][getAvailableDeliveryOrders]', error);
+        res.status(500).json({ error: 'Failed to get available delivery orders', message: error.message });
+    }
+};
+
+// Delivery partner: Accept an order (assign deliveryPartnerId if not already set)
+exports.acceptDeliveryOrder = async (req, res) => {
+    try {
+        // Check if delivery partner is online and active
+        if (!req.deliveryPartner.online || req.deliveryPartner.status !== 'active') {
+            return res.status(403).json({ 
+                error: 'You must be online and have active status to accept orders' 
+            });
+        }
+
+        const { orderId } = req.params;
+        const order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.deliveryPartnerId) {
+            return res.status(400).json({ error: 'Order already assigned to a delivery partner' });
+        }
+        order.deliveryPartnerId = req.deliveryPartner._id;
+        await order.save();
+        res.status(200).json(order);
+    } catch (error) {
+        console.error('[orderController.js][acceptDeliveryOrder]', error);
+        res.status(500).json({ error: 'Failed to accept delivery order', message: error.message });
+    }
+};
+
+// Delivery partner: Get completed orders
+exports.getCompletedDeliveryPartnerOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({
+            deliveryPartnerId: req.deliveryPartner._id,
+            status: 'ORDER_DELIVERED'
+        }).populate('customerAddress');
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('[orderController.js][getCompletedDeliveryPartnerOrders]', error);
+        res.status(500).json({ error: 'Failed to get completed orders', message: error.message });
+    }
+};

@@ -19,12 +19,18 @@ const {
     getRestaurantOrderStatusByAdmin,
     postRestaurantOrderStatusByAdmin,
     getAcceptedItemsSummaryByAdmin,
-    postInstoreOrderByAdmin
+    postInstoreOrderByAdmin,
+    getDeliveryPartnerOrders,
+    postDeliveryPartnerOrderStatus,
+    getAvailableDeliveryOrders,
+    acceptDeliveryOrder,
+    getCompletedDeliveryPartnerOrders
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const { testEmailConfiguration } = require('../utils/emailService');
+const deliveryPartnerMiddleware = require('../middleware/deliveryPartnerMiddleware');
 const router = express.Router();
 
 router.get('/summary', authMiddleware, restaurantMiddleware, getOrdersSummary);
@@ -79,5 +85,14 @@ router.post('/test-email', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+
+// Delivery partner order routes
+router.get('/delivery-partner/orders', authMiddleware, deliveryPartnerMiddleware, getDeliveryPartnerOrders);
+router.patch('/delivery-partner/status/:orderId', authMiddleware, deliveryPartnerMiddleware, postDeliveryPartnerOrderStatus);
+router.get('/delivery-partner/available-orders', authMiddleware, deliveryPartnerMiddleware, getAvailableDeliveryOrders);
+router.patch('/delivery-partner/accept-order/:orderId', authMiddleware, deliveryPartnerMiddleware, acceptDeliveryOrder);
+router.get('/delivery-partner/completed-orders', authMiddleware, deliveryPartnerMiddleware, getCompletedDeliveryPartnerOrders);
+
 
 module.exports = router;

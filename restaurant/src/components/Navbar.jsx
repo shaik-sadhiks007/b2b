@@ -293,7 +293,8 @@ const Navbar = () => {
                                                             <span className={`badge ${
                                                                 order.status === 'ORDER_PLACED' ? 'bg-primary' :
                                                                 order.status === 'ACCEPTED' ? 'bg-warning' :
-                                                                order.status === 'ORDER_READY' ? 'bg-info' : 'bg-success'
+                                                                order.status === 'ORDER_DELIVERY_READY' ? 'bg-info' :
+                                                                order.status === 'ORDER_PICKUP_READY' ? 'bg-warning' : 'bg-success'
                                                             }`}>
                                                                 {order.status.replace('_', ' ')}
                                                             </span>

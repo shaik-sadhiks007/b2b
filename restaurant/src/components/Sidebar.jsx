@@ -22,14 +22,6 @@ export const menuItems = [
     { icon: "bi-cash-coin", label: "Order In Store", path: "/instore-orders" },
     { icon: "bi-clock-history", label: "Order history", path: "/order-history" },
 
-    // { icon: "bi-gift", label: "Offers", path: "/offers" },
-    // { icon: "bi-wallet2", label: "Payout", path: "/payout" },
-    // { icon: "bi-cart4", label: "Hyperpure", path: "/hyperpure" },
-    // { icon: "bi-megaphone", label: "Ads", path: "/ads" },
-    // { icon: "bi-shop", label: "Outlet info", path: "/outlet-info" },
-    // { icon: "bi-exclamation-circle", label: "Customer complaints", path: "/complaints" },
-    // { icon: "bi-star", label: "Reviews", path: "/reviews" },
-    // { icon: "bi-question-circle", label: "Help centre", path: "/help" }
 ];
 
 const Sidebar = () => {

@@ -45,11 +45,10 @@ const server = http.createServer(app);
 
 // Allow all subdomains of shopatb2b.com and localhost development ports
 const allowedOriginRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*shopatb2b\.com$/;
-const localhostRegex = /^https?:\/\/localhost:(5173|5174)$/;
+const localhostRegex = /^https?:\/\/localhost:(5173|5174|5175|5176)$/;
 
 // Helper function for origin validation
 function isAllowedOrigin(origin) {
-    return allowedOriginRegex.test(origin) || localhostRegex.test(origin);
     return allowedOriginRegex.test(origin) || localhostRegex.test(origin);
 }
 
@@ -60,7 +59,7 @@ const corsOptions = {
         if (allowedOriginRegex.test(origin) || localhostRegex.test(origin)) {
             return callback(null, true);
         }
-        console.error(` CORS blocked origin: ${origin}`);
+        console.error(`CORS blocked origin: ${origin}`);
         return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,

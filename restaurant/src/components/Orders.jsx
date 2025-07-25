@@ -28,7 +28,8 @@ socket.on('disconnect', () => {
 const statusTabs = [
     { id: 'ORDER_PLACED', label: 'New Orders', icon: 'bi-bell' },
     { id: 'ACCEPTED', label: 'Accepted', icon: 'bi-clock' },
-    { id: 'ORDER_READY', label: 'Ready', icon: 'bi-check-circle' },
+    { id: 'ORDER_DELIVERY_READY', label: 'Delivery Ready', icon: 'bi-check-circle' },
+    { id: 'ORDER_PICKUP_READY', label: 'Pickup Ready', icon: 'bi-check-circle' },
     { id: 'ORDER_PICKED_UP', label: 'Completed', icon: 'bi-check2-all' }
 ];
 
@@ -273,7 +274,7 @@ const Orders = ({ adminMode = false }) => {
                     <>
                         <button
                             className="btn btn-success w-100 mb-2"
-                            onClick={() => handleStatusChange(order._id, 'ORDER_READY')}
+                            onClick={() => handleStatusChange(order._id, order.orderType === 'delivery' ? 'ORDER_DELIVERY_READY' : 'ORDER_PICKUP_READY')}
                         >
                             <i className="bi bi-check-circle me-2"></i>
                             Mark as Ready
@@ -287,7 +288,25 @@ const Orders = ({ adminMode = false }) => {
                         </button>
                     </>
                 );
-            case 'ORDER_READY':
+            case 'ORDER_DELIVERY_READY':
+                return (
+                    <>
+                        <button
+                            className="btn btn-success w-100 mb-2"
+                            onClick={() => handleStatusChange(order._id, "OUT_FOR_DELIVERY")}
+                        >
+                            <i className="bi bi-check-circle me-2"></i>
+                            Mark as Out for Delivery
+                        </button>
+                        <button
+                            className="btn btn-outline-danger w-100"
+                            onClick={() => handleCancelClick(order._id)}
+                        >
+                            <i className="bi bi-x-circle me-2"></i>
+                            Cancel Order
+                        </button>
+                    </>);
+            case 'ORDER_PICKUP_READY':
                 return (
                     <>
                         <button

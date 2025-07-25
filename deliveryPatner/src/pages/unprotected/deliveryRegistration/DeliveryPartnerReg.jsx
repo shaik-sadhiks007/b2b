@@ -117,7 +117,7 @@ function DeliveryPartnerReg() {
       if (result.meta.requestStatus === 'fulfilled') {
         dispatch(setStep(step + 1));
       }
-    } else if (step >= 2 && step <= 4) {
+    } else if (step >= 2 && step <= 5) {
       if (!id) return alert('Registration ID missing. Please start from step 1.');
       const result = await dispatch(updateDeliveryPartnerStep({ id, form, step }));
       if (result.meta.requestStatus === 'fulfilled') {
@@ -126,11 +126,19 @@ function DeliveryPartnerReg() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.termsAccepted) return alert('Please accept the terms and conditions.');
-    alert('Registration submitted!');
-    dispatch(resetForm());
+    if (!id) return alert('Registration ID missing. Please start from step 1.');
+    // Update backend with termsAccepted: true and status: 'review'
+    const result = await dispatch(updateDeliveryPartnerStep({ id, form: { ...form, termsAccepted: true, status: 'review' }, step }));
+    if (result.meta.requestStatus === 'fulfilled') {
+      alert('Registration submitted!');
+      navigate('/');
+      dispatch(resetForm());
+    } else {
+      alert('Failed to submit registration. Please try again.');
+    }
   };
 
   return (

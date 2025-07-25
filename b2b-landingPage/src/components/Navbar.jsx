@@ -118,8 +118,8 @@ function Navbar({ alwaysVisible }) {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const setupSocketConnection = () => {
@@ -180,13 +180,6 @@ function Navbar({ alwaysVisible }) {
     }
   };
 
-  const handleLogoClick = (e) => {
-    e.preventDefault();
-    const subdomain = getSubdomain();
-    if (subdomain && subdomain !== "shopatb2b") {
-      navigate("/");
-    }
-  };
 
   const handleLocationSelect = (suggestion) => {
     const locationData = {
@@ -248,9 +241,9 @@ function Navbar({ alwaysVisible }) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={handleLogoClick} className="cursor-pointer">
+              <Link to="/">
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
-              </button>
+              </Link>
               {isSubdomain && (
                 <button
                   onClick={handleSubdomainClick}
@@ -367,9 +360,8 @@ function Navbar({ alwaysVisible }) {
                         {notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${
-                              !notification.read ? "bg-blue-50" : ""
-                            }`}
+                            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? "bg-blue-50" : ""
+                              }`}
                             onClick={() =>
                               handleNotificationClick(notification)
                             }
@@ -415,7 +407,12 @@ function Navbar({ alwaysVisible }) {
                       </span>
                     </>
                   ) : (
-                    <UserCircle size={24} />
+                    <>
+                      <UserCircle size={24} />
+                      <span className="text-md capitalize">
+                        Login/Register
+                      </span>
+                    </>
                   )}
                 </button>
 
@@ -443,12 +440,12 @@ function Navbar({ alwaysVisible }) {
                         >
                           Feedback
                         </Link>
-                       
+
                         <button
-                          onClick={ handleLogout }
+                          onClick={handleLogout}
                           className="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600"
                         >
-                          Logout-d
+                          Logout
                         </button>
                       </>
                     ) : (
@@ -499,9 +496,11 @@ function Navbar({ alwaysVisible }) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={handleLogoClick} className="cursor-pointer">
+
+              <Link to="/">
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
-              </button>
+              </Link>
+
               {isSubdomain && (
                 <button
                   onClick={handleSubdomainClick}
@@ -581,9 +580,8 @@ function Navbar({ alwaysVisible }) {
                         {notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm ${
-                              !notification.read ? "bg-blue-50" : ""
-                            }`}
+                            className={`px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm ${!notification.read ? "bg-blue-50" : ""
+                              }`}
                             onClick={() =>
                               handleNotificationClick(notification)
                             }
@@ -653,7 +651,7 @@ function Navbar({ alwaysVisible }) {
                           }}
                           className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
                         >
-                          Logout-m
+                          Logout
                         </button>
                       </>
                     ) : (

@@ -70,8 +70,10 @@ const OrderHistory = ({ adminMode = false }) => {
                 return <Clock className="h-5 w-5 text-blue-500" />;
             case 'ACCEPTED':
                 return <Package className="h-5 w-5 text-green-500" />;
-            case 'ORDER_READY':
+            case 'ORDER_DELIVERY_READY':
                 return <Truck className="h-5 w-5 text-green-500" />;
+            case 'ORDER_PICKUP_READY':
+                return <Package className="h-5 w-5 text-warning-500" />;
             case 'ORDER_DELIVERED':
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             case 'ORDER_PICKED_UP':
@@ -89,8 +91,10 @@ const OrderHistory = ({ adminMode = false }) => {
                 return 'bg-blue-100 text-blue-800';
             case 'ACCEPTED':
                 return 'bg-green-100 text-green-800';
-            case 'ORDER_READY':
+            case 'ORDER_DELIVERY_READY':
                 return 'bg-green-100 text-green-800';
+            case 'ORDER_PICKUP_READY':
+                return 'bg-warning-100 text-warning-800';
             case 'ORDER_DELIVERED':
                 return 'bg-green-100 text-green-800';
             case 'ORDER_PICKED_UP':

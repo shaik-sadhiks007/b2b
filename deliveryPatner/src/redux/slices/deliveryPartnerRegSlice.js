@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { registerDeliveryPartnerApi, updateDeliveryPartnerStepApi, getDeliveryPartnerProfileApi } from '../../api/Api';
+import { registerDeliveryPartnerApi, updateDeliveryPartnerStepApi, getDeliveryPartnerProfileApi, toggleDeliveryPartnerOnlineApi } from '../../api/Api';
 
 // Utility: convert File to base64 string
 function fileToBase64(file) {
@@ -70,6 +70,18 @@ export const getDeliveryPartnerProfile = createAsyncThunk(
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Profile fetch failed');
+    }
+  }
+);
+
+export const toggleOnlineStatus = createAsyncThunk(
+  'deliveryPartnerReg/toggleOnline',
+  async ({ id, online }, { rejectWithValue }) => {
+    try {
+      const res = await toggleDeliveryPartnerOnlineApi(id, online);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Toggle online status failed');
     }
   }
 );
@@ -202,6 +214,9 @@ const deliveryPartnerRegSlice = createSlice({
       .addCase(getDeliveryPartnerProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(toggleOnlineStatus.fulfilled, (state, action) => {
+        state.form.online = action.payload.online;
       });
   },
 });

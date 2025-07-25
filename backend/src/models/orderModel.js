@@ -62,7 +62,7 @@ const orderSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ["ORDER_PLACED", "ACCEPTED", "ORDER_READY", "ORDER_DELIVERED", "CANCELLED", "ORDER_PICKED_UP","INSTORE_ORDER"],
+        enum: ["ORDER_PLACED", "ACCEPTED", "ORDER_DELIVERY_READY","ORDER_PICKUP_READY", "OUT_FOR_DELIVERY", "ORDER_DELIVERED", "CANCELLED", "ORDER_PICKED_UP","INSTORE_ORDER"],
         default: "ORDER_PLACED"
     },
     restaurantId: {
@@ -85,7 +85,12 @@ const orderSchema = new mongoose.Schema({
         min: 0,
         default: 0,
         max: 120
-    }
+    },
+    deliveryPartnerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeliveryPartner",
+        required: false, // Required only if status is ORDER_DELIVERY_READY
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Order", orderSchema);

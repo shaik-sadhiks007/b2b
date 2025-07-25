@@ -1,23 +1,37 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutThunk, fetchProfileThunk } from '../redux/slices/authSlice';
+import { toggleOnlineStatus, getDeliveryPartnerProfile } from '../redux/slices/deliveryPartnerRegSlice';
 import { useEffect } from 'react';
 
 function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, loading, isAuthenticated } = useSelector((state) => state.auth);
+  const deliveryPartner = useSelector((state) => state.deliveryPartnerReg);
 
   useEffect(() => {
     if (!user) {
       dispatch(fetchProfileThunk());
     }
+    // Fetch delivery partner profile if authenticated and not loaded
+    if (isAuthenticated && !deliveryPartner.id) {
+      dispatch(getDeliveryPartnerProfile());
+    }
     // eslint-disable-next-line
-  }, []);
+  }, [isAuthenticated, user, deliveryPartner.id, dispatch]);
 
   const handleLogout = async () => {
     await dispatch(logoutThunk());
     navigate('/login');
+  };
+
+  // Toggle online status handler
+  const handleToggleOnline = () => {
+    if (deliveryPartner.id) {
+      const newOnline = !deliveryPartner.form.online;
+      dispatch(toggleOnlineStatus({ id: deliveryPartner.id, online: newOnline }));
+    }
   };
 
   return (
@@ -39,6 +53,28 @@ function Header() {
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           ) : isAuthenticated && user ? (
             <div className="flex items-center space-x-4">
+              {/* Online/Offline Toggle */}
+              {deliveryPartner.id && (
+                <label className="flex items-center cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={!!deliveryPartner.form.online}
+                      onChange={handleToggleOnline}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`block w-10 h-6 rounded-full ${deliveryPartner.form.online ? 'bg-green-500' : 'bg-red-500'}`}
+                    ></div>
+                    <div
+                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${deliveryPartner.form.online ? 'translate-x-4' : ''}`}
+                    ></div>
+                  </div>
+                  <span className="ml-2 text-sm font-medium">
+                    {deliveryPartner.form.online ? 'Online' : 'Offline'}
+                  </span>
+                </label>
+              )}
               {/* Avatar Circle */}
               <div
                 className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold"

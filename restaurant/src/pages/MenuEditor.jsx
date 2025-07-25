@@ -80,7 +80,9 @@ function MenuEditor() {
     description: "",
     foodType: "veg",
     inStock: true,
-    quantity: ""
+    quantity: "",
+    expiryDate: "",
+    unit: "piece"
   });
 
   // Toggle subcategory expansion
@@ -266,7 +268,8 @@ function MenuEditor() {
         description: "",
         foodType: "veg",
         inStock: true,
-        quantity: ""
+        quantity: "",
+        expiryDate: "",
       });
     }
   };
@@ -294,6 +297,10 @@ function MenuEditor() {
       price: parseFloat(newItemData.price),
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
+      unit: newItemData.unit || 'piece',
+      expiryDate: newItemData.expiryDate
+        ? new Date(newItemData.expiryDate)
+        : null,
     });
     setShowAccordionForm(false);
     setAccordionSubcategory("");
@@ -789,6 +796,27 @@ function MenuEditor() {
                                           required
                                         />
                                       </div>
+                                       <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Unit <span className="text-red-500">*</span>
+    </label>
+    <select
+      name="unit"
+      value={newItemData.unit || 'piece'} // default to 'piece'
+      onChange={handleAccordionInputChange}
+      className="w-full border border-gray-300 rounded-md px-3 py-2"
+      required
+    >
+      <option value="kg">kg</option>
+      <option value="ltr">ltr</option>
+      <option value="piece">piece</option>
+      <option value="box">box</option>
+      <option value="plate">plate</option>
+      <option value="bottle">bottle</option>
+      <option value="cup">cup</option>
+      <option value="packet">packet</option>
+    </select>
+  </div>
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                           Price<span className="text-red-500">*</span>
@@ -819,6 +847,23 @@ function MenuEditor() {
                                           required
                                           min="1"
                                           step="1"
+                                        />
+                                      </div>
+                                       <div>
+                                        <label
+                                          className="block text-sm font-medium text-gray-700 mb-1"
+                                          htmlFor="expiry-date-input"
+                                        >
+                                          Expiry Date{" "}
+                                          
+                                        </label>
+                                        <input
+                                          type="date"
+                                          name="expiryDate"
+                                          value={newItemData.expiryDate}
+                                          onChange={handleAccordionInputChange}
+                                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                          
                                         />
                                       </div>
                                       <div className="flex items-center gap-4">

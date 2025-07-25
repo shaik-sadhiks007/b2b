@@ -3,8 +3,7 @@ import { useEffect } from "react";
 import aboutUsImage from "../assets/aboutus.png";
 import logo from "../assets/b2bupdate.png";
 import { FaArrowDown } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import Features from "../components/Features";
+import { Link } from "react-router-dom";
 import play from "../assets/play.webp";
 import restaurant from "../assets/restaurant.webp";
 import mess from "../assets/mess.webp";
@@ -19,15 +18,10 @@ import ck from "../assets/ck.webp";
 import whole from "../assets/whole.webp";
 
 const AboutUs = () => {
-  const navigate = useNavigate();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
   
-  const scrollToNextSection = () => {
-    navigate("/features");
-  };
-
   // Card data with categories for styling
   const businessTypes = [
     { name: "Supermarket", category: "retail", image: superm },
@@ -264,10 +258,10 @@ const AboutUs = () => {
           </div>
         </div>
 
-        {/* Floating Know More Button */}
+        {/* Floating Know More Button - Now using Link instead of navigate */}
         <div className="flex flex-col items-center justify-center mt-16 mb-10">
-          <button
-            onClick={scrollToNextSection}
+          <Link 
+            to="/features" 
             className="flex flex-col items-center justify-center group"
           >
             <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
@@ -276,7 +270,7 @@ const AboutUs = () => {
             <span className="mt-3 text-lg font-medium text-gray-700 group-hover:text-blue-600 transition-colors duration-300">
               Know More
             </span>
-          </button>
+          </Link>
         </div>
       </div>
     </div>

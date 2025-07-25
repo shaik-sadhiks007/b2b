@@ -18,6 +18,7 @@ const defaultForm = {
   bin: "",
   batchNumber: "",
   requiresPrescription: false,
+  unit: "piece",
 };
 
 const ACCEPTED_IMAGE_TYPES = [
@@ -179,6 +180,29 @@ const MenuItemModal = ({
               placeholder="e.g., Paracetamol 500mg"
             />
           </div>
+          
+           {/* Unit Dropdown */}
+  <div className="space-y-1">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Unit
+    </label>
+    <select
+      name="unit"
+      value={form.unit}
+      onChange={handleChange}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+    >
+      <option value="kg">kg</option>
+      <option value="ltr">ltr</option>
+      <option value="piece">piece</option>
+      <option value="box">box</option>
+      <option value="plate">plate</option>
+      <option value="bottle">bottle</option>
+      <option value="cup">cup</option>
+      <option value="packet">packet</option>
+    </select>
+  </div>
+  
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">

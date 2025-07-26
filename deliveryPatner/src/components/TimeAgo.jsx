@@ -10,5 +10,5 @@ export const TimeAgo = ({ timestamp }) => {
         return () => clearInterval(interval);
     }, []);
 
-    return <span>{moment(now).fromNow()}</span>;
+    return <span>{moment(timestamp).from(now)}</span>;
 };

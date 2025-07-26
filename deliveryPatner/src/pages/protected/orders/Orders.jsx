@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAvailableDeliveryOrders, acceptDeliveryOrder } from '../../../redux/slices/orderSlice';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { TimeAgo } from '../../../components/TimeAgo';
+import appImages from '../../../constants/appImages';
+import Lottie from 'lottie-react';
 
 function Orders() {
   const dispatch = useDispatch();
-  const { availableOrders, availableLoading, availableError } = useSelector(state => state.orders);
+  const { availableOrders, availableError, availableLoading } = useSelector(state => state.orders);
 
   useEffect(() => {
     dispatch(fetchAvailableDeliveryOrders());
@@ -17,12 +19,17 @@ function Orders() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <h1 className="text-2xl font-bold mb-6">Available Orders to Accept</h1>
-      {availableLoading && <div>Loading available orders...</div>}
+      {availableLoading && (
+        <div className="flex flex-col items-center justify-center">
+          <Lottie animationData={appImages.deliveryAnimation} style={{ width: 300, height: 300 }} />
+          <div>Loading available orders...</div>
+        </div>
+      )}
       <ErrorMessage error={availableError} />
       {!availableLoading && availableOrders.length === 0 && !availableError && <div>No available orders to accept.</div>}
-      <div className="space-y-6 mb-10">
+      {!availableLoading && availableOrders.length > 0 && (<div className="space-y-6 mb-10">
         {availableOrders.map(order => (
           <div key={order._id} className="bg-yellow-50 rounded-lg shadow p-6 border border-yellow-200">
             <div className="flex justify-between items-center mb-2">
@@ -67,6 +74,7 @@ function Orders() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

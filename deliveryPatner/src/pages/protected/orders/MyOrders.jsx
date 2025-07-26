@@ -15,7 +15,7 @@ function MyOrders() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <h1 className="text-2xl font-bold mb-6">My Delivery Orders</h1>
       {loading && <div>Loading orders...</div>}
       {error && <div className="text-red-500">{error}</div>}

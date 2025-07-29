@@ -160,6 +160,7 @@ const Orders = ({ adminMode = false }) => {
             }
             const response = await axios.patch(url, { status }, { params });
             const updatedOrder = response.data.order;
+            
             // Emit the order status update with cancelledBy only if status is CANCELLED
             if (status === 'CANCELLED') {
                 const orderWithCancelledBy = { ...updatedOrder, cancelledBy: 'restaurant' };

@@ -378,6 +378,20 @@ exports.postRestaurantOrderStatus = async (req, res) => {
         if (!order.orderType) order.orderType = 'PICKUP';
         await order.save();
 
+        // Emit delivery ready order event if status is ORDER_DELIVERY_READY
+        if (status === 'ORDER_DELIVERY_READY') {
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('deliveryReadyOrder', order);
+            }
+        }
+
+        // Emit order status update event for all status changes
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('orderStatusUpdate', order);
+        }
+
         // Send status change email notification to customer
         try {
             const user = await User.findById(order.user);
@@ -819,7 +833,10 @@ exports.postInstoreOrderByAdmin = async (req, res) => {
 // Delivery partner: Get orders
 exports.getDeliveryPartnerOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ deliveryPartnerId: req.deliveryPartner._id })
+        const orders = await Order.find({ 
+            deliveryPartnerId: req.deliveryPartner._id,
+            status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
+        })
             .populate('customerAddress');
         res.status(200).json(orders);
     } catch (error) {

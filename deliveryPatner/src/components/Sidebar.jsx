@@ -14,7 +14,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="bg-white shadow h-screen w-64 p-4 flex flex-col">
+    <aside className="bg-white h-screen w-64 p-4 flex flex-col">
       <div className="flex-1">
         {menuItems.map((item, idx) => (
           <Link

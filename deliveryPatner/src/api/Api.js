@@ -29,6 +29,9 @@ export const getProfileApi = () => api.get("/api/auth/profile");
 // Get delivery partner profile
 export const getDeliveryPartnerProfileApi = () => api.get("/api/delivery-partner/profile");
 
+// Update delivery partner profile
+export const updateDeliveryPartnerProfileApi = (data) => api.patch("/api/delivery-partner/profile", data);
+
 // Register
 export const registerApi = (data) => api.post("/api/auth/register", data);
 

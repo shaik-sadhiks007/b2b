@@ -5,6 +5,24 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { TimeAgo } from '../../../components/TimeAgo';
 import appImages from '../../../constants/appImages';
 import Lottie from 'lottie-react';
+import { toast } from 'react-toastify';
+import io from 'socket.io-client';
+
+// Initialize socket connection
+const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+
+// Add connection logging
+socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+});
 
 function Orders() {
   const dispatch = useDispatch();
@@ -12,6 +30,21 @@ function Orders() {
 
   useEffect(() => {
     dispatch(fetchAvailableDeliveryOrders());
+
+    // Listen for delivery ready orders
+    socket.on('deliveryReadyOrder', (newOrder) => {
+      console.log('🚚 New delivery ready order received:', newOrder);
+      
+      // Show toast notification
+      toast.info(`New delivery order available! Order #${newOrder._id.slice(-6)}`);
+
+      // Refresh available orders
+      dispatch(fetchAvailableDeliveryOrders());
+    });
+
+    return () => {
+      socket.off('deliveryReadyOrder');
+    };
   }, [dispatch]);
 
   const handleAcceptOrder = (orderId) => {

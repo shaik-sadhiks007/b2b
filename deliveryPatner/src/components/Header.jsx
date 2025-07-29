@@ -2,28 +2,57 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutThunk, fetchProfileThunk } from '../redux/slices/authSlice';
 import { toggleOnlineStatus, getDeliveryPartnerProfile } from '../redux/slices/deliveryPartnerRegSlice';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, loading, isAuthenticated } = useSelector((state) => state.auth);
   const deliveryPartner = useSelector((state) => state.deliveryPartnerReg);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const profileRef = useRef(null);
 
   useEffect(() => {
     if (!user) {
       dispatch(fetchProfileThunk());
     }
-    // Fetch delivery partner profile if authenticated and not loaded
+    // Fetch delivery partner profile for online status
     if (isAuthenticated && !deliveryPartner.id) {
       dispatch(getDeliveryPartnerProfile());
     }
     // eslint-disable-next-line
   }, [isAuthenticated, user, deliveryPartner.id, dispatch]);
 
+  // Close profile popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfilePopup(false);
+      }
+    };
+
+    if (showProfilePopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfilePopup]);
+
   const handleLogout = async () => {
     await dispatch(logoutThunk());
     navigate('/login');
+    setShowProfilePopup(false);
+  };
+
+  const handleProfileClick = () => {
+    setShowProfilePopup(!showProfilePopup);
+  };
+
+  const handleNavigateToProfile = () => {
+    navigate('/profile');
+    setShowProfilePopup(false);
   };
 
   // Toggle online status handler
@@ -75,22 +104,38 @@ function Header() {
                   </span>
                 </label>
               )}
-              {/* Avatar Circle */}
-              <div
-                className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold"
-                title={user.email}
-              >
-                {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
+              {/* Profile Section */}
+              <div className="relative" ref={profileRef}>
+                <div className="flex items-center space-x-2 cursor-pointer" onClick={handleProfileClick}>
+                  <div
+                    className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold"
+                    title={user.mobileNumber || user.email}
+                  >
+                    {user.name ? user.name[0].toUpperCase() : 'D'}
+                  </div>
+                  <span className="text-gray-700 font-medium">
+                    {user.name || 'Delivery Partner'}
+                  </span>
+                </div>
+                
+                {/* Profile Popup */}
+                {showProfilePopup && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <button
+                      onClick={handleNavigateToProfile}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
-              <span className="text-gray-700 font-medium">
-                {user.username || user.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-1.5 text-sm bg-red-100 text-red-600 hover:bg-red-200 rounded-full transition"
-              >
-                Logout
-              </button>
             </div>
           ) : (
             <Link to="/login">
@@ -98,7 +143,7 @@ function Header() {
                 Login
               </button>
             </Link>
-          )}
+                    )}
         </div>
       </div>
     </nav>

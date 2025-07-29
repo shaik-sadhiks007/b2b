@@ -144,22 +144,22 @@ const updateProfile = async (req, res) => {
       partner.photo = getS3ObjectUrl(s3Key);
     }
     
-    // Update form data - only update if provided
-    if (updateData.name !== undefined) partner.form.name = updateData.name;
-    if (updateData.mobileNumber !== undefined) partner.form.mobileNumber = updateData.mobileNumber;
-    if (updateData.gender !== undefined) partner.form.gender = updateData.gender;
-    if (updateData.vehicleType !== undefined) partner.form.vehicleType = updateData.vehicleType;
-    if (updateData.vehicleNumber !== undefined) partner.form.vehicleNumber = updateData.vehicleNumber;
-    if (updateData.serviceLocation !== undefined) partner.form.serviceLocation = updateData.serviceLocation;
+    // Update fields directly on the partner document - only update if provided
+    if (updateData.name !== undefined) partner.name = updateData.name;
+    if (updateData.mobileNumber !== undefined) partner.mobileNumber = updateData.mobileNumber;
+    if (updateData.gender !== undefined) partner.gender = updateData.gender;
+    if (updateData.vehicleType !== undefined) partner.vehicleType = updateData.vehicleType;
+    if (updateData.vehicleNumber !== undefined) partner.vehicleNumber = updateData.vehicleNumber;
+    if (updateData.serviceLocation !== undefined) partner.serviceLocation = updateData.serviceLocation;
     
     // Update address - only update if provided
     if (updateData.presentAddress) {
-      if (!partner.form.presentAddress) partner.form.presentAddress = {};
-      if (updateData.presentAddress.streetAddress !== undefined) partner.form.presentAddress.streetAddress = updateData.presentAddress.streetAddress;
-      if (updateData.presentAddress.city !== undefined) partner.form.presentAddress.city = updateData.presentAddress.city;
-      if (updateData.presentAddress.district !== undefined) partner.form.presentAddress.district = updateData.presentAddress.district;
-      if (updateData.presentAddress.state !== undefined) partner.form.presentAddress.state = updateData.presentAddress.state;
-      if (updateData.presentAddress.pinCode !== undefined) partner.form.presentAddress.pinCode = updateData.presentAddress.pinCode;
+      if (!partner.presentAddress) partner.presentAddress = {};
+      if (updateData.presentAddress.streetAddress !== undefined) partner.presentAddress.streetAddress = updateData.presentAddress.streetAddress;
+      if (updateData.presentAddress.city !== undefined) partner.presentAddress.city = updateData.presentAddress.city;
+      if (updateData.presentAddress.district !== undefined) partner.presentAddress.district = updateData.presentAddress.district;
+      if (updateData.presentAddress.state !== undefined) partner.presentAddress.state = updateData.presentAddress.state;
+      if (updateData.presentAddress.pinCode !== undefined) partner.presentAddress.pinCode = updateData.presentAddress.pinCode;
     }
 
     await partner.save();

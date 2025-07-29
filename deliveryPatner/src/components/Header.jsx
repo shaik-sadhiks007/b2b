@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logoutThunk, fetchProfileThunk } from '../redux/slices/authSlice';
 import { toggleOnlineStatus, getDeliveryPartnerProfile } from '../redux/slices/deliveryPartnerRegSlice';
 import { useEffect, useState, useRef } from 'react';
+import { Menu, X } from 'lucide-react';
+import Sidebar from './Sidebar';
 
 function Header() {
   const dispatch = useDispatch();
@@ -10,6 +12,7 @@ function Header() {
   const { user, loading, isAuthenticated } = useSelector((state) => state.auth);
   const deliveryPartner = useSelector((state) => state.deliveryPartnerReg);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -63,21 +66,58 @@ function Header() {
     }
   };
 
-  return (
-    <nav className="w-full bg-white shadow-md z-50 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <img
-            src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
-            alt="logo"
-            className="w-10 h-10"
-          />
-          <span className="text-xl font-bold text-gray-800">Delivery Partner</span>
-        </Link>
+  // Toggle sidebar handler
+  const handleToggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
 
-        {/* Right Section */}
-        <div className="flex items-center space-x-4">
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSidebar && !event.target.closest('.sidebar-container')) {
+        setShowSidebar(false);
+      }
+    };
+
+    if (showSidebar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSidebar]);
+
+  return (
+    <>
+      <nav className="w-full bg-white shadow-md z-50 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          {/* Left Section with Menu Icon */}
+          <div className="flex items-center space-x-4">
+            {/* Menu Icon for Small and Medium Devices */}
+            {isAuthenticated && user && (
+              <button
+                onClick={handleToggleSidebar}
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Menu size={24} className="text-gray-700" />
+              </button>
+            )}
+            
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-2">
+              <img
+                src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
+                alt="logo"
+                className="w-10 h-10"
+              />
+              <span className="hidden md:block md:text-xl text-sm font-bold text-gray-800">Delivery Partner</span>
+              <span className="md:hidden text-sm font-bold text-gray-800">B2B</span>
+            </Link>
+          </div>
+
+          {/* Right Section */}
+          <div className="flex items-center space-x-4">
           {loading ? (
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           ) : isAuthenticated && user ? (
@@ -113,7 +153,7 @@ function Header() {
                   >
                     {user.name ? user.name[0].toUpperCase() : 'D'}
                   </div>
-                  <span className="text-gray-700 font-medium">
+                  <span className="text-gray-700 font-medium hidden md:block">
                     {user.name || 'Delivery Partner'}
                   </span>
                 </div>
@@ -143,10 +183,36 @@ function Header() {
                 Login
               </button>
             </Link>
-                    )}
+          )}
         </div>
       </div>
     </nav>
+
+    {/* Offcanvas Sidebar for Small and Medium Devices */}
+    {showSidebar && (
+      <div className="fixed inset-0 z-50 lg:hidden">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/30"
+          onClick={() => setShowSidebar(false)}
+        ></div>
+        
+        {/* Sidebar */}
+        <div className="sidebar-container absolute left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X size={20} className="text-gray-700" />
+            </button>
+          </div>
+          <Sidebar onItemClick={() => setShowSidebar(false)} />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

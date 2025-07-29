@@ -10,16 +10,23 @@ const menuItems = [
   // Add more items as needed
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ onItemClick }) => {
   const location = useLocation();
 
+  const handleItemClick = () => {
+    if (onItemClick) {
+      onItemClick();
+    }
+  };
+
   return (
-    <aside className="bg-white h-screen w-64 p-4 flex flex-col">
-      <div className="flex-1">
+    <aside className="bg-white h-screen w-64 flex flex-col">
+      <div className="flex-1 p-4">
         {menuItems.map((item, idx) => (
           <Link
             key={idx}
             to={item.path}
+            onClick={handleItemClick}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 font-medium transition-colors duration-200 ${location.pathname === item.path ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
           >
             {item.icon}

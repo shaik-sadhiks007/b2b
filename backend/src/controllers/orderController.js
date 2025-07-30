@@ -211,6 +211,7 @@ exports.orderHistory = async (req, res) => {
         const totalOrders = await Order.countDocuments(filter);
         const orders = await Order.find(filter)
             .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(pageSize);
@@ -236,6 +237,7 @@ exports.orderHistoryByUser = async (req, res) => {
 
         const orders = await Order.find({ user: req.user.id })
             .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email")
             .sort({ createdAt: -1 });
 
         res.status(200).json(orders);
@@ -437,6 +439,7 @@ exports.getRestaurantOrderStatus = async (req, res) => {
             status,
             restaurantId: req.restaurant._id
         })
+            .populate('deliveryPartnerId', 'name mobileNumber email')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(pageSize);
@@ -524,7 +527,8 @@ exports.getOrderDetails = async (req, res) => {
             _id: req.params.orderId,
             user: req.user.id
         })
-            .populate("customerAddress");
+            .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email");
 
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
@@ -895,8 +899,19 @@ exports.acceptDeliveryOrder = async (req, res) => {
         if (order.deliveryPartnerId) {
             return res.status(400).json({ error: 'Order already assigned to a delivery partner' });
         }
+        
+        const previousStatus = order.status;
         order.deliveryPartnerId = req.deliveryPartner._id;
         await order.save();
+
+        // Emit order status update to notify restaurant
+        const io = req.app.get('io');
+        if (io) {
+            const updatedOrder = await Order.findById(orderId).populate('deliveryPartnerId', 'name phone email');
+            io.emit('orderStatusUpdate', updatedOrder);
+            io.emit('deliveryPartnerAssigned', updatedOrder);
+        }
+
         res.status(200).json(order);
     } catch (error) {
         console.error('[orderController.js][acceptDeliveryOrder]', error);

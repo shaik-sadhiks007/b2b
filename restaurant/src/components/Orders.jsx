@@ -109,9 +109,24 @@ const Orders = ({ adminMode = false }) => {
                 }
             });
 
+            // Listen for delivery partner assignment
+            socket.on('deliveryPartnerAssigned', (updatedOrder) => {
+                console.log('Delivery partner assigned:', updatedOrder);
+                if (updatedOrder.restaurantId === user?.restaurantId) {
+                    setOrders(prevOrders => {
+                        const updatedOrders = prevOrders.map(order =>
+                            order._id === updatedOrder._id ? updatedOrder : order
+                        );
+                        return updatedOrders;
+                    });
+                    toast.success(`Delivery partner assigned to order #${updatedOrder._id.slice(-6)}`);
+                }
+            });
+
             return () => {
                 socket.off('newOrder');
                 socket.off('orderStatusUpdate');
+                socket.off('deliveryPartnerAssigned');
             };
         }
     }, [activeTab, user, currentPage, pageSize, adminMode, ownerId]);
@@ -295,6 +310,8 @@ const Orders = ({ adminMode = false }) => {
                         <button
                             className="btn btn-success w-100 mb-2"
                             onClick={() => handleStatusChange(order._id, "OUT_FOR_DELIVERY")}
+                            disabled={!order.deliveryPartnerId}
+                            title={!order.deliveryPartnerId ? "No delivery partner assigned yet" : ""}
                         >
                             <i className="bi bi-check-circle me-2"></i>
                             Mark as Out for Delivery
@@ -551,6 +568,20 @@ const Orders = ({ adminMode = false }) => {
                                                             <div className="text-success mt-2">
                                                                 <i className="bi bi-circle-fill me-2"></i>
                                                                 VEG ONLY ORDER
+                                                            </div>
+                                                        )}
+                                                        {order.deliveryPartnerId && (
+                                                            <div className="mt-2 p-2 rounded border border-success" style={{ backgroundColor: '#e8f5e8' }}>
+                                                                <div className="d-flex align-items-center mb-1">
+                                                                    <i className="bi bi-person-badge text-success me-2"></i>
+                                                                    <span className="fw-medium text-success">Delivery Partner Assigned</span>
+                                                                </div>
+                                                                {order.deliveryPartnerId && typeof order.deliveryPartnerId === 'object' && (
+                                                                    <div className="small text-muted">
+                                                                        <div>{order.deliveryPartnerId.name}</div>
+                                                                        <div>{order.deliveryPartnerId.mobileNumber}</div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

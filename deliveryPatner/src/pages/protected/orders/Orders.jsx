@@ -48,7 +48,13 @@ function Orders() {
   }, [dispatch]);
 
   const handleAcceptOrder = (orderId) => {
-    dispatch(acceptDeliveryOrder(orderId));
+    dispatch(acceptDeliveryOrder(orderId)).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        toast.success('Order accepted successfully!');
+      } else {
+        toast.error('Failed to accept order');
+      }
+    });
   };
 
   return (

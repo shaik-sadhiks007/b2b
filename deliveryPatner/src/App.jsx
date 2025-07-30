@@ -11,6 +11,7 @@ import Orders from './pages/protected/orders/Orders.jsx'
 import Profile from './pages/protected/profile/Profile.jsx'
 import MyOrders from './pages/protected/orders/MyOrders.jsx'
 import CompletedOrders from './pages/protected/orders/CompletedOrders.jsx'
+import ForgotPassword from './pages/unprotected/login/ForgotPassword.jsx'
 
 function App() {
 
@@ -24,6 +25,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/delivery-partner-registration" element={<DeliveryPartnerReg />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
 
         {/* Protected Routes */}
         <Route path="/review" element={<Review />} />

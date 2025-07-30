@@ -5,6 +5,8 @@ import { toggleOnlineStatus, getDeliveryPartnerProfile } from '../redux/slices/d
 import { useEffect, useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
+import ToggleSwitch from './ToggleSwitch';
+import { auth, sendPasswordResetEmail } from '../utils/commonFunction';
 
 function Header() {
   const dispatch = useDispatch();
@@ -35,11 +37,11 @@ function Header() {
     };
 
     if (showProfilePopup) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [showProfilePopup]);
 
@@ -56,6 +58,16 @@ function Header() {
   const handleNavigateToProfile = () => {
     navigate('/profile');
     setShowProfilePopup(false);
+  };
+
+  // Handle logo click with authentication check
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    if (isAuthenticated && user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/');
+    }
   };
 
   // Toggle online status handler
@@ -104,8 +116,8 @@ function Header() {
               </button>
             )}
             
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            {/* Logo with authentication-based navigation */}
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
               <img
                 src="https://res.cloudinary.com/dcd6oz2pi/image/upload/f_auto,q_auto/v1/logo/xwdu2f0zjbsscuo0q2kq"
                 alt="logo"
@@ -113,7 +125,7 @@ function Header() {
               />
               <span className="hidden md:block md:text-xl text-sm font-bold text-gray-800">Delivery Partner</span>
               <span className="md:hidden text-sm font-bold text-gray-800">B2B</span>
-            </Link>
+            </div>
           </div>
 
           {/* Right Section */}
@@ -122,27 +134,16 @@ function Header() {
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           ) : isAuthenticated && user ? (
             <div className="flex items-center space-x-4">
-              {/* Online/Offline Toggle */}
+              {/* Online/Offline Toggle using ToggleSwitch component */}
               {deliveryPartner.id && (
-                <label className="flex items-center cursor-pointer select-none">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={!!deliveryPartner.form.online}
-                      onChange={handleToggleOnline}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`block w-10 h-6 rounded-full ${deliveryPartner.form.online ? 'bg-green-500' : 'bg-red-500'}`}
-                    ></div>
-                    <div
-                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${deliveryPartner.form.online ? 'translate-x-4' : ''}`}
-                    ></div>
-                  </div>
-                  <span className="ml-2 text-sm font-medium">
-                    {deliveryPartner.form.online ? 'Online' : 'Offline'}
-                  </span>
-                </label>
+                <ToggleSwitch
+                  id="online-status-toggle"
+                  checked={!!deliveryPartner.form.online}
+                  onChange={handleToggleOnline}
+                  label={deliveryPartner.form.online ? 'Online' : 'Offline'}
+                  onColor="bg-green-500"
+                  offColor="bg-red-500"
+                />
               )}
               {/* Profile Section */}
               <div className="relative" ref={profileRef}>

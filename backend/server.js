@@ -103,6 +103,11 @@ io.on('connection', (socket) => {
         io.emit('deliveryReadyOrder', orderData);
     });
 
+    socket.on('deliveryPartnerAssigned', (orderData) => {
+        console.log('👤 Delivery partner assigned:', orderData);
+        io.emit('deliveryPartnerAssigned', orderData);
+    });
+
     socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);
     });

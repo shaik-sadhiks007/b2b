@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginApi, googleLoginApi, guestLoginApi, logoutApi, getProfileApi, registerApi } from '../../api/Api';
+import { loginApi, googleLoginApi, logoutApi, getDeliveryPartnerProfileApi, updateDeliveryPartnerProfileApi, registerApi } from '../../api/Api';
 
 const initialState = {
   isAuthenticated: false,
@@ -22,15 +22,28 @@ export const registerThunk = createAsyncThunk(
   }
 );
 
-// Fetch profile thunk
+// Fetch delivery partner profile thunk
 export const fetchProfileThunk = createAsyncThunk(
   'auth/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await getProfileApi();
+      const res = await getDeliveryPartnerProfileApi();
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Fetch profile failed');
+      return rejectWithValue(err.response?.data?.message || 'Fetch delivery partner profile failed');
+    }
+  }
+);
+
+// Update delivery partner profile thunk
+export const updateProfileThunk = createAsyncThunk(
+  'auth/updateProfile',
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await updateDeliveryPartnerProfileApi(data);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Update profile failed');
     }
   }
 );
@@ -73,24 +86,7 @@ export const googleLoginThunk = createAsyncThunk(
   }
 );
 
-// Guest login thunk
-export const guestLoginThunk = createAsyncThunk(
-  'auth/guestLogin',
-  async (credentials, { dispatch, rejectWithValue }) => {
-    try {
-      await guestLoginApi(credentials);
-      // After login, fetch the profile
-      const profileResult = await dispatch(fetchProfileThunk());
-      if (fetchProfileThunk.fulfilled.match(profileResult)) {
-        return profileResult.payload;
-      } else {
-        return rejectWithValue(profileResult.payload || 'Failed to fetch profile after guest login');
-      }
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Guest login failed');
-    }
-  }
-);
+
 
 // Logout thunk
 export const logoutThunk = createAsyncThunk(
@@ -155,20 +151,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Guest login
-      .addCase(guestLoginThunk.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(guestLoginThunk.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.user = action.payload;
-        state.loading = false;
-      })
-      .addCase(guestLoginThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+
       // Logout
       .addCase(logoutThunk.fulfilled, (state) => {
         state.isAuthenticated = false;
@@ -183,10 +166,39 @@ const authSlice = createSlice({
       })
       .addCase(fetchProfileThunk.fulfilled, (state, action) => {
         state.isAuthenticated = true;
-        state.user = action.payload;
+        // Map delivery partner data to user format
+        state.user = {
+          _id: action.payload._id,
+          name: action.payload.name,
+          email: action.payload.mobileNumber, // Use mobile number as email
+          username: action.payload.name,
+          mobileNumber: action.payload.mobileNumber,
+          ...action.payload
+        };
         state.loading = false;
       })
       .addCase(fetchProfileThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Update profile
+      .addCase(updateProfileThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfileThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update user data with new profile data
+        state.user = {
+          _id: action.payload._id,
+          name: action.payload.name,
+          email: action.payload.mobileNumber,
+          username: action.payload.name,
+          mobileNumber: action.payload.mobileNumber,
+          ...action.payload
+        };
+      })
+      .addCase(updateProfileThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

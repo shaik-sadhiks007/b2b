@@ -8,7 +8,9 @@ const {
 const getProfile = async (req, res) => {
   try {
     const partner = req.deliveryPartner;
-    res.json(partner);
+    // Remove aadhaar object from response
+    const { aadhaar, ...profileData } = partner.toObject();
+    res.json(profileData);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -119,11 +121,63 @@ const getAll = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const partner = req.deliveryPartner;
+    if (!partner) {
+      return res.status(404).json({ error: 'Delivery partner not found' });
+    }
+
+    const updateData = { ...req.body };
+    
+    // Handle photo upload
+    if (updateData.photo && typeof updateData.photo === 'string' && updateData.photo.startsWith('data:image')) {
+      // Delete old photo if exists
+      if (partner.photo && partner.photo.startsWith('https://')) {
+        const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+        if (partner.photo.startsWith(s3UrlPrefix)) {
+          const oldKey = partner.photo.replace(s3UrlPrefix, '');
+          deleteS3Object(oldKey); // fire-and-forget
+        }
+      }
+      const s3Key = await uploadBase64ImageToS3(updateData.photo, 'delivery-partner');
+      partner.photo = getS3ObjectUrl(s3Key);
+    }
+    
+    // Update fields directly on the partner document - only update if provided
+    if (updateData.name !== undefined) partner.name = updateData.name;
+    if (updateData.mobileNumber !== undefined) partner.mobileNumber = updateData.mobileNumber;
+    if (updateData.gender !== undefined) partner.gender = updateData.gender;
+    if (updateData.vehicleType !== undefined) partner.vehicleType = updateData.vehicleType;
+    if (updateData.vehicleNumber !== undefined) partner.vehicleNumber = updateData.vehicleNumber;
+    if (updateData.serviceLocation !== undefined) partner.serviceLocation = updateData.serviceLocation;
+    
+    // Update address - only update if provided
+    if (updateData.presentAddress) {
+      if (!partner.presentAddress) partner.presentAddress = {};
+      if (updateData.presentAddress.streetAddress !== undefined) partner.presentAddress.streetAddress = updateData.presentAddress.streetAddress;
+      if (updateData.presentAddress.city !== undefined) partner.presentAddress.city = updateData.presentAddress.city;
+      if (updateData.presentAddress.district !== undefined) partner.presentAddress.district = updateData.presentAddress.district;
+      if (updateData.presentAddress.state !== undefined) partner.presentAddress.state = updateData.presentAddress.state;
+      if (updateData.presentAddress.pinCode !== undefined) partner.presentAddress.pinCode = updateData.presentAddress.pinCode;
+    }
+
+    await partner.save();
+    
+    // Return response without aadhaar
+    const { aadhaar, ...profileData } = partner.toObject();
+    res.json(profileData);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getProfile,
   register,
   updateStep,
   updateStatus,
   toggleOnline,
-  getAll
+  getAll,
+  updateProfile
 };

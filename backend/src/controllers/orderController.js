@@ -211,6 +211,7 @@ exports.orderHistory = async (req, res) => {
         const totalOrders = await Order.countDocuments(filter);
         const orders = await Order.find(filter)
             .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(pageSize);
@@ -236,6 +237,7 @@ exports.orderHistoryByUser = async (req, res) => {
 
         const orders = await Order.find({ user: req.user.id })
             .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email")
             .sort({ createdAt: -1 });
 
         res.status(200).json(orders);
@@ -378,6 +380,20 @@ exports.postRestaurantOrderStatus = async (req, res) => {
         if (!order.orderType) order.orderType = 'PICKUP';
         await order.save();
 
+        // Emit delivery ready order event if status is ORDER_DELIVERY_READY
+        if (status === 'ORDER_DELIVERY_READY') {
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('deliveryReadyOrder', order);
+            }
+        }
+
+        // Emit order status update event for all status changes
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('orderStatusUpdate', order);
+        }
+
         // Send status change email notification to customer
         try {
             const user = await User.findById(order.user);
@@ -423,6 +439,7 @@ exports.getRestaurantOrderStatus = async (req, res) => {
             status,
             restaurantId: req.restaurant._id
         })
+            .populate('deliveryPartnerId', 'name mobileNumber email')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(pageSize);
@@ -510,7 +527,8 @@ exports.getOrderDetails = async (req, res) => {
             _id: req.params.orderId,
             user: req.user.id
         })
-            .populate("customerAddress");
+            .populate("customerAddress")
+            .populate("deliveryPartnerId", "name mobileNumber email");
 
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
@@ -819,7 +837,10 @@ exports.postInstoreOrderByAdmin = async (req, res) => {
 // Delivery partner: Get orders
 exports.getDeliveryPartnerOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ deliveryPartnerId: req.deliveryPartner._id })
+        const orders = await Order.find({ 
+            deliveryPartnerId: req.deliveryPartner._id,
+            status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
+        })
             .populate('customerAddress');
         res.status(200).json(orders);
     } catch (error) {
@@ -878,8 +899,19 @@ exports.acceptDeliveryOrder = async (req, res) => {
         if (order.deliveryPartnerId) {
             return res.status(400).json({ error: 'Order already assigned to a delivery partner' });
         }
+        
+        const previousStatus = order.status;
         order.deliveryPartnerId = req.deliveryPartner._id;
         await order.save();
+
+        // Emit order status update to notify restaurant
+        const io = req.app.get('io');
+        if (io) {
+            const updatedOrder = await Order.findById(orderId).populate('deliveryPartnerId', 'name phone email');
+            io.emit('orderStatusUpdate', updatedOrder);
+            io.emit('deliveryPartnerAssigned', updatedOrder);
+        }
+
         res.status(200).json(order);
     } catch (error) {
         console.error('[orderController.js][acceptDeliveryOrder]', error);

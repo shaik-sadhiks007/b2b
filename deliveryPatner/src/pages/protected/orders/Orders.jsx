@@ -3,26 +3,72 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAvailableDeliveryOrders, acceptDeliveryOrder } from '../../../redux/slices/orderSlice';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { TimeAgo } from '../../../components/TimeAgo';
+import appImages from '../../../constants/appImages';
+import Lottie from 'lottie-react';
+import { toast } from 'react-toastify';
+import io from 'socket.io-client';
+
+// Initialize socket connection
+const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
+
+// Add connection logging
+socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+});
 
 function Orders() {
   const dispatch = useDispatch();
-  const { availableOrders, availableLoading, availableError } = useSelector(state => state.orders);
+  const { availableOrders, availableError, availableLoading } = useSelector(state => state.orders);
 
   useEffect(() => {
     dispatch(fetchAvailableDeliveryOrders());
+
+    // Listen for delivery ready orders
+    socket.on('deliveryReadyOrder', (newOrder) => {
+      console.log('🚚 New delivery ready order received:', newOrder);
+      
+      // Show toast notification
+      toast.info(`New delivery order available! Order #${newOrder._id.slice(-6)}`);
+
+      // Refresh available orders
+      dispatch(fetchAvailableDeliveryOrders());
+    });
+
+    return () => {
+      socket.off('deliveryReadyOrder');
+    };
   }, [dispatch]);
 
   const handleAcceptOrder = (orderId) => {
-    dispatch(acceptDeliveryOrder(orderId));
+    dispatch(acceptDeliveryOrder(orderId)).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        toast.success('Order accepted successfully!');
+      } else {
+        toast.error('Failed to accept order');
+      }
+    });
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <h1 className="text-2xl font-bold mb-6">Available Orders to Accept</h1>
-      {availableLoading && <div>Loading available orders...</div>}
+      {availableLoading && (
+        <div className="flex flex-col items-center justify-center">
+          <Lottie animationData={appImages.deliveryAnimation} style={{ width: 300, height: 300 }} />
+          <div>Loading available orders...</div>
+        </div>
+      )}
       <ErrorMessage error={availableError} />
       {!availableLoading && availableOrders.length === 0 && !availableError && <div>No available orders to accept.</div>}
-      <div className="space-y-6 mb-10">
+      {!availableLoading && availableOrders.length > 0 && (<div className="space-y-6 mb-10">
         {availableOrders.map(order => (
           <div key={order._id} className="bg-yellow-50 rounded-lg shadow p-6 border border-yellow-200">
             <div className="flex justify-between items-center mb-2">
@@ -67,6 +113,7 @@ function Orders() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -98,6 +98,16 @@ io.on('connection', (socket) => {
         io.emit('orderStatusUpdate', orderData);
     });
 
+    socket.on('deliveryReadyOrder', (orderData) => {
+        console.log('🚚 Delivery ready order received:', orderData);
+        io.emit('deliveryReadyOrder', orderData);
+    });
+
+    socket.on('deliveryPartnerAssigned', (orderData) => {
+        console.log('👤 Delivery partner assigned:', orderData);
+        io.emit('deliveryPartnerAssigned', orderData);
+    });
+
     socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);
     });

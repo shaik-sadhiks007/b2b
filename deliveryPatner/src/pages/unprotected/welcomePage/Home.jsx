@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { getDeliveryPartnerProfile, setStep } from '../../../redux/slices/deliveryPartnerRegSlice';
@@ -8,6 +8,13 @@ const Home = () => {
   const loading = useSelector((state) => state.deliveryPartnerReg.loading);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleRegisterClick = async () => {
     if (isAuthenticated) {
@@ -37,6 +44,11 @@ const Home = () => {
       navigate('/login');
     }
   };
+
+  // Don't render the home page content if user is authenticated
+  if (isAuthenticated) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">

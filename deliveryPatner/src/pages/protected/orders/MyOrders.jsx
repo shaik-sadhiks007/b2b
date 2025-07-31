@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDeliveryPartnerOrders, updateDeliveryPartnerOrderStatus } from '../../../redux/slices/orderSlice';
 import { toast } from 'react-toastify';
 import io from 'socket.io-client';
+import Pagination from '../../../components/Pagination';
 
 // Initialize socket connection
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
@@ -22,13 +23,15 @@ socket.on('disconnect', () => {
 
 function MyOrders() {
   const dispatch = useDispatch();
-  const { orders, loading, error } = useSelector(state => state.orders);
+  const { orders, loading, error, pagination } = useSelector(state => state.orders);
   const { user } = useSelector(state => state.auth);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   console.log(user,'my orders user');
 
   useEffect(() => {
-    dispatch(fetchDeliveryPartnerOrders());
+    dispatch(fetchDeliveryPartnerOrders({ page: currentPage, pageSize }));
 
     // Listen for order status updates
     socket.on('orderStatusUpdate', (updatedOrder) => {
@@ -44,17 +47,26 @@ function MyOrders() {
         }
         
         // Refresh orders to get updated status
-        dispatch(fetchDeliveryPartnerOrders());
+        dispatch(fetchDeliveryPartnerOrders({ page: currentPage, pageSize }));
       }
     });
 
     return () => {
       socket.off('orderStatusUpdate');
     };
-  }, [dispatch]);
+  }, [dispatch, currentPage, pageSize]);
 
   const handleStatusUpdate = (orderId) => {
     dispatch(updateDeliveryPartnerOrderStatus({ orderId, status: 'ORDER_DELIVERED' }));
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
   };
 
   console.log(orders,'my orders');
@@ -111,6 +123,14 @@ function MyOrders() {
           </div>
         ))}
       </div>
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        pageSize={pageSize}
+        totalItems={pagination.total}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
     </div>
   );
 }

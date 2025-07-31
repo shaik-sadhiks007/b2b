@@ -45,16 +45,22 @@ export const updateDeliveryPartnerStepApi = (id, data) => api.patch(`/api/delive
 export const toggleDeliveryPartnerOnlineApi = (id, online) => api.patch(`/api/delivery-partner/online`, { online });
 
 // Get delivery partner orders
-export const getDeliveryPartnerOrdersApi = () => api.get('/api/orders/delivery-partner/orders');
+export const getDeliveryPartnerOrdersApi = (params = {}) => api.get('/api/orders/delivery-partner/orders', { params });
 
 // Update delivery partner order status
 export const updateDeliveryPartnerOrderStatusApi = (orderId, status) => api.patch(`/api/orders/delivery-partner/status/${orderId}`, { status });
 
 // Get available delivery orders for delivery partner
-export const getAvailableDeliveryOrdersApi = () => api.get('/api/orders/delivery-partner/available-orders');
+export const getAvailableDeliveryOrdersApi = (params = {}) => api.get('/api/orders/delivery-partner/available-orders', { params });
+
+// Get all business names for filtering
+export const getAllBusinessNamesApi = () => api.get('/api/orders/delivery-partner/business-names');
 
 // Accept a delivery order (assign deliveryPartnerId)
 export const acceptDeliveryOrderApi = (orderId) => api.patch(`/api/orders/delivery-partner/accept-order/${orderId}`);
 
+// Accept multiple delivery orders at once
+export const acceptMultipleDeliveryOrdersApi = (orderIds) => api.post('/api/orders/delivery-partner/accept-multiple-orders', { orderIds });
+
 // Get completed orders for delivery partner
-export const getCompletedDeliveryPartnerOrdersApi = () => api.get('/api/orders/delivery-partner/completed-orders');
+export const getCompletedDeliveryPartnerOrdersApi = (params = {}) => api.get('/api/orders/delivery-partner/completed-orders', { params });

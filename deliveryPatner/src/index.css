@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
-html, body {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+@layer base {
+  html {
+    font-family: 'Roboto', sans-serif;
+  }
 }

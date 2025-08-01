@@ -19,6 +19,8 @@ const defaultForm = {
   batchNumber: "",
   requiresPrescription: false,
   unit: "piece",
+  unitValue: 1, 
+   loose: false,
 };
 
 const ACCEPTED_IMAGE_TYPES = [
@@ -98,10 +100,15 @@ const MenuItemModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.totalPrice) {
-      setError("Name and Price are required");
+    if (!form.name || !form.totalPrice || !form.unitValue || !form.unit) {
+      setError("Name, Price, unit and unit value are required");
       return;
     }
+    if (form.unitValue <= 0) {
+    setError("Unit Value must be greater than zero");
+    return;
+  }
+
 
     setError("");
     setIsSubmitting(true);
@@ -202,6 +209,22 @@ const MenuItemModal = ({
       <option value="packet">packet</option>
     </select>
   </div>
+  <div className="space-y-1">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Unit Value <span className="text-red-500">*</span>
+  </label>
+  <input
+    type="number"
+    name="unitValue"
+    value={form.unitValue}
+    onChange={handleChange}
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+    required
+    min="0.01"
+    step="0.01"
+    placeholder="e.g., 1.5"
+  />
+</div>
   
 
           <div className="grid grid-cols-2 gap-4">
@@ -394,6 +417,7 @@ const MenuItemModal = ({
               />
             </div>
           </div>
+          
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -526,7 +550,35 @@ const MenuItemModal = ({
               </label>
             </div>
           </div>
-
+                    {/* Add this code block with the other toggle fields */}
+<div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+  <label className="flex items-center gap-2 cursor-pointer">
+    <div className="relative">
+      <input
+        type="checkbox"
+        name="loose"
+        checked={form.loose}
+        onChange={(e) =>
+          setForm((prev) => ({ ...prev, loose: e.target.checked }))
+        }
+        className="sr-only"
+      />
+      <div
+        className={`w-10 h-5 rounded-full shadow-inner transition-colors duration-200 ${
+          form.loose ? "bg-blue-500" : "bg-gray-300"
+        }`}
+      ></div>
+      <div
+        className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+          form.loose ? "translate-x-5" : "translate-x-0"
+        }`}
+      ></div>
+    </div>
+    <span className="text-sm font-medium text-gray-700">
+      Loose Item (unpackaged)
+    </span>
+  </label>
+</div>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Item Image

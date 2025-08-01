@@ -13,16 +13,17 @@ const BulkAddModal = ({ open, onClose, onBulkAdd, preSelectedCategory = '', preS
 
     // Define the default header order as a constant
     const DEFAULT_HEADER = [
-        'Name', 'Price', 'Quantity', 'Unit', 'Category', 'Subcategory', 'Food Type', 
+        'Name', 'Price', 'Quantity', 'Unit', 'UnitValue', 'Category', 'Subcategory', 'Food Type', 
         'Description', 'In Stock', 'Expiry Date', 'Storage Zone', 'Rack', 
-        'Shelf', 'Bin', 'Batch Number', 'Requires Prescription'
+        'Shelf', 'Bin', 'Batch Number', 'Requires Prescription', 'Loose Item'
     ];
 
     // Sample data format for reference
     const sampleData = `${DEFAULT_HEADER.join(',')}
-Paracetamol 500mg,5.00,100,piece,Medicines,Tablets,veg,Pain reliever,true,2024-12-31,general,A,2,3,BX2023-045,false
-Amoxicillin 250mg,8.50,50,box,Medicines,Capsules,veg,Antibiotic,true,2024-10-15,general,B,1,5,AMX2023-102,true
-Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,2024-06-30,refrigerated,C,1,1,INS2024-001,true`;
+Paracetamol 500mg,5.00,100,piece,500mg,Medicines,Tablets,veg,Pain reliever,true,2024-12-31,general,A,2,3,BX2023-045,false,false
+Amoxicillin 250mg,8.50,50,box,250mg,Medicines,Capsules,veg,Antibiotic,true,2024-10-15,general,B,1,5,AMX2023-102,true,false
+Insulin Vial,450.00,20,bottle,10ml,Medicines,Injections,veg,Diabetes medication,true,2024-06-30,refrigerated,C,1,1,INS2024-001,true,false
+Rice,2.50,1,kg,,Groceries,Staples,veg,Long grain rice,true,2025-01-15,general,D,1,2,,false,true`;
 
     // Parse CSV to items whenever bulkData changes
     useEffect(() => {
@@ -35,6 +36,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                     totalPrice: '',
                     quantity: null,
                     unit: 'piece',
+                    unitValue: '',
                     category: category || '',
                     subcategory: subcategory || '',
                     foodType: 'veg',
@@ -46,7 +48,8 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                     shelf: '',
                     bin: '',
                     batchNumber: '',
-                    requiresPrescription: false
+                    requiresPrescription: false,
+                    looseItem: false
                 }
             ] : prev));
             return;
@@ -75,6 +78,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 totalPrice: '',
                 quantity: null,
                 unit: 'piece',
+                unitValue: '',
                 category: category || '',
                 subcategory: subcategory || '',
                 foodType: 'veg',
@@ -86,7 +90,8 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 shelf: '',
                 bin: '',
                 batchNumber: '',
-                requiresPrescription: false
+                requiresPrescription: false,
+                looseItem: false
             }
         ]);
     };
@@ -108,6 +113,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
             const processedItems = parsedItems.map(item => ({
                 ...item,
                 unit: item.unit || 'piece',
+                unitValue: item.unitValue || '',
                 category: item.category || category || 'uncategorized',
                 subcategory: item.subcategory || subcategory || 'general',
                 foodType: item.foodType || 'veg',
@@ -120,7 +126,8 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 shelf: item.shelf || '',
                 bin: item.bin || '',
                 batchNumber: item.batchNumber || '',
-                requiresPrescription: item.requiresPrescription || false
+                requiresPrescription: item.requiresPrescription || false,
+                looseItem: item.looseItem || false
             }));
             // Filter out items missing required fields
             const validItems = processedItems.filter(item => {
@@ -167,6 +174,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 totalPrice: '',
                 quantity: null,
                 unit: 'piece',
+                unitValue: '',
                 category: '',
                 subcategory: '',
                 foodType: 'veg',
@@ -178,7 +186,8 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 shelf: '',
                 bin: '',
                 batchNumber: '',
-                requiresPrescription: false
+                requiresPrescription: false,
+                looseItem: false
             };
             if (dataStartIdx === 1) {
                 // Map by header
@@ -199,6 +208,10 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                             break;
                         case 'unit':
                             item.unit = value || 'piece';
+                            break;
+                        case 'unitvalue':
+                        case 'unit value':
+                            item.unitValue = value || '';
                             break;
                         case 'category':
                             item.category = value;
@@ -244,6 +257,10 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                         case 'requiresprescription':
                             item.requiresPrescription = value ? (value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' || value === '1') : false;
                             break;
+                        case 'loose item':
+                        case 'looseitem':
+                            item.looseItem = value ? (value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' || value === '1') : false;
+                            break;
                     }
                 });
             } else {
@@ -253,18 +270,20 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                     totalPrice: values[1] || '',
                     quantity: values[2] ? parseInt(values[2]) : null,
                     unit: values[3] || 'piece',
-                    category: values[4] || '',
-                    subcategory: values[5] || '',
-                    foodType: (values[6] || 'veg').toLowerCase(),
-                    description: values[7] || '',
-                    inStock: typeof values[8] !== 'undefined' ? (values[8].toLowerCase() === 'true' || values[8].toLowerCase() === 'yes' || values[8] === '1') : true,
-                    expiryDate: values[9] || '',
-                    storageZone: values[10] || 'general',
-                    rack: values[11] || '',
-                    shelf: values[12] || '',
-                    bin: values[13] || '',
-                    batchNumber: values[14] || '',
-                    requiresPrescription: typeof values[15] !== 'undefined' ? (values[15].toLowerCase() === 'true' || values[15].toLowerCase() === 'yes' || values[15] === '1') : false
+                    unitValue: values[4] || '',
+                    category: values[5] || '',
+                    subcategory: values[6] || '',
+                    foodType: (values[7] || 'veg').toLowerCase(),
+                    description: values[8] || '',
+                    inStock: typeof values[9] !== 'undefined' ? (values[9].toLowerCase() === 'true' || values[9].toLowerCase() === 'yes' || values[9] === '1') : true,
+                    expiryDate: values[10] || '',
+                    storageZone: values[11] || 'general',
+                    rack: values[12] || '',
+                    shelf: values[13] || '',
+                    bin: values[14] || '',
+                    batchNumber: values[15] || '',
+                    requiresPrescription: typeof values[16] !== 'undefined' ? (values[16].toLowerCase() === 'true' || values[16].toLowerCase() === 'yes' || values[16] === '1') : false,
+                    looseItem: typeof values[17] !== 'undefined' ? (values[17].toLowerCase() === 'true' || values[17].toLowerCase() === 'yes' || values[17] === '1') : false
                 };
             }
             if (item.name && item.totalPrice) {
@@ -288,6 +307,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 totalPrice: '',
                 quantity: null,
                 unit: 'piece',
+                unitValue: '',
                 category: category || '',
                 subcategory: subcategory || '',
                 foodType: 'veg',
@@ -299,7 +319,8 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                 shelf: '',
                 bin: '',
                 batchNumber: '',
-                requiresPrescription: false
+                requiresPrescription: false,
+                looseItem: false
             }
         ]);
     };
@@ -340,11 +361,12 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                                 <p>• Enter items in CSV format</p>
                                 <p>• First row should be headers</p>
                                 <p>• <strong>Required fields: Name, Price, Quantity</strong></p>
-                                <p>• Optional fields: Unit, Category, Subcategory, Food Type, Description, In Stock, Expiry Date</p>
+                                <p>• Optional fields: Unit, Unit Value, Category, Subcategory, Food Type, Description, In Stock, Expiry Date</p>
                                 <p>• Storage Zone: general, refrigerated, controlled, hazardous</p>
                                 <p>• Rack/Shelf/Bin: Location identifiers</p>
                                 <p>• Batch Number: Medication batch ID</p>
                                 <p>• Requires Prescription: true/false</p>
+                                <p>• Loose Item: true/false (for items sold by weight/volume)</p>
                                 <div className="mt-4 pt-2 border-t border-blue-200">
                                     <p className="text-blue-800 font-medium">Note:</p>
                                     <p className="text-xs text-blue-700 mt-1"><strong>Include all commas even for empty optional fields to maintain format.</strong></p>
@@ -417,6 +439,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                                                 <th className="border px-2 py-1">Price*</th>
                                                 <th className="border px-2 py-1">Qty*</th>
                                                 <th className="border px-2 py-1">Unit</th>
+                                                <th className="border px-2 py-1">Unit Value</th>
                                                 <th className="border px-2 py-1">Category</th>
                                                 <th className="border px-2 py-1">Subcat</th>
                                                 <th className="border px-2 py-1">Type</th>
@@ -426,6 +449,7 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                                                 <th className="border px-2 py-1">Bin</th>
                                                 <th className="border px-2 py-1">Batch</th>
                                                 <th className="border px-2 py-1">Rx</th>
+                                                <th className="border px-2 py-1">Loose</th>
                                                 <th className="border px-2 py-1">Expiry</th>
                                             </tr>
                                         </thead>
@@ -461,6 +485,9 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                                                             <option value="cup">cup</option>
                                                             <option value="packet">packet</option>
                                                         </select>
+                                                    </td>
+                                                    <td className="border px-2 py-1">
+                                                        <input type="text" value={item.unitValue || ''} onChange={e => handleItemChange(idx, 'unitValue', e.target.value)} className="w-16 border rounded px-1 py-0.5" placeholder="500mg, 10ml" />
                                                     </td>
                                                     <td className="border px-2 py-1">
                                                         <input type="text" value={item.category || ''} onChange={e => handleItemChange(idx, 'category', e.target.value)} className="w-20 border rounded px-1 py-0.5" />
@@ -500,6 +527,14 @@ Insulin Vial,450.00,20,bottle,Medicines,Injections,veg,Diabetes medication,true,
                                                             type="checkbox" 
                                                             checked={item.requiresPrescription || false} 
                                                             onChange={e => handleItemChange(idx, 'requiresPrescription', e.target.checked)} 
+                                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        />
+                                                    </td>
+                                                    <td className="border px-2 py-1 text-center">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={item.looseItem || false} 
+                                                            onChange={e => handleItemChange(idx, 'looseItem', e.target.checked)} 
                                                             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                                         />
                                                     </td>

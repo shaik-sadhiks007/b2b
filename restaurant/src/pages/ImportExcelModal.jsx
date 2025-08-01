@@ -73,6 +73,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         price: rowData.price || 0,
                         quantity: rowData.quantity || '',
                         unit: rowData.unit || 'piece',
+                        unitValue: rowData.unitvalue || '1',
                         category: rowData.category || '',
                         subcategory: rowData.subcategory || 'general',
                         description: rowData.description || '',
@@ -88,7 +89,11 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         requiresPrescription: rowData.requiresprescription === 'true' || 
                                            rowData.requiresprescription === true || 
                                            rowData.requiresprescription === 1 || 
-                                           false
+                                           false,
+                        isLooseItem: rowData.islooseitem === 'true' || 
+                                  rowData.islooseitem === true || 
+                                  rowData.islooseitem === 1 || 
+                                  false
                     };
                 });
 
@@ -119,6 +124,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 totalPrice: parseFloat(item.price) || 0,
                 quantity: parseInt(item.quantity) || 0,
                 unit: item.unit || 'piece',
+                unitValue: item.unitValue || '1',
                 category: item.category,
                 subcategory: item.subcategory,
                 description: item.description,
@@ -131,7 +137,8 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 shelf: item.shelf,
                 bin: item.bin,
                 batchNumber: item.batchNumber,
-                requiresPrescription: item.requiresPrescription
+                requiresPrescription: item.requiresPrescription,
+                isLooseItem: item.isLooseItem
             }));
 
             await onImport(items);
@@ -160,24 +167,34 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
     const downloadTemplate = () => {
         const templateData = [
             [
-                'name', 'price', 'quantity', 'unit', 'category', 'subcategory', 'description',
+                'name', 'price', 'quantity', 'unit', 'unitValue', 'category', 'subcategory', 'description',
                 'foodType', 'inStock', 'expiryDate', 'storageZone', 'rack',
-                'shelf', 'bin', 'batchNumber', 'requiresPrescription'
+                'shelf', 'bin', 'batchNumber', 'requiresPrescription', 'isLooseItem'
             ],
             [
-                'Paracetamol 500mg', '5.00', '100', 'piece', 'Medicines', 'Tablets', 'Pain reliever',
+                'Paracetamol 500mg', '5.00', '100', 'piece', '500mg', 'Medicines', 'Tablets', 'Pain reliever',
                 'veg', 'true', '2024-12-31', 'general', 'A',
-                '2', '3', 'BATCH001', 'false'
+                '2', '3', 'BATCH001', 'false', 'false'
             ],
             [
-                'Amoxicillin 250mg', '8.50', '50', 'box', 'Medicines', 'Capsules', 'Antibiotic',
+                'Amoxicillin 250mg', '8.50', '50', 'box', '250mg', 'Medicines', 'Capsules', 'Antibiotic',
                 'veg', 'true', '2024-10-15', 'general', 'B',
-                '1', '5', 'BATCH002', 'true'
+                '1', '5', 'BATCH002', 'true', 'false'
             ],
             [
-                'Insulin Vial', '450.00', '20', 'bottle', 'Medicines', 'Injections', 'Diabetes medication',
+                'Insulin Vial', '450.00', '20', 'bottle', '10ml', 'Medicines', 'Injections', 'Diabetes medication',
                 'veg', 'true', '2024-06-30', 'refrigerated', 'C',
-                '1', '1', 'BATCH003', 'true'
+                '1', '1', 'BATCH003', 'true', 'false'
+            ],
+            [
+                'Rice', '50.00', '10', 'kg', '1kg', 'Groceries', 'Grains', 'Basmati rice',
+                'veg', 'true', '2025-12-31', 'general', 'D',
+                '3', '2', 'BATCH004', 'false', 'true'
+            ],
+            [
+                'Loose Nails', '0.50', '500', 'piece', '1', 'Hardware', 'Fasteners', 'Assorted nails',
+                'veg', 'true', '', 'general', 'E',
+                '4', '1', '', 'false', 'true'
             ]
         ];
 
@@ -208,9 +225,11 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         <ul className="text-sm text-blue-700 space-y-1">
                             <li>• Upload Excel (.xlsx, .xls) or CSV (.csv) file</li>
                             <li>• Required columns: name, price, quantity</li>
-                            <li>• Unit options: kg, ltr,  piece, box, bottle, packet, etc.</li>
+                            <li>• Unit options: kg, ltr, piece, box, bottle, packet, etc.</li>
+                            <li>• Unit Value: Quantity per unit (e.g., 500mg, 1kg, 10ml)</li>
                             <li>• Medical fields: storageZone, rack, shelf, bin, batchNumber, requiresPrescription</li>
                             <li>• storageZone options: general, refrigerated, controlled, hazardous</li>
+                            <li>• isLooseItem: Set to true for items sold individually (like nails, screws, etc.)</li>
                         </ul>
                         <button
                             onClick={downloadTemplate}
@@ -269,6 +288,8 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Value</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loose</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Storage</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
@@ -283,6 +304,18 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">₹{item.price}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unit}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unitValue}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                                    {item.isLooseItem ? (
+                                                        <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                                            Yes
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                                                            No
+                                                        </span>
+                                                    )}
+                                                </td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm">
                                                     <span className={`px-2 py-1 rounded-full text-xs ${
                                                         item.storageZone === 'refrigerated' ? 'bg-blue-100 text-blue-800' :

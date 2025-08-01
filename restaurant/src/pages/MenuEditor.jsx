@@ -8,6 +8,7 @@ import ImportExcelModal from "./ImportExcelModal";
 import { MenuContext } from "../context/MenuContext";
 import ConfirmModal from "../reusable/ConfirmModal";
 import { AuthContext } from "../context/AuthContext";
+import Offers from './Offers';
 
 // Veg/NonVeg icons for menu items
 const VegIcon = () => (
@@ -82,8 +83,16 @@ function MenuEditor() {
     inStock: true,
     quantity: "",
     expiryDate: "",
-    unit: "piece"
+    unit: "piece",
+    unitValue: 1, // Default unit value
   });
+  // State for offer form
+const [offerFormOpenForItem, setOfferFormOpenForItem] = useState(null);
+
+  // Handler for opening offer form
+const handleOpenOfferForm = (item) => {
+  setOfferFormOpenForItem(item._id);
+};
 
   // Toggle subcategory expansion
   const toggleSubcategory = (subcategoryName) => {
@@ -270,6 +279,9 @@ function MenuEditor() {
         inStock: true,
         quantity: "",
         expiryDate: "",
+         unit: "piece", // Add default unit
+        unitValue: "1",
+        loose: false, // Default to not loose
       });
     }
   };
@@ -298,6 +310,8 @@ function MenuEditor() {
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
       unit: newItemData.unit || 'piece',
+      unitValue: newItemData.unitValue || 1,
+      loose: newItemData.loose || false, // Add loose field
       expiryDate: newItemData.expiryDate
         ? new Date(newItemData.expiryDate)
         : null,
@@ -817,6 +831,19 @@ function MenuEditor() {
       <option value="packet">packet</option>
     </select>
   </div>
+   <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Unit Value
+          </label>
+          <input
+            type="text"
+            name="unitValue"
+            value={newItemData.unitValue}
+            onChange={handleAccordionInputChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="e.g., 1, 250, 0.5"
+          />
+        </div>
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                           Price<span className="text-red-500">*</span>
@@ -866,6 +893,35 @@ function MenuEditor() {
                                           
                                         />
                                       </div>
+                                      <div className="flex items-center gap-4">
+  {/* Add this block with the other toggle buttons */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Loose Item
+    </label>
+    <label className="flex items-center cursor-pointer">
+      <div className="relative">
+        <input
+          type="checkbox"
+          name="loose"
+          checked={newItemData.loose}
+          onChange={handleAccordionInputChange}
+          className="sr-only"
+        />
+        <div
+          className={`block w-10 h-6 rounded-full ${
+            newItemData.loose ? "bg-blue-500" : "bg-gray-400"
+          }`}
+        ></div>
+        <div
+          className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
+            newItemData.loose ? "translate-x-4" : ""
+          }`}
+        ></div>
+      </div>
+    </label>
+  </div>
+</div>
                                       <div className="flex items-center gap-4">
                                         <div>
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -947,152 +1003,161 @@ function MenuEditor() {
                               showOutOfStock) && (
                                 <div className="space-y-8">
                                   <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
-                                    {subcat.items
-                                      .filter(
-                                        (item) =>
-                                          item.name
-                                            .toLowerCase()
-                                            .includes(searchTerm.toLowerCase()) &&
-                                          (!showOutOfStock ||
-                                            item.inStock === false)
-                                      )
-                                      .map((item, index) => (
-                                        <div
-                                          key={item._id || index}
-                                          className={`flex items-center justify-between rounded-md p-3 ${bulkDeleteMode &&
-                                            selectedItems[item._id]
-                                            ? "bg-red-50 border border-red-200"
-                                            : "bg-white"
-                                            }`}
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            {/* Item checkbox - only show in bulk delete mode */}
-                                            {bulkDeleteMode && (
-                                              <input
-                                                type="checkbox"
-                                                checked={
-                                                  selectedItems[item._id] || false
-                                                }
-                                                onChange={(e) =>
-                                                  handleItemSelection(
-                                                    item._id,
-                                                    e.target.checked
-                                                  )
-                                                }
-                                                className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
-                                              />
-                                            )}
-                                            {/* Veg/Non-Veg Icon */}
-                                            <span
-                                              title={
-                                                item.foodType === "veg"
-                                                  ? "Veg"
-                                                  : "Non-Veg"
-                                              }
-                                              className="inline-block align-middle"
-                                            >
-                                              {item.foodType === "veg" ? (
-                                                <VegIcon />
-                                              ) : (
-                                                <NonVegIcon />
-                                              )}
-                                            </span>
-                                            <div>
-                                              <div className="font-medium text-gray-800">
-                                                {item.name}
-                                              </div>
-                                              <div className="flex gap-4 text-sm text-gray-600">
-                                                <span>₹{item.price || item.totalPrice}</span>
-                                                <span>Qty: {item.quantity}</span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center space-x-4">
-                                            {/* InStock Toggle */}
-                                            <label className="flex items-center cursor-pointer">
-                                              <div className="relative">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={item.inStock}
-                                                  onChange={() =>
-                                                    updateMenuItem(item._id, {
-                                                      ...item,
-                                                      inStock: !item.inStock,
-                                                    })
-                                                  }
-                                                  className="sr-only"
-                                                />
-                                                <div
-                                                  className={`block w-10 h-6 rounded-full ${item.inStock
-                                                    ? "bg-green-500"
-                                                    : "bg-red-500"
-                                                    }`}
-                                                ></div>
-                                                <div
-                                                  className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock
-                                                    ? "translate-x-4"
-                                                    : ""
-                                                    }`}
-                                                ></div>
-                                              </div>
-                                            </label>
-                                            {/* Edit/Delete - Hide in bulk delete mode */}
-                                            {/* Mobile: show only icons, Desktop: show text */}
-                                            {!bulkDeleteMode && (
-                                              <>
-                                                <span className="hidden sm:inline">
-                                                  <button
-                                                    className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                    onClick={() =>
-                                                      handleOpenModal(
-                                                        selectedCategory,
-                                                        selectedSubcategory,
-                                                        item
-                                                      )
-                                                    }
-                                                  >
-                                                    Edit
-                                                  </button>
-                                                  <button
-                                                    className="ms-3 text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                                                    onClick={() => {
-                                                      setItemToDelete(item);
-                                                      setDeleteConfirmOpen(true);
-                                                    }}
-                                                  >
-                                                    Delete
-                                                  </button>
-                                                </span>
-                                                <span className="sm:hidden flex gap-2">
-                                                  <button
-                                                    className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
-                                                    onClick={() =>
-                                                      handleOpenModal(
-                                                        selectedCategory,
-                                                        selectedSubcategory,
-                                                        item
-                                                      )
-                                                    }
-                                                    title="Edit"
-                                                  >
-                                                    <Pencil size={18} />
-                                                  </button>
-                                                  <button
-                                                    className="text-red-600 hover:text-red-800 p-2 rounded-full"
-                                                    onClick={() => {
-                                                      setItemToDelete(item);
-                                                      setDeleteConfirmOpen(true);
-                                                    }}
-                                                    title="Delete"
-                                                  >
-                                                    <Trash2 size={18} />
-                                                  </button>
-                                                </span>
-                                              </>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
+                                  {/* Inside your item mapping */}
+{subcat.items
+  .filter(
+    (item) =>
+      item.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) &&
+      (!showOutOfStock || item.inStock === false)
+  )
+  .map((item, index) => (
+    <React.Fragment key={item._id || index}>
+      <div className={`flex items-center justify-between rounded-md p-3 ${bulkDeleteMode && selectedItems[item._id]
+        ? "bg-red-50 border border-red-200"
+        : "bg-white"}`}>
+        
+        <div className="flex items-center gap-3">
+          {/* Item checkbox - only show in bulk delete mode */}
+          {bulkDeleteMode && (
+            <input
+              type="checkbox"
+              checked={selectedItems[item._id] || false}
+              onChange={(e) => handleItemSelection(item._id, e.target.checked)}
+              className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
+            />
+          )}
+          {/* Veg/Non-Veg Icon */}
+          <span
+            title={item.foodType === "veg" ? "Veg" : "Non-Veg"}
+            className="inline-block align-middle"
+          >
+            {item.foodType === "veg" ? <VegIcon /> : <NonVegIcon />}
+          </span>
+          <div>
+            <div className="font-medium text-gray-800">
+              {item.name}
+            </div>
+            <div className="flex gap-4 text-sm text-gray-600">
+              <span>₹{item.price || item.totalPrice}</span>
+              <span>Qty: {item.quantity}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          {/* InStock Toggle */}
+          <label className="flex items-center cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={item.inStock}
+                onChange={() =>
+                  updateMenuItem(item._id, {
+                    ...item,
+                    inStock: !item.inStock,
+                  })
+                }
+                className="sr-only"
+              />
+              <div
+                className={`block w-10 h-6 rounded-full ${item.inStock
+                  ? "bg-green-500"
+                  : "bg-red-500"
+                  }`}
+              ></div>
+              <div
+                className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock
+                  ? "translate-x-4"
+                  : ""
+                  }`}
+              ></div>
+            </div>
+          </label>
+          
+          {/* Action Buttons */}
+          {!bulkDeleteMode && (
+            <>
+              {/* Desktop buttons */}
+              <span className="hidden sm:flex gap-2">
+                <button
+                  className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm transition-colors bg-blue-100/60 border border-blue-200 rounded"
+                  onClick={() => handleOpenOfferForm(item)}
+                >
+                  Add Offer
+                </button>
+                <button
+                  className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                  onClick={() =>
+                    handleOpenModal(
+                      selectedCategory,
+                      selectedSubcategory,
+                      item
+                    )
+                  }
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-red-600 hover:text-red-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                  onClick={() => {
+                    setItemToDelete(item);
+                    setDeleteConfirmOpen(true);
+                  }}
+                >
+                  Delete
+                </button>
+              </span>
+              
+              {/* Mobile buttons */}
+              <span className="sm:hidden flex gap-2">
+                <button
+                  className="text-blue-600 hover:text-blue-800 p-2 rounded-full"
+                  onClick={() => handleOpenOfferForm(item)}
+                  title="Add Offer"
+                >
+                  <Plus size={18} />
+                </button>
+                <button
+                  className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
+                  onClick={() =>
+                    handleOpenModal(
+                      selectedCategory,
+                      selectedSubcategory,
+                      item
+                    )
+                  }
+                  title="Edit"
+                >
+                  <Pencil size={18} />
+                </button>
+                <button
+                  className="text-red-600 hover:text-red-800 p-2 rounded-full"
+                  onClick={() => {
+                    setItemToDelete(item);
+                    setDeleteConfirmOpen(true);
+                  }}
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      
+      {/* Offer Form - Only show for this item */}
+      {offerFormOpenForItem === item._id && (
+        <div className="mt-2 mb-4 bg-gray-50 p-4 rounded-md border border-gray-200">
+          <Offers 
+            menuItemId={item._id} 
+            onClose={() => setOfferFormOpenForItem(null)}
+          />
+        </div>
+      )}
+    </React.Fragment>
+  ))}
                                   </div>
                                 </div>
                               )}

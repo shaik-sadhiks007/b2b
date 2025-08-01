@@ -4,6 +4,7 @@ const Menu = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/businessModel");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail, sendOrderNotificationToRestaurant, sendStatusChangeToRestaurant } = require('../utils/emailService');
+const { calculateDeliveryCharges, calculateGST, calculateDistance } = require('./settingsController');
 const moment = require('moment-timezone');
 
 exports.placeOrder = async (req, res) => {
@@ -131,6 +132,39 @@ exports.placeOrder = async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
+        // Calculate delivery charges and GST
+        let deliveryCharge = 0;
+        let gstAmount = 0;
+        let gstPercentage = 5;
+        let subtotalAmount = totalAmount;
+
+        if (orderType === 'delivery') {
+            // Calculate distance if customer address has location
+            let distance = 0;
+            if (customerAddressId) {
+                const address = await CustomerAddress.findById(customerAddressId);
+                if (address && address.location && restaurant.location) {
+                    distance = calculateDistance(address.location, restaurant.location);
+                }
+            }
+
+            // Calculate total weight of items (assuming average weight per item)
+            const totalWeight = items.reduce((weight, item) => weight + (item.quantity * 0.5), 0); // 0.5kg per item as default
+
+            // Calculate delivery charges
+            const deliveryResult = await calculateDeliveryCharges(totalAmount, distance, totalWeight);
+            deliveryCharge = deliveryResult.deliveryCharge;
+        }
+
+        // Calculate GST based on restaurant category
+        const category = restaurant.category || 'restaurant';
+        const gstResult = await calculateGST(totalAmount, category);
+        gstAmount = gstResult.gstAmount;
+        gstPercentage = gstResult.gstPercentage;
+
+        // Calculate final total
+        const finalTotalAmount = subtotalAmount + deliveryCharge + gstAmount;
+
         // Create new order
         const newOrder = new Order({
             user: userId,
@@ -142,7 +176,11 @@ exports.placeOrder = async (req, res) => {
                 photos: item.photos || [],
                 foodType: item.foodType || 'veg'
             })),
-            totalAmount,
+            subtotalAmount,
+            deliveryCharge,
+            gstAmount,
+            gstPercentage,
+            totalAmount: finalTotalAmount,
             paymentMethod: paymentMethod || "COD",
             paymentStatus: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
             status: "ORDER_PLACED",
@@ -837,12 +875,64 @@ exports.postInstoreOrderByAdmin = async (req, res) => {
 // Delivery partner: Get orders
 exports.getDeliveryPartnerOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ 
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+        const { timeFilter, businessFilter } = req.query;
+
+        let filter = {
             deliveryPartnerId: req.deliveryPartner._id,
             status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
-        })
-            .populate('customerAddress');
-        res.status(200).json(orders);
+        };
+
+        // Add time filter
+        if (timeFilter) {
+            const now = new Date();
+            let timeRange;
+            
+            switch (timeFilter) {
+                case '1h':
+                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '3h':
+                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '12h':
+                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+            }
+            filter.createdAt = { $gte: timeRange };
+        }
+
+        // Add business filter
+        if (businessFilter) {
+            filter.restaurantName = { $regex: businessFilter, $options: 'i' };
+        }
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
     } catch (error) {
         console.error('[orderController.js][getDeliveryPartnerOrders]', error);
         res.status(500).json({ error: 'Failed to get delivery partner orders', message: error.message });
@@ -872,14 +962,127 @@ exports.getAvailableDeliveryOrders = async (req, res) => {
             });
         }
 
-        const orders = await Order.find({
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+        const { timeFilter, businessFilter } = req.query;
+
+        let filter = {
             status: 'ORDER_DELIVERY_READY',
             deliveryPartnerId: { $exists: false }
-        }).populate('customerAddress');
-        res.status(200).json(orders);
+        };
+
+        // Add time filter
+        if (timeFilter) {
+            const now = new Date();
+            let timeRange;
+            
+            switch (timeFilter) {
+                case '1h':
+                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '3h':
+                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '12h':
+                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+            }
+            filter.createdAt = { $gte: timeRange };
+        }
+
+        // Add business filter
+        if (businessFilter) {
+            filter.restaurantName = { $regex: businessFilter, $options: 'i' };
+        }
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
     } catch (error) {
         console.error('[orderController.js][getAvailableDeliveryOrders]', error);
         res.status(500).json({ error: 'Failed to get available delivery orders', message: error.message });
+    }
+};
+
+// Delivery partner: Accept multiple orders at once
+exports.acceptMultipleDeliveryOrders = async (req, res) => {
+    try {
+        // Check if delivery partner is online and active
+        if (!req.deliveryPartner.online || req.deliveryPartner.status !== 'active') {
+            return res.status(403).json({ 
+                error: 'You must be online and have active status to accept orders' 
+            });
+        }
+
+        const { orderIds } = req.body;
+        
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+            return res.status(400).json({ error: 'Order IDs array is required' });
+        }
+
+        // Check if all orders exist and are available
+        const orders = await Order.find({
+            _id: { $in: orderIds },
+            status: 'ORDER_DELIVERY_READY',
+            deliveryPartnerId: { $exists: false }
+        });
+
+        if (orders.length !== orderIds.length) {
+            return res.status(400).json({ 
+                error: 'Some orders are not available or already assigned' 
+            });
+        }
+
+        // Update all orders with delivery partner ID
+        const updatedOrders = await Promise.all(
+            orders.map(async (order) => {
+                order.deliveryPartnerId = req.deliveryPartner._id;
+                return await order.save();
+            })
+        );
+
+        // Emit order status updates to notify restaurant
+        const io = req.app.get('io');
+        if (io) {
+            const populatedOrders = await Order.find({
+                _id: { $in: orderIds }
+            }).populate('deliveryPartnerId', 'name phone email');
+            
+            populatedOrders.forEach(order => {
+                io.emit('orderStatusUpdate', order);
+                io.emit('deliveryPartnerAssigned', order);
+            });
+        }
+
+        res.status(200).json({
+            message: `Successfully accepted ${updatedOrders.length} orders`,
+            orders: updatedOrders
+        });
+    } catch (error) {
+        console.error('[orderController.js][acceptMultipleDeliveryOrders]', error);
+        res.status(500).json({ error: 'Failed to accept multiple delivery orders', message: error.message });
     }
 };
 
@@ -922,13 +1125,70 @@ exports.acceptDeliveryOrder = async (req, res) => {
 // Delivery partner: Get completed orders
 exports.getCompletedDeliveryPartnerOrders = async (req, res) => {
     try {
-        const orders = await Order.find({
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+
+        const filter = {
             deliveryPartnerId: req.deliveryPartner._id,
             status: 'ORDER_DELIVERED'
-        }).populate('customerAddress');
-        res.status(200).json(orders);
+        };
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
     } catch (error) {
         console.error('[orderController.js][getCompletedDeliveryPartnerOrders]', error);
         res.status(500).json({ error: 'Failed to get completed orders', message: error.message });
+    }
+};
+
+// Get all unique business names for filtering
+exports.getAllBusinessNames = async (req, res) => {
+    try {
+        const businessNames = await Order.distinct('restaurantName', {
+            status: 'ORDER_DELIVERY_READY',
+            deliveryPartnerId: { $exists: false }
+        });
+
+        // Sort alphabetically
+        const sortedBusinessNames = businessNames.sort();
+
+        res.status(200).json({
+            businessNames: sortedBusinessNames
+        });
+    } catch (error) {
+        console.error('[orderController.js][getAllBusinessNames]', error);
+        res.status(500).json({ error: 'Failed to get business names', message: error.message });
+    }
+};
+
+// Get business names for delivery partner orders
+exports.getDeliveryPartnerBusinessNames = async (req, res) => {
+    try {
+        const businessNames = await Order.distinct('restaurantName', {
+            deliveryPartnerId: req.deliveryPartner._id,
+            status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
+        });
+        const sortedBusinessNames = businessNames.sort();
+        res.status(200).json({
+            businessNames: sortedBusinessNames
+        });
+    } catch (error) {
+        console.error('[orderController.js][getDeliveryPartnerBusinessNames]', error);
+        res.status(500).json({ error: 'Failed to get business names', message: error.message });
     }
 };

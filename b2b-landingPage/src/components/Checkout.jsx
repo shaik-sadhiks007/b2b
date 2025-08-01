@@ -96,6 +96,8 @@ const Checkout = () => {
     const [loading, setLoading] = useState(true);
     const [orderType, setOrderType] = useState('delivery');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [calculatedCharges, setCalculatedCharges] = useState(null);
+    const [chargesLoading, setChargesLoading] = useState(false);
     const navigate = useNavigate();
     const { carts, clearCart } = useCart();
     const { user } = useContext(HotelContext);
@@ -224,7 +226,7 @@ const Checkout = () => {
                     photos: item.photos || [],
                     isVeg: item.isVeg || false
                 })),
-                totalAmount: calculateTotal(),
+                totalAmount: calculatedCharges ? calculatedCharges.totalAmount : calculateTotal(),
                 paymentMethod: "COD",
                 orderType,
                 restaurantId: cartData.restaurantId._id,
@@ -247,7 +249,7 @@ const Checkout = () => {
                 socket.emit('newOrder', response.data.order);
 
                 toast.success('Order placed successfully! Redirecting to order details...');
-                
+
                 // Navigate first, then clear cart
                 navigate(`/ordersuccess/${response.data.order._id}`);
                 await clearCart();
@@ -276,6 +278,59 @@ const Checkout = () => {
         }, 0);
     };
 
+    // Calculate charges using settings API
+    const calculateCharges = async () => {
+        try {
+            setChargesLoading(true);
+            const subtotal = calculateTotal();
+
+            if (subtotal <= 0) {
+                setCalculatedCharges(null);
+                return;
+            }
+
+            // Get restaurant category from cart data
+            const cartData = carts[0];
+            const category = cartData?.restaurant?.category || 'restaurant';
+
+            // Calculate distance if delivery and address is selected
+            let distance = 0;
+            if (orderType === 'delivery' && selectedAddress && cartData?.restaurant?.location) {
+                // Simple distance calculation (in a real app, you'd use a proper geolocation service)
+                // For now, we'll use a placeholder distance
+                distance = 5; // 5km as default
+            }
+
+            // Calculate total weight (assuming 0.5kg per item)
+            const totalWeight = cartData?.items?.reduce((weight, item) => weight + (item.quantity * 0.5), 0) || 0;
+
+            const response = await axios.post(`${API_URL}/api/settings/calculate-checkout`, {
+                orderAmount: subtotal,
+                distance: distance,
+                weight: totalWeight,
+                category: category,
+                deliveryChargeType: orderType === 'delivery' ? null : undefined // Use default for delivery
+            });
+
+            if (response.data.success) {
+                setCalculatedCharges(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error calculating charges:', error);
+            // Fallback to basic calculation
+            const subtotal = calculateTotal();
+            setCalculatedCharges({
+                subtotalAmount: subtotal,
+                deliveryCharge: orderType === 'delivery' ? 30 : 0,
+                gstAmount: (subtotal * 5) / 100,
+                gstPercentage: 5,
+                totalAmount: subtotal + (orderType === 'delivery' ? 30 : 0) + ((subtotal * 5) / 100)
+            });
+        } finally {
+            setChargesLoading(false);
+        }
+    };
+
     const cartData = carts[0];
     const isDeliveryAvailable = cartData?.serviceType === 'delivery' || cartData?.serviceType === 'both';
     const isPickupAvailable = cartData?.serviceType === 'pickup' || cartData?.serviceType === 'both';
@@ -288,6 +343,13 @@ const Checkout = () => {
             setOrderType('pickup');
         }
     }, [isDeliveryAvailable, isPickupAvailable]);
+
+    // Recalculate charges when relevant data changes
+    useEffect(() => {
+        if (!loading && carts.length > 0) {
+            calculateCharges();
+        }
+    }, [carts, orderType, selectedAddress, loading]);
 
     const handleAddAddress = async () => {
         try {
@@ -392,11 +454,126 @@ const Checkout = () => {
                             ))}
                         </div>
                         <div className="mt-6 pt-4 border-t border-gray-200">
-                            <div className="flex justify-between items-center">
-                                <span className="text-lg font-semibold text-gray-800">Total Amount</span>
-                                <span className="text-xl font-bold text-gray-900">₹{calculateTotal().toFixed(2)}</span>
-                            </div>
+                            {chargesLoading ? (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Subtotal</span>
+                                        <span className="text-sm text-gray-600">Calculating...</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Delivery Charge</span>
+                                        <span className="text-sm text-gray-600">Calculating...</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">GST ({calculatedCharges?.gstPercentage || 5}%)</span>
+                                        <span className="text-sm text-gray-600">Calculating...</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                        <span className="text-lg font-semibold text-gray-800">Total Amount</span>
+                                        <span className="text-lg font-semibold text-gray-800">Calculating...</span>
+                                    </div>
+                                </div>
+                            ) : calculatedCharges ? (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Subtotal</span>
+                                        <span className="text-sm text-gray-600">₹{calculatedCharges.subtotalAmount.toFixed(2)}</span>
+                                    </div>
+                                    {orderType === 'delivery' && calculatedCharges.deliveryCharge > 0 && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">Delivery Charge</span>
+                                            <span className="text-sm text-gray-600">₹{calculatedCharges.deliveryCharge.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">GST ({calculatedCharges.gstPercentage}%)</span>
+                                        <span className="text-sm text-gray-600">₹{calculatedCharges.gstAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                        <span className="text-lg font-semibold text-gray-800">Total Amount</span>
+                                        <span className="text-xl font-bold text-gray-900">₹{calculatedCharges.totalAmount.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-lg font-semibold text-gray-800">Total Amount</span>
+                                    <span className="text-xl font-bold text-gray-900">₹{calculateTotal().toFixed(2)}</span>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Settings Information */}
+                        {calculatedCharges && calculatedCharges.settings && (
+                            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">Applied Settings</h3>
+                                <div className="space-y-2 text-xs text-gray-600">
+                                    <div className="flex justify-between">
+                                        <span>Delivery Type:</span>
+                                        <span className="font-medium capitalize">{calculatedCharges.chargeType}</span>
+                                    </div>
+                                    {calculatedCharges.chargeType === 'flat' && (
+                                        <div className="flex justify-between">
+                                            <span>Flat Delivery Charge:</span>
+                                            <span className="font-medium">₹{calculatedCharges.settings.flatDeliveryCharge}</span>
+                                        </div>
+                                    )}
+                                    {calculatedCharges.chargeType === 'threshold' && (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span>Threshold Amount:</span>
+                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryThresholdAmount}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Free Delivery Above:</span>
+                                                <span className="font-medium">{calculatedCharges.settings.freeDeliveryAboveThreshold ? 'Yes' : 'No'}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                    {(calculatedCharges.chargeType === 'weight' || calculatedCharges.chargeType === 'distance-weight') && (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span>Rate per Kg:</span>
+                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryRatePerKg}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Max Weight (kg):</span>
+                                                <span className="font-medium">{calculatedCharges.settings.maxDeliveryWeight}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Additional Charge per Kg:</span>
+                                                <span className="font-medium">₹{calculatedCharges.settings.additionalChargePerKg}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                    {calculatedCharges.chargeType === 'distance-weight' && (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span>Rate per Km:</span>
+                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryRatePerKm}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Max Distance (km):</span>
+                                                <span className="font-medium">{calculatedCharges.settings.maxDeliveryDistance}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Additional Charge per Km:</span>
+                                                <span className="font-medium">₹{calculatedCharges.settings.additionalChargePerKm}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                    <div className="pt-2 border-t border-gray-200">
+                                        <div className="flex justify-between">
+                                            <span>GST Category:</span>
+                                            <span className="font-medium capitalize">{calculatedCharges.category}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>GST Percentage:</span>
+                                            <span className="font-medium">{calculatedCharges.gstPercentage}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Side - Address Management */}

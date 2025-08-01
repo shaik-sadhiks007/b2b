@@ -24,6 +24,9 @@ const {
     postDeliveryPartnerOrderStatus,
     getAvailableDeliveryOrders,
     acceptDeliveryOrder,
+    acceptMultipleDeliveryOrders,
+    getAllBusinessNames,
+    getDeliveryPartnerBusinessNames,
     getCompletedDeliveryPartnerOrders
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -91,7 +94,10 @@ router.post('/test-email', async (req, res) => {
 router.get('/delivery-partner/orders', authMiddleware, deliveryPartnerMiddleware, getDeliveryPartnerOrders);
 router.patch('/delivery-partner/status/:orderId', authMiddleware, deliveryPartnerMiddleware, postDeliveryPartnerOrderStatus);
 router.get('/delivery-partner/available-orders', authMiddleware, deliveryPartnerMiddleware, getAvailableDeliveryOrders);
+router.get('/delivery-partner/business-names', authMiddleware, deliveryPartnerMiddleware, getAllBusinessNames);
+router.get('/delivery-partner/my-business-names', authMiddleware, deliveryPartnerMiddleware, getDeliveryPartnerBusinessNames);
 router.patch('/delivery-partner/accept-order/:orderId', authMiddleware, deliveryPartnerMiddleware, acceptDeliveryOrder);
+router.post('/delivery-partner/accept-multiple-orders', authMiddleware, deliveryPartnerMiddleware, acceptMultipleDeliveryOrders);
 router.get('/delivery-partner/completed-orders', authMiddleware, deliveryPartnerMiddleware, getCompletedDeliveryPartnerOrders);
 
 

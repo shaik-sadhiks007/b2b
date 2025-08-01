@@ -1,16 +1,28 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCompletedDeliveryPartnerOrders } from '../../../redux/slices/orderSlice';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { TimeAgo } from '../../../components/TimeAgo';
+import Pagination from '../../../components/Pagination';
 
 function CompletedOrders() {
   const dispatch = useDispatch();
-  const { completedOrders, completedLoading, completedError } = useSelector(state => state.orders);
+  const { completedOrders, completedLoading, completedError, completedPagination } = useSelector(state => state.orders);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
-    dispatch(fetchCompletedDeliveryPartnerOrders());
-  }, [dispatch]);
+    dispatch(fetchCompletedDeliveryPartnerOrders({ page: currentPage, pageSize }));
+  }, [dispatch, currentPage, pageSize]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="container mx-auto">
@@ -57,6 +69,14 @@ function CompletedOrders() {
           </div>
         ))}
       </div>
+      <Pagination
+        currentPage={completedPagination.page}
+        totalPages={completedPagination.totalPages}
+        pageSize={pageSize}
+        totalItems={completedPagination.total}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
     </div>
   );
 }

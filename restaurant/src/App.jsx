@@ -32,6 +32,7 @@ import AdminBusinessDashboard from './adminComp/AdminBusinessDashboard';
 import BusinessProfile from './adminComp/BusinessProfile'
 import AdminFeedback from './adminComp/AdminFeedback'
 import Expiry from './components/Expiry';
+import Offers from './pages/Offers';
 function App() {
   return (
     <MobileMenuProvider>
@@ -114,6 +115,11 @@ function App() {
               <Route path='/feedback' element={
                 <PrivateRoute>
                   <Feedback />
+                </PrivateRoute>
+              } /> 
+              <Route path='/offers' element={
+                <PrivateRoute>
+                  <Offers />
                 </PrivateRoute>
               } /> 
               <Route path='/menu/expiry' element={

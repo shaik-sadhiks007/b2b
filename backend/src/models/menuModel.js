@@ -51,6 +51,7 @@ const menuItemSchema = new mongoose.Schema({
     },
     unit: {
         type: String,
+        required: true,
         enum: ['kg', 'ltr', 'piece', 'box', 'plate', 'bottle', 'cup', 'packet'],
         default: 'piece'
     },
@@ -65,11 +66,20 @@ const menuItemSchema = new mongoose.Schema({
         type: Number,
         default: 100
     },
+     loose: {
+        type: Boolean,
+        default: false  // Default to false meaning it's not a loose item by default
+    },
 
      expiryDate: {
         type: Date,
         required: false  
     },
+unitValue: {
+    type: Number,
+    required: true,
+    min: [0.01, 'Unit value must be greater than zero']
+},
 
      storageZone: {
         type: String,

@@ -7,7 +7,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { HotelContext } from "../contextApi/HotelContextProvider";
 import { useRestaurantDetails } from "../hooks/useRestaurantDetails";
 import HotelMenu from "./HotelMenu";
-import { Search } from "lucide-react";
+import { Search, Tag, ChevronDown } from "lucide-react";
 
 const RestaurantDetailsSkeleton = () => (
   <div className="mt-24">
@@ -45,25 +45,28 @@ const HotelDetails = (props) => {
   const [triggerSearchOnTextUpdate, setTriggerSearchOnTextUpdate] = useState(false);
   const [updatingItems, setUpdatingItems] = useState({});
   const [selectedQuantities, setSelectedQuantities] = useState({});
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [currentItemOffers, setCurrentItemOffers] = useState([]);
+  const [selectedItemForOffer, setSelectedItemForOffer] = useState(null);
 
   const isPantulugariMessSubdomain = useMemo(() => {
     return window.location.hostname === "pantulugaarimess.shopatb2b.com";
   }, []);
   const [showClosingSoonPopup, setShowClosingSoonPopup] = useState(false);
   
-  // Define available quantity options
   const quantityOptions = [
-    { value: 100, label: '100 grams' },
-    { value: 150, label: '150 grams' },
-    { value: 250, label: '250 grams' },
-    { value: 300, label: '300 grams' },
-    { value: 500, label: '500 grams' },
-    { value: 750, label: '750 grams' },
-    { value: 1000, label: '1 kg' },
-    { value: 2000, label: '2 kg' },
-    { value: 3000, label: '3 kg' },
-    { value: 5000, label: '5 kg' }
+    { value: 100, label: '100' },
+    { value: 150, label: '150' },
+    { value: 250, label: '250' },
+    { value: 300, label: '300' },
+    { value: 500, label: '500' },
+    { value: 750, label: '750' },
+    { value: 1000, label: '1000' },
   ];
+
+  const calculatePrice = (basePrice, quantity) => {
+    return (basePrice * quantity / 1000).toFixed(2);
+  };
 
   const popularItems = useMemo(() => {
     if (!menu || menu.length === 0) return [];
@@ -71,7 +74,11 @@ const HotelDetails = (props) => {
       category.subcategories.flatMap(sub =>
         sub.items?.map(item => ({
           name: item.name,
-          image: item.photos?.[0] || "https://via.placeholder.com/80?text=Item"
+          image: item.photos?.[0] || "https://via.placeholder.com/80?text=Item",
+          totalPrice: item.totalPrice,
+          offers: item.offers || [],
+          unit: item.unit || 'unit',
+          unitValue: item.unitValue || 1
         }))
       )
     );
@@ -171,8 +178,13 @@ const HotelDetails = (props) => {
       return;
     }
 
-    const selectedQuantity = selectedQuantities[item._id] || 100; 
-    const quantityLabel = quantityOptions.find(q => q.value === selectedQuantity)?.label || '100 grams';
+    const selectedQuantity = item.loose ? (selectedQuantities[item._id] || 100) : 1;
+    const quantityLabel = item.loose 
+      ? (quantityOptions.find(q => q.value === selectedQuantity)?.label + ' grams')
+      : `${item.unitValue} ${item.unit}`;
+    const calculatedPrice = item.loose 
+      ? calculatePrice(item.totalPrice, selectedQuantity)
+      : item.totalPrice;
 
     const items = [{
       itemId: item._id,
@@ -180,9 +192,11 @@ const HotelDetails = (props) => {
       quantity: 1,
       quantityValue: selectedQuantity,
       quantityLabel: quantityLabel,
-      totalPrice: Number(item.totalPrice),
+      totalPrice: Number(calculatedPrice),
       foodType: item.foodType,
       photos: Array.isArray(item.photos) ? item.photos.filter(p => typeof p === 'string') : [],
+      unit: item.unit || 'unit',
+      unitValue: item.unitValue || 1
     }];
 
     const result = await addToCart(
@@ -218,7 +232,12 @@ const HotelDetails = (props) => {
         return;
       }
 
-      const result = await updateCartItem(itemId, newQuantity);
+      const originalPricePerKg = (item.totalPrice * 1000) / item.quantityValue;
+      const calculatedPrice = calculatePrice(originalPricePerKg, item.quantityValue);
+      
+      const result = await updateCartItem(itemId, newQuantity, {
+        totalPrice: calculatedPrice
+      });
       if (!result.success) {
         toast.error(result.error || 'Failed to update quantity');
       }
@@ -242,73 +261,119 @@ const HotelDetails = (props) => {
     }
   };
 
-  const renderItemActions = (item) => {
-    if (!item.inStock) {
-      return <span className="text-red-500 text-sm">Out of Stock</span>;
-    }
+  const handleOpenOfferModal = (item) => {
+    setSelectedItemForOffer(item);
+    setCurrentItemOffers(item.offers || []);
+    setShowOfferModal(true);
+  };
 
-    const cartItem = getCartItem(item._id);
-    const isUpdating = updatingItems[item._id];
-    
-    if (cartItem) {
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleQuantityChange(item._id, -1);
-              }}
-              disabled={isUpdating}
-              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              -
-            </button>
-            <span className="w-6 text-center">
-              {isUpdating ? <Skeleton width={20} /> : cartItem.quantity}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleQuantityChange(item._id, 1);
-              }}
-              disabled={isUpdating}
-              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              +
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveItem(item._id);
-              }}
-              disabled={isUpdating}
-              className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
-            >
-              Remove
-            </button>
-          </div>
-          {cartItem.quantityLabel && (
-            <span className="text-xs text-gray-500">Size: {cartItem.quantityLabel}</span>
-          )}
-        </div>
-      );
-    }
+ const renderItemActions = (item) => {
+  if (!item.inStock) {
+    return <span className="text-red-500 text-sm">Out of Stock</span>;
+  }
 
+  const cartItem = getCartItem(item._id);
+  const isUpdating = updatingItems[item._id];
+  const selectedQuantity = selectedQuantities[item._id] || 1000;
+  const displayPrice = cartItem ? 
+    cartItem.totalPrice : 
+    calculatePrice(item.totalPrice, selectedQuantity);
+  
+  if (cartItem) {
     return (
       <div className="flex flex-col gap-2">
-        <select
-          value={selectedQuantities[item._id] || 100}
-          onChange={(e) => handleQuantitySelect(item._id, parseInt(e.target.value))}
-          className="text-xs p-1 border rounded"
-          onClick={(e) => e.stopPropagation()}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleQuantityChange(item._id, -1);
+            }}
+            disabled={isUpdating}
+            className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            -
+          </button>
+          <span className="w-6 text-center">
+            {isUpdating ? <Skeleton width={20} /> : cartItem.quantity}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleQuantityChange(item._id, 1);
+            }}
+            disabled={isUpdating}
+            className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+          >
+            +
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveItem(item._id);
+            }}
+            disabled={isUpdating}
+            className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
+          >
+            Remove
+          </button>
+        </div>
+        <div className="text-xs text-gray-500">
+          {cartItem.quantityLabel && (
+            <span>Size: {cartItem.quantityLabel}</span>
+          )}
+          <span className="block">Price: ₹{displayPrice}</span>
+         
+          
+        </div>
+      </div>
+    );
+  }
+
+  // Check if item has offers
+  const hasOffers = item.offers && item.offers.length > 0;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <div>
+           {item.loose && (
+          <span className="text-sm font-medium">₹{displayPrice}</span>
+        )}
+          {!item.loose && (
+            <span className="text-xs text-gray-500 block">
+              {item.unitValue} {item.unit}
+            </span>
+          )}
+        </div>
+        {/* Only show quantity dropdown if item.loose is true */}
+        {item.loose && (
+          <select
+            value={selectedQuantity}
+            onChange={(e) => handleQuantitySelect(item._id, parseInt(e.target.value))}
+            className="text-xs p-1 border rounded"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {quantityOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      {hasOffers ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenOfferModal(item);
+          }}
+          className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm flex items-center justify-center gap-1"
         >
-          {quantityOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <Tag size={14} />
+          <span>Options</span>
+          <ChevronDown size={14} />
+        </button>
+      ) : (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -318,9 +383,10 @@ const HotelDetails = (props) => {
         >
           Add
         </button>
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
+};
 
   const handleRestaurantModalResponse = async (resetCart) => {
     if (resetCart) {
@@ -389,6 +455,93 @@ const HotelDetails = (props) => {
                 Yes, Reset Cart
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showOfferModal && selectedItemForOffer && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">
+              Offers for {selectedItemForOffer.name}
+            </h2>
+            
+            <div className="mb-6">
+              <div className="bg-gray-50 p-4 rounded-md mb-4">
+                <h3 className="font-medium mb-2">Regular Price</h3>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-gray-700">₹{selectedItemForOffer.totalPrice}</span>
+                    <span className="text-xs text-gray-500 block">
+                      {selectedItemForOffer.unitValue} {selectedItemForOffer.unit}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleAddToCart(selectedItemForOffer);
+                      setShowOfferModal(false);
+                    }}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+
+              {currentItemOffers.length > 0 && (
+                <>
+                  <h3 className="font-medium mb-2">Special Offers</h3>
+                  <div className="space-y-3">
+                    {currentItemOffers.map((offer, index) => (
+                      <div key={index} className="bg-yellow-50 border border-yellow-100 p-4 rounded-md">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-yellow-800">{offer.title}</h4>
+                          {offer.isActive && (
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-yellow-700 mb-3">{offer.description}</p>
+                        
+                        {offer.offerType === 'percentage-off' && (
+                          <p className="text-sm">
+                            {offer.discountPercentage}% off - Now ₹{(selectedItemForOffer.totalPrice * (1 - offer.discountPercentage/100)).toFixed(2)}
+                          </p>
+                        )}
+                        {offer.offerType === 'flat-rate' && (
+                          <p className="text-sm">
+                            Flat ₹{offer.flatDiscount} off - Now ₹{(selectedItemForOffer.totalPrice - offer.flatDiscount).toFixed(2)}
+                          </p>
+                        )}
+                        {offer.offerType === 'bulk-purchase' && (
+                          <p className="text-sm">
+                            Buy {offer.minQuantity} for ₹{(selectedItemForOffer.totalPrice * offer.minQuantity * (1 - offer.discountPercentage/100)).toFixed(2)} ({offer.discountPercentage}% off)
+                          </p>
+                        )}
+                        
+                        <button
+                          onClick={() => {
+                            handleAddToCart(selectedItemForOffer);
+                            setShowOfferModal(false);
+                          }}
+                          className="mt-3 w-full px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
+                        >
+                          Add with Offer
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowOfferModal(false)}
+              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -466,6 +619,9 @@ const HotelDetails = (props) => {
                         <span className="text-sm text-center font-medium whitespace-nowrap overflow-hidden overflow-ellipsis max-w-full">
                           {item.name}
                         </span>
+                        <span className="text-xs text-gray-500">
+                          {item.unitValue} {item.unit}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -503,7 +659,9 @@ const HotelDetails = (props) => {
                       className="w-24 h-24 object-cover rounded mb-2"
                     />
                     <p className="text-sm font-medium mb-2">{item.name}</p>
-                    <p className="text-sm font-medium mb-2">₹{item.totalPrice}</p>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {item.unitValue} {item.unit}
+                    </p>
                     {renderItemActions(item)}
                   </div>
                 ))}
@@ -521,7 +679,9 @@ const HotelDetails = (props) => {
                         className="w-20 h-20 object-cover rounded mb-2"
                       />
                       <p className="text-sm font-medium mb-2">{item.name}</p>
-                      <p className="text-sm font-medium mb-2">₹{item.totalPrice}</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        {item.unitValue} {item.unit}
+                      </p>
                       {renderItemActions(item)}
                     </div>
                   ))}

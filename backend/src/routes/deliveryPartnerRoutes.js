@@ -6,13 +6,17 @@ const {
   toggleOnline,
   getAll,
   updateStep,
-  getProfile
+  getProfile,
+  updateProfile
 } = require('../controllers/deliveryPartnerController.js');
 const deliveryPartnerMiddleware = require('../middleware/deliveryPartnerMiddleware.js');
 const authMiddleware = require('../middleware/authMiddleware.js');
 
 
 router.get('/profile', authMiddleware, deliveryPartnerMiddleware, getProfile);
+
+// Update delivery partner profile
+router.patch('/profile', authMiddleware, deliveryPartnerMiddleware, updateProfile);
 
 // Register a new delivery partner
 router.post('/register', authMiddleware, register);

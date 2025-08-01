@@ -40,6 +40,7 @@ import { getSubdomain } from "./utils/getSubdomain";
 import { API_URL } from "./api/api"
 import axios from 'axios';
 import HomeOrHotelDetails from './components/HomeOrHotelDetails';
+import bgImage from './assets/bgImage.jpg'
 
 
 function AppContent() {
@@ -118,7 +119,7 @@ function AppContent() {
         <Route path="/feedback" element={<Feedback />} />
       </Routes>
 
-      {!shouldHideFooter && (isMainDomain ? <Footer /> : <Pantulugarifooter />)}
+      <Footer />
     </div>
   );
 }

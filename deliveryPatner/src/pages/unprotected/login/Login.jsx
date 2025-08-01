@@ -33,7 +33,7 @@ const Login = () => {
       // Dispatch login thunk to backend
       const resultAction = await dispatch(loginThunk({ email: user.email, firebaseUid: user.uid }));
       if (loginThunk.fulfilled.match(resultAction)) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setLocalError(resultAction.payload || 'Login failed!');
       }
@@ -50,7 +50,7 @@ const Login = () => {
       // Dispatch google login thunk to backend
       const resultAction = await dispatch(googleLoginThunk({ email: user.email, name: user.displayName, firebaseUid: user.uid }));
       if (googleLoginThunk.fulfilled.match(resultAction)) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setLocalError(resultAction.payload || 'Google Login failed!');
       }

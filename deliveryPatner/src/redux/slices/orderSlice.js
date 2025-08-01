@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getDeliveryPartnerOrdersApi, updateDeliveryPartnerOrderStatusApi, getAvailableDeliveryOrdersApi, acceptDeliveryOrderApi, acceptMultipleDeliveryOrdersApi, getAllBusinessNamesApi, getCompletedDeliveryPartnerOrdersApi } from '../../api/Api';
+import { getDeliveryPartnerOrdersApi, updateDeliveryPartnerOrderStatusApi, getAvailableDeliveryOrdersApi, acceptDeliveryOrderApi, acceptMultipleDeliveryOrdersApi, getAllBusinessNamesApi, getDeliveryPartnerBusinessNamesApi, getCompletedDeliveryPartnerOrdersApi } from '../../api/Api';
 
 export const fetchDeliveryPartnerOrders = createAsyncThunk(
   'orders/fetchDeliveryPartnerOrders',
@@ -85,6 +85,18 @@ export const fetchBusinessNames = createAsyncThunk(
   }
 );
 
+export const fetchDeliveryPartnerBusinessNames = createAsyncThunk(
+  'orders/fetchDeliveryPartnerBusinessNames',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await getDeliveryPartnerBusinessNamesApi();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'orders',
   initialState: {
@@ -92,14 +104,17 @@ const orderSlice = createSlice({
     availableOrders: [],
     completedOrders: [],
     businessNames: [],
+    deliveryPartnerBusinessNames: [],
     loading: false,
     availableLoading: false,
     completedLoading: false,
     businessNamesLoading: false,
+    deliveryPartnerBusinessNamesLoading: false,
     error: null,
     availableError: null,
     completedError: null,
     businessNamesError: null,
+    deliveryPartnerBusinessNamesError: null,
     pagination: {
       total: 0,
       page: 1,
@@ -192,6 +207,18 @@ const orderSlice = createSlice({
       .addCase(fetchBusinessNames.rejected, (state, action) => {
         state.businessNamesLoading = false;
         state.businessNamesError = action.payload;
+      })
+      .addCase(fetchDeliveryPartnerBusinessNames.pending, (state) => {
+        state.deliveryPartnerBusinessNamesLoading = true;
+        state.deliveryPartnerBusinessNamesError = null;
+      })
+      .addCase(fetchDeliveryPartnerBusinessNames.fulfilled, (state, action) => {
+        state.deliveryPartnerBusinessNamesLoading = false;
+        state.deliveryPartnerBusinessNames = action.payload.businessNames;
+      })
+      .addCase(fetchDeliveryPartnerBusinessNames.rejected, (state, action) => {
+        state.deliveryPartnerBusinessNamesLoading = false;
+        state.deliveryPartnerBusinessNamesError = action.payload;
       });
   },
 });

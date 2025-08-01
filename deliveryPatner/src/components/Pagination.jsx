@@ -10,7 +10,7 @@ const Pagination = ({
   totalItems,
   showPageSizeSelector = true 
 }) => {
-  if (totalPages <= 1) return null;
+  // if (totalPages <= 1) return null;
 
   const getVisiblePages = () => {
     const pages = [];

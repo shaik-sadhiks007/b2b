@@ -4,6 +4,7 @@ const Menu = require("../models/menuModel");
 const CustomerAddress = require("../models/customerAddress");
 const Restaurant = require("../models/businessModel");
 const { sendOrderConfirmationEmail, sendStatusChangeEmail, sendOrderNotificationToRestaurant, sendStatusChangeToRestaurant } = require('../utils/emailService');
+const { calculateDeliveryCharges, calculateGST, calculateDistance } = require('./settingsController');
 const moment = require('moment-timezone');
 
 exports.placeOrder = async (req, res) => {
@@ -131,6 +132,39 @@ exports.placeOrder = async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
+        // Calculate delivery charges and GST
+        let deliveryCharge = 0;
+        let gstAmount = 0;
+        let gstPercentage = 5;
+        let subtotalAmount = totalAmount;
+
+        if (orderType === 'delivery') {
+            // Calculate distance if customer address has location
+            let distance = 0;
+            if (customerAddressId) {
+                const address = await CustomerAddress.findById(customerAddressId);
+                if (address && address.location && restaurant.location) {
+                    distance = calculateDistance(address.location, restaurant.location);
+                }
+            }
+
+            // Calculate total weight of items (assuming average weight per item)
+            const totalWeight = items.reduce((weight, item) => weight + (item.quantity * 0.5), 0); // 0.5kg per item as default
+
+            // Calculate delivery charges
+            const deliveryResult = await calculateDeliveryCharges(totalAmount, distance, totalWeight);
+            deliveryCharge = deliveryResult.deliveryCharge;
+        }
+
+        // Calculate GST based on restaurant category
+        const category = restaurant.category || 'restaurant';
+        const gstResult = await calculateGST(totalAmount, category);
+        gstAmount = gstResult.gstAmount;
+        gstPercentage = gstResult.gstPercentage;
+
+        // Calculate final total
+        const finalTotalAmount = subtotalAmount + deliveryCharge + gstAmount;
+
         // Create new order
         const newOrder = new Order({
             user: userId,
@@ -142,7 +176,11 @@ exports.placeOrder = async (req, res) => {
                 photos: item.photos || [],
                 foodType: item.foodType || 'veg'
             })),
-            totalAmount,
+            subtotalAmount,
+            deliveryCharge,
+            gstAmount,
+            gstPercentage,
+            totalAmount: finalTotalAmount,
             paymentMethod: paymentMethod || "COD",
             paymentStatus: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
             status: "ORDER_PLACED",
@@ -840,11 +878,44 @@ exports.getDeliveryPartnerOrders = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const pageSize = parseInt(req.query.pageSize) || 10;
         const skip = (page - 1) * pageSize;
+        const { timeFilter, businessFilter } = req.query;
 
-        const filter = {
+        let filter = {
             deliveryPartnerId: req.deliveryPartner._id,
             status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
         };
+
+        // Add time filter
+        if (timeFilter) {
+            const now = new Date();
+            let timeRange;
+            
+            switch (timeFilter) {
+                case '1h':
+                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '3h':
+                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '12h':
+                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+            }
+            filter.createdAt = { $gte: timeRange };
+        }
+
+        // Add business filter
+        if (businessFilter) {
+            filter.restaurantName = { $regex: businessFilter, $options: 'i' };
+        }
 
         const totalOrders = await Order.countDocuments(filter);
         const orders = await Order.find(filter)
@@ -1101,6 +1172,23 @@ exports.getAllBusinessNames = async (req, res) => {
         });
     } catch (error) {
         console.error('[orderController.js][getAllBusinessNames]', error);
+        res.status(500).json({ error: 'Failed to get business names', message: error.message });
+    }
+};
+
+// Get business names for delivery partner orders
+exports.getDeliveryPartnerBusinessNames = async (req, res) => {
+    try {
+        const businessNames = await Order.distinct('restaurantName', {
+            deliveryPartnerId: req.deliveryPartner._id,
+            status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
+        });
+        const sortedBusinessNames = businessNames.sort();
+        res.status(200).json({
+            businessNames: sortedBusinessNames
+        });
+    } catch (error) {
+        console.error('[orderController.js][getDeliveryPartnerBusinessNames]', error);
         res.status(500).json({ error: 'Failed to get business names', message: error.message });
     }
 };

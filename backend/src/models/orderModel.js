@@ -45,6 +45,25 @@ const orderSchema = new mongoose.Schema({
         ref: "CustomerAddress",
         required: false
     },
+    subtotalAmount: {
+        type: Number,
+        required: true
+    },
+    deliveryCharge: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    gstAmount: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    gstPercentage: {
+        type: Number,
+        required: true,
+        default: 5
+    },
     totalAmount: {
         type: Number,
         required: true

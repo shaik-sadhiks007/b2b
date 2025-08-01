@@ -56,6 +56,9 @@ export const getAvailableDeliveryOrdersApi = (params = {}) => api.get('/api/orde
 // Get all business names for filtering
 export const getAllBusinessNamesApi = () => api.get('/api/orders/delivery-partner/business-names');
 
+// Get business names for delivery partner orders
+export const getDeliveryPartnerBusinessNamesApi = () => api.get('/api/orders/delivery-partner/my-business-names');
+
 // Accept a delivery order (assign deliveryPartnerId)
 export const acceptDeliveryOrderApi = (orderId) => api.patch(`/api/orders/delivery-partner/accept-order/${orderId}`);
 

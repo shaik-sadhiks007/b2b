@@ -9,32 +9,32 @@ const getActiveSettings = async () => {
             isActive: true 
         });
         
-        if (!settings) {
-            // Return default settings if none exist
-            return {
-                gstSettings: {
-                    defaultGstPercentage: 5,
-                    categoryGstPercentages: {
-                        pharma: 12,
-                        grocery: 2,
-                        restaurant: 5,
-                        others: 5
-                    }
-                },
-                deliverySettings: {
-                    flatDeliveryCharge: 30,
-                    deliveryThresholdAmount: 500,
-                    freeDeliveryAboveThreshold: true,
-                    deliveryRatePerKm: 10,
-                    maxDeliveryDistance: 10,
-                    additionalChargePerKm: 15,
-                    deliveryRatePerKg: 5,
-                    maxDeliveryWeight: 15,
-                    additionalChargePerKg: 8,
-                    minimumOrderAmount: 100
-                }
-            };
-        }
+        // if (!settings) {
+        //     // Return default settings if none exist
+        //     return {
+        //         gstSettings: {
+        //             defaultGstPercentage: 5,
+        //             categoryGstPercentages: {
+        //                 pharma: 12,
+        //                 grocery: 2,
+        //                 restaurant: 5,
+        //                 others: 5
+        //             }
+        //         },
+        //         deliverySettings: {
+        //             flatDeliveryCharge: 30,
+        //             deliveryThresholdAmount: 500,
+        //             freeDeliveryAboveThreshold: true,
+        //             deliveryRatePerKm: 10,
+        //             maxDeliveryDistance: 10,
+        //             additionalChargePerKm: 15,
+        //             deliveryRatePerKg: 5,
+        //             maxDeliveryWeight: 15,
+        //             additionalChargePerKg: 8,
+        //             minimumOrderAmount: 100
+        //         }
+        //     };
+        // }
         
         return settings;
     } catch (error) {
@@ -52,52 +52,32 @@ const calculateDeliveryCharges = async (orderAmount, distance, weight) => {
         let deliveryCharge = 0;
         let chargeType = 'flat'; // Default type
         
-        // Calculate based on order amount first (threshold logic)
-        if (orderAmount >= deliverySettings.deliveryThresholdAmount) {
-            if (deliverySettings.freeDeliveryAboveThreshold) {
-                deliveryCharge = 0;
-                chargeType = 'free';
-            } else {
-                deliveryCharge = deliverySettings.flatDeliveryCharge;
-                chargeType = 'threshold';
-            }
+        // Check if order meets threshold for free delivery
+        if (orderAmount >= deliverySettings.deliveryThresholdAmount && deliverySettings.freeDeliveryAboveThreshold) {
+            deliveryCharge = 0;
+            chargeType = 'free';
         } else {
-            // Apply flat charge as base
+            // Start with flat delivery charge as base
             deliveryCharge = deliverySettings.flatDeliveryCharge;
             chargeType = 'flat';
         }
         
-        // Add distance-based charges if distance is provided
-        if (distance && distance > 0) {
-            const distanceCharge = distance * deliverySettings.deliveryRatePerKm;
-            
-            // Additional charges for distance beyond maxDeliveryDistance
-            if (distance > deliverySettings.maxDeliveryDistance) {
-                const additionalDistance = distance - deliverySettings.maxDeliveryDistance;
-                const additionalCharge = additionalDistance * deliverySettings.additionalChargePerKm;
-                deliveryCharge += additionalCharge;
-            } else {
-                deliveryCharge += distanceCharge;
-            }
-            
+        // Add distance-based charges if distance exceeds maxDeliveryDistance
+        if (distance && distance > deliverySettings.maxDeliveryDistance) {
+            const additionalDistance = distance - deliverySettings.maxDeliveryDistance;
+            const additionalCharge = additionalDistance * deliverySettings.additionalChargePerKm;
+            deliveryCharge += additionalCharge;
             chargeType = 'distance';
         }
         
-        // Add weight-based charges if weight is provided
-        if (weight && weight > 0) {
-            const weightCharge = weight * deliverySettings.deliveryRatePerKg;
-            
-            // Additional charges for weight beyond maxDeliveryWeight
-            if (weight > deliverySettings.maxDeliveryWeight) {
-                const additionalWeight = weight - deliverySettings.maxDeliveryWeight;
-                const additionalCharge = additionalWeight * deliverySettings.additionalChargePerKg;
-                deliveryCharge += additionalCharge;
-            } else {
-                deliveryCharge += weightCharge;
-            }
+        // Add weight-based charges if weight exceeds maxDeliveryWeight
+        if (weight && weight > deliverySettings.maxDeliveryWeight) {
+            const additionalWeight = weight - deliverySettings.maxDeliveryWeight;
+            const additionalCharge = additionalWeight * deliverySettings.additionalChargePerKg;
+            deliveryCharge += additionalCharge;
             
             // Update charge type if both distance and weight are considered
-            if (distance && distance > 0) {
+            if (distance && distance > deliverySettings.maxDeliveryDistance) {
                 chargeType = 'distance-weight';
             } else {
                 chargeType = 'weight';
@@ -312,10 +292,8 @@ const insertSettings = async (req, res) => {
                 flatDeliveryCharge: 30,
                 deliveryThresholdAmount: 500,
                 freeDeliveryAboveThreshold: true,
-                deliveryRatePerKm: 10,
                 maxDeliveryDistance: 10,
                 additionalChargePerKm: 15,
-                deliveryRatePerKg: 5,
                 maxDeliveryWeight: 15,
                 additionalChargePerKg: 8,
                 minimumOrderAmount: 100

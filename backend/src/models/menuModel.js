@@ -1,31 +1,32 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const menuItemSchema = new mongoose.Schema({
+const menuItemSchema = new mongoose.Schema(
+  {
     businessId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Business',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Business",
+      required: true,
     },
     name: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     category: {
-        type: String,
-        default: "uncategorized",
-        lowercase: true,
-        trim: true
+      type: String,
+      default: "uncategorized",
+      lowercase: true,
+      trim: true,
     },
     subcategory: {
-        type: String,
-        default: "general",
-        lowercase: true,
-        trim: true
+      type: String,
+      default: "general",
+      lowercase: true,
+      trim: true,
     },
     foodType: {
-        type: String,
-        enum: ['veg', 'nonveg', 'egg'],
-        default: 'veg',
+      type: String,
+      enum: ["veg", "nonveg", "egg"],
+      default: "veg",
     },
     // customisable: {
     //     type: Boolean,
@@ -36,97 +37,109 @@ const menuItemSchema = new mongoose.Schema({
     //     required: true
     // },
     description: {
-        type: String,
+      type: String,
     },
     photos: {
-        type: String
+      type: String,
     },
     // serviceType: {
     //     type: String,
     //     enum: ['Delivery', 'Dine-in', 'Both'],
     // },
     totalPrice: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true,
     },
     unit: {
-        type: String,
-        required: true,
-        enum: ['kg', 'ltr', 'piece', 'box', 'plate', 'bottle', 'cup', 'packet'],
-        default: 'piece'
+      type: String,
+      required: true,
+      enum: [
+        "grams",
+        "ml",
+        "kg",
+        "ltr",
+        "piece",
+        "box",
+        "plate",
+        "bottle",
+        "cup",
+        "packet",
+      ],
+      default: "piece",
     },
     // packagingCharges: {
     //     type: String,
     // },
     inStock: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
     quantity: {
-        type: Number,
-        default: 100
+      type: Number,
+      default: 100,
     },
-     loose: {
-        type: Boolean,
-        default: false  // Default to false meaning it's not a loose item by default
+    loose: {
+      type: Boolean,
+      default: false, // Default to false meaning it's not a loose item by default
     },
 
-     expiryDate: {
-        type: Date,
-        required: false  
+    expiryDate: {
+      type: Date,
+      required: false,
     },
-unitValue: {
-    type: Number,
-    required: true,
-    min: [0.01, 'Unit value must be greater than zero']
-},
+    unitValue: {
+      type: Number,
+      required: true,
+      min: [0.01, "Unit value must be greater than zero"],
+      default: 1, // Default to 1, can be overridden
+    },
 
-     storageZone: {
-        type: String,
-        enum: ['general', 'refrigerated', 'controlled', 'hazardous'],
-        default: 'general'
+    storageZone: {
+      type: String,
+      enum: ["general", "refrigerated", "controlled", "hazardous"],
+      default: "general",
     },
     rack: {
-        type: String,
-        uppercase: true,
-        trim: true,
-        required: false, // Add this
-  validate: {
-    validator: function(v) {
-      return !v || /^[A-Z0-9-]{1,5}$/.test(v); // Allow empty or valid format
-    },
-    message: props => `${props.value} is not a valid rack identifier!`
-  }
+      type: String,
+      uppercase: true,
+      trim: true,
+      required: false, // Add this
+      validate: {
+        validator: function (v) {
+          return !v || /^[A-Z0-9-]{1,5}$/.test(v); // Allow empty or valid format
+        },
+        message: (props) => `${props.value} is not a valid rack identifier!`,
+      },
     },
     shelf: {
-        type: String,
-        uppercase: true,
-        trim: true
+      type: String,
+      uppercase: true,
+      trim: true,
     },
     bin: {
-        type: String,
-        uppercase: true,
-        trim: true
+      type: String,
+      uppercase: true,
+      trim: true,
     },
-     batchNumber: {
-        type: String,
-        uppercase: true,
-        trim: true
+    batchNumber: {
+      type: String,
+      uppercase: true,
+      trim: true,
     },
     requiresPrescription: {
-        type: Boolean,
-        default: false
-    }
-
-
-}, {
-    timestamps: true
-});
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Compound index
 menuItemSchema.index({ category: 1, subcategory: 1 });
 
 // Check if the model exists before creating it
-const Menu = mongoose.models.Menu || mongoose.model('Menu', menuItemSchema);
+const Menu = mongoose.models.Menu || mongoose.model("Menu", menuItemSchema);
 
-module.exports = Menu; 
+module.exports = Menu;

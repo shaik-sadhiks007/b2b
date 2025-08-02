@@ -821,6 +821,8 @@ const handleOpenOfferForm = (item) => {
       className="w-full border border-gray-300 rounded-md px-3 py-2"
       required
     >
+      <option value="grams">grams</option>
+      <option value="milli grams">ml</option>
       <option value="kg">kg</option>
       <option value="ltr">ltr</option>
       <option value="piece">piece</option>

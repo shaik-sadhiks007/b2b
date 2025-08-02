@@ -87,12 +87,22 @@ const CartPage = () => {
                 return;
             }
 
-            const result = await updateCartItem(itemId, newQuantity);
-
-            if (result.success) {
-                // toast.success('Cart updated successfully');
+            // For loose items, keep the same quantity value but update the price
+            if (cartItem.loose) {
+                const originalPricePerKg = (cartItem.totalPrice * 1000) / cartItem.quantityValue;
+                const calculatedPrice = (originalPricePerKg * cartItem.quantityValue / 1000).toFixed(2);
+                
+                const result = await updateCartItem(itemId, newQuantity, {
+                    totalPrice: calculatedPrice
+                });
+                if (!result.success) {
+                    toast.error(result.error || 'Failed to update quantity');
+                }
             } else {
-                toast.error(result.error || 'Failed to update quantity');
+                const result = await updateCartItem(itemId, newQuantity);
+                if (!result.success) {
+                    toast.error(result.error || 'Failed to update quantity');
+                }
             }
         } catch (err) {
             console.error('Error updating quantity:', err);
@@ -132,7 +142,22 @@ const CartPage = () => {
         }, 0);
     };
 
-    console.log(carts, "carts");
+    const renderQuantityLabel = (item) => {
+        if (item.loose && item.quantityLabel) {
+            return (
+                <span className="text-xs text-gray-500 ml-1">
+                    ({item.quantityLabel})
+                </span>
+            );
+        } else if (item.unit && item.unitValue) {
+            return (
+                <span className="text-xs text-gray-500 ml-1">
+                    ({item.unitValue} {item.unit})
+                </span>
+            );
+        }
+        return null;
+    };
 
     if (loading) return <CartSkeleton />;
     if (error) return <div className="flex justify-center items-center h-screen text-red-600">{error}</div>;
@@ -191,7 +216,9 @@ const CartPage = () => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-sm truncate">{item.name}</div>
-                                                    <div className="text-gray-600 text-xs mt-1">₹{item.totalPrice}</div>
+                                                    <div className="text-gray-600 text-xs mt-1">
+                                                        ₹{item.totalPrice} {renderQuantityLabel(item)}
+                                                    </div>
                                                 </div>
                                                 <div className="flex items-center border rounded-full px-2 py-1 bg-white shadow-sm ml-2">
                                                     <button
@@ -213,7 +240,7 @@ const CartPage = () => {
                                                     </svg>
                                                 </button>
                                             </div>
-                                            {/* Desktop/tablet layout (unchanged) */}
+                                            {/* Desktop/tablet layout */}
                                             <div className="hidden sm:flex items-center gap-4">
                                                 <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative">
                                                     {item.photos?.length > 0 && item.photos[0] != null && item.photos[0] != '' ? (
@@ -236,7 +263,7 @@ const CartPage = () => {
                                                         <h3 className="font-medium">{item.name}</h3>
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        ₹{item.totalPrice} 
+                                                        ₹{item.totalPrice} {renderQuantityLabel(item)}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3">

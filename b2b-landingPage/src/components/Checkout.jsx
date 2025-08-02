@@ -218,14 +218,26 @@ const Checkout = () => {
 
             const cartData = carts[0];
             const orderData = {
-                items: cartData.items.map(item => ({
-                    itemId: item.itemId,
-                    name: item.name,
-                    quantity: item.quantity,
-                    totalPrice: item.totalPrice,
-                    photos: item.photos || [],
-                    isVeg: item.isVeg || false
-                })),
+                items: cartData.items.map(item => {
+                    // For loose items, convert quantity from grams to kg
+                    const quantity = item.loose && item.quantityLabel 
+                        ? parseFloat(item.quantityLabel) / 1000 
+                        : item.quantity;
+
+                    return {
+                        itemId: item.itemId,
+                        name: item.name,
+                        quantity: quantity,
+                        totalPrice: item.totalPrice,
+                        photos: item.photos || [],
+                        isVeg: item.isVeg || false,
+                        loose: item.loose || false,
+                        unit: item.unit || '',
+                        unitValue: item.unitValue || 0,
+                        quantityLabel: item.quantityLabel || '',
+                        originalQuantity: item.quantity // Keep original quantity for reference
+                    };
+                }),
                 totalAmount: calculatedCharges ? calculatedCharges.totalAmount : calculateTotal(),
                 paymentMethod: "COD",
                 orderType,
@@ -328,6 +340,23 @@ const Checkout = () => {
         } finally {
             setChargesLoading(false);
         }
+    };
+
+    const renderQuantityLabel = (item) => {
+        if (item.loose && item.quantityLabel) {
+            return (
+                <span className="text-xs text-gray-500 ml-1">
+                    ({item.quantityLabel})
+                </span>
+            );
+        } else if (item.unit && item.unitValue) {
+            return (
+                <span className="text-xs text-gray-500 ml-1">
+                    ({item.unitValue} {item.unit})
+                </span>
+            );
+        }
+        return null;
     };
 
     const cartData = carts[0];
@@ -441,9 +470,16 @@ const Checkout = () => {
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="font-medium text-gray-800">{item.name}</h3>
-                                            <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                                            <p className="text-sm text-gray-600">₹{item.totalPrice.toFixed(2)} each</p>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-medium text-gray-800">{item.name}</h3>
+                                                <span className={`w-3 h-3 border ${item.foodType === 'veg' ? 'border-green-600' : 'border-red-600'} flex items-center justify-center`}>
+                                                    <span className={`w-1.5 h-1.5 ${item.foodType === 'veg' ? 'bg-green-600' : 'bg-red-600'} rounded-full`}></span>
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-500">
+                                                Quantity: {item.quantity} {renderQuantityLabel(item)}
+                                            </p>
+                                            <p className="text-sm text-gray-600">₹{item.totalPrice.toFixed(2)} {item.loose ? 'per kg' : 'each'}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">

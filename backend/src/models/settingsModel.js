@@ -31,13 +31,6 @@ const settingsSchema = new mongoose.Schema({
 
     // Delivery Settings
     deliverySettings: {
-        // Delivery charge calculation type
-        deliveryChargeType: {
-            type: String,
-            enum: ['flat', 'threshold', 'weight', 'distance-weight'],
-            default: 'flat'
-        },
-        
         // Flat delivery charge (for flat type)
         flatDeliveryCharge: {
             type: Number,

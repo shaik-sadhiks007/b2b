@@ -22,7 +22,6 @@ const getActiveSettings = async () => {
                     }
                 },
                 deliverySettings: {
-                    deliveryChargeType: 'threshold',
                     flatDeliveryCharge: 30,
                     deliveryThresholdAmount: 500,
                     freeDeliveryAboveThreshold: true,
@@ -45,62 +44,64 @@ const getActiveSettings = async () => {
 };
 
 // Calculate delivery charges based on settings and parameters
-const calculateDeliveryCharges = async (orderAmount, distance, weight, deliveryChargeType = null) => {
+const calculateDeliveryCharges = async (orderAmount, distance, weight) => {
     try {
         const settings = await getActiveSettings();
         const deliverySettings = settings.deliverySettings;
         
-        // Use provided deliveryChargeType or default from settings
-        const chargeType = deliveryChargeType || deliverySettings.deliveryChargeType;
-        
         let deliveryCharge = 0;
+        let chargeType = 'flat'; // Default type
         
-        switch (chargeType) {
-            case 'flat':
+        // Calculate based on order amount first (threshold logic)
+        if (orderAmount >= deliverySettings.deliveryThresholdAmount) {
+            if (deliverySettings.freeDeliveryAboveThreshold) {
+                deliveryCharge = 0;
+                chargeType = 'free';
+            } else {
                 deliveryCharge = deliverySettings.flatDeliveryCharge;
-                break;
-                
-            case 'threshold':
-                if (orderAmount >= deliverySettings.deliveryThresholdAmount) {
-                    deliveryCharge = deliverySettings.freeDeliveryAboveThreshold ? 0 : deliverySettings.flatDeliveryCharge;
-                } else {
-                    deliveryCharge = deliverySettings.flatDeliveryCharge;
-                }
-                break;
-                
-            case 'weight':
-                deliveryCharge = weight * deliverySettings.deliveryRatePerKg;
-                
-                // Additional charges for weight beyond maxDeliveryWeight
-                if (weight > deliverySettings.maxDeliveryWeight) {
-                    const additionalWeight = weight - deliverySettings.maxDeliveryWeight;
-                    deliveryCharge += additionalWeight * deliverySettings.additionalChargePerKg;
-                }
-                break;
-                
-            case 'distance-weight':
-                // Base delivery charge based on distance
-                deliveryCharge = distance * deliverySettings.deliveryRatePerKm;
-                
-                // Additional charges for distance beyond maxDeliveryDistance
-                if (distance > deliverySettings.maxDeliveryDistance) {
-                    const additionalDistance = distance - deliverySettings.maxDeliveryDistance;
-                    deliveryCharge += additionalDistance * deliverySettings.additionalChargePerKm;
-                }
-                
-                // Add weight-based charges
-                const weightCharge = weight * deliverySettings.deliveryRatePerKg;
+                chargeType = 'threshold';
+            }
+        } else {
+            // Apply flat charge as base
+            deliveryCharge = deliverySettings.flatDeliveryCharge;
+            chargeType = 'flat';
+        }
+        
+        // Add distance-based charges if distance is provided
+        if (distance && distance > 0) {
+            const distanceCharge = distance * deliverySettings.deliveryRatePerKm;
+            
+            // Additional charges for distance beyond maxDeliveryDistance
+            if (distance > deliverySettings.maxDeliveryDistance) {
+                const additionalDistance = distance - deliverySettings.maxDeliveryDistance;
+                const additionalCharge = additionalDistance * deliverySettings.additionalChargePerKm;
+                deliveryCharge += additionalCharge;
+            } else {
+                deliveryCharge += distanceCharge;
+            }
+            
+            chargeType = 'distance';
+        }
+        
+        // Add weight-based charges if weight is provided
+        if (weight && weight > 0) {
+            const weightCharge = weight * deliverySettings.deliveryRatePerKg;
+            
+            // Additional charges for weight beyond maxDeliveryWeight
+            if (weight > deliverySettings.maxDeliveryWeight) {
+                const additionalWeight = weight - deliverySettings.maxDeliveryWeight;
+                const additionalCharge = additionalWeight * deliverySettings.additionalChargePerKg;
+                deliveryCharge += additionalCharge;
+            } else {
                 deliveryCharge += weightCharge;
-                
-                // Additional charges for weight beyond maxDeliveryWeight
-                if (weight > deliverySettings.maxDeliveryWeight) {
-                    const additionalWeight = weight - deliverySettings.maxDeliveryWeight;
-                    deliveryCharge += additionalWeight * deliverySettings.additionalChargePerKg;
-                }
-                break;
-                
-            default:
-                deliveryCharge = deliverySettings.flatDeliveryCharge;
+            }
+            
+            // Update charge type if both distance and weight are considered
+            if (distance && distance > 0) {
+                chargeType = 'distance-weight';
+            } else {
+                chargeType = 'weight';
+            }
         }
         
         // Ensure minimum delivery charge
@@ -108,8 +109,7 @@ const calculateDeliveryCharges = async (orderAmount, distance, weight, deliveryC
         
         return {
             deliveryCharge: Math.round(deliveryCharge * 100) / 100, // Round to 2 decimal places
-            chargeType: chargeType,
-            settings: deliverySettings
+            chargeType: chargeType
         };
     } catch (error) {
         console.error('Error calculating delivery charges:', error);
@@ -150,8 +150,7 @@ const calculateCheckoutCharges = async (req, res) => {
             orderAmount, 
             distance, 
             weight, 
-            category = 'others',
-            deliveryChargeType = null 
+            category = 'others'
         } = req.body;
         
         if (!orderAmount || orderAmount <= 0) {
@@ -161,15 +160,11 @@ const calculateCheckoutCharges = async (req, res) => {
             });
         }
         
-        // Get the active settings to pass to the frontend
-        const activeSettings = await getActiveSettings();
-        
         // Calculate delivery charges
         const deliveryResult = await calculateDeliveryCharges(
             orderAmount, 
             distance || 0, 
-            weight || 0, 
-            deliveryChargeType
+            weight || 0
         );
         
         // Calculate GST
@@ -187,22 +182,7 @@ const calculateCheckoutCharges = async (req, res) => {
                 gstPercentage: gstResult.gstPercentage,
                 category: gstResult.category,
                 totalAmount: Math.round(totalAmount * 100) / 100,
-                chargeType: deliveryResult.chargeType,
-                // Include only essential settings for checkout display
-                settings: {
-                    deliveryChargeType: activeSettings.deliverySettings.deliveryChargeType,
-                    flatDeliveryCharge: activeSettings.deliverySettings.flatDeliveryCharge,
-                    deliveryThresholdAmount: activeSettings.deliverySettings.deliveryThresholdAmount,
-                    freeDeliveryAboveThreshold: activeSettings.deliverySettings.freeDeliveryAboveThreshold,
-                    deliveryRatePerKm: activeSettings.deliverySettings.deliveryRatePerKm,
-                    maxDeliveryDistance: activeSettings.deliverySettings.maxDeliveryDistance,
-                    additionalChargePerKm: activeSettings.deliverySettings.additionalChargePerKm,
-                    deliveryRatePerKg: activeSettings.deliverySettings.deliveryRatePerKg,
-                    maxDeliveryWeight: activeSettings.deliverySettings.maxDeliveryWeight,
-                    additionalChargePerKg: activeSettings.deliverySettings.additionalChargePerKg,
-                    defaultGstPercentage: activeSettings.gstSettings.defaultGstPercentage,
-                    categoryGstPercentages: activeSettings.gstSettings.categoryGstPercentages
-                }
+                chargeType: deliveryResult.chargeType
             }
         });
     } catch (error) {
@@ -309,6 +289,59 @@ const calculateDistance = (point1, point2) => {
     }
 };
 
+// Direct insert settings (for testing/initial setup)
+const insertSettings = async (req, res) => {
+    try {
+        const {
+            gstSettings,
+            deliverySettings
+        } = req.body;
+        
+        // Create new settings
+        const settings = new Settings({
+            gstSettings: gstSettings || {
+                defaultGstPercentage: 5,
+                categoryGstPercentages: {
+                    pharma: 12,
+                    grocery: 2,
+                    restaurant: 5,
+                    others: 5
+                }
+            },
+            deliverySettings: deliverySettings || {
+                flatDeliveryCharge: 30,
+                deliveryThresholdAmount: 500,
+                freeDeliveryAboveThreshold: true,
+                deliveryRatePerKm: 10,
+                maxDeliveryDistance: 10,
+                additionalChargePerKm: 15,
+                deliveryRatePerKg: 5,
+                maxDeliveryWeight: 15,
+                additionalChargePerKg: 8,
+                minimumOrderAmount: 100
+            },
+            createdBy: req.body.createdBy || '507f1f77bcf86cd799439011', // Default ObjectId
+            settingsType: 'admin_default',
+            isActive: true
+        });
+        
+        await settings.save();
+        
+        res.json({
+            success: true,
+            message: 'Settings inserted successfully',
+            data: settings
+        });
+    } catch (error) {
+        console.error('Error inserting settings:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error inserting settings',
+            error: error.message 
+        });
+    }
+};
+
 module.exports = {
     getActiveSettings,
     calculateDeliveryCharges,
@@ -316,5 +349,6 @@ module.exports = {
     calculateCheckoutCharges,
     createOrUpdateSettings,
     getSettings,
-    calculateDistance
+    calculateDistance,
+    insertSettings
 }; 

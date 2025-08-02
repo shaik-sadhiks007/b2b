@@ -199,6 +199,8 @@ const MenuItemModal = ({
       onChange={handleChange}
       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
     >
+       <option value="grams">grams</option>
+      <option value="milli grams">ml</option>
       <option value="kg">kg</option>
       <option value="ltr">ltr</option>
       <option value="piece">piece</option>

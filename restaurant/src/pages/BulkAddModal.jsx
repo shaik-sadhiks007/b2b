@@ -476,6 +476,8 @@ Rice,2.50,1,kg,,Groceries,Staples,veg,Long grain rice,true,2025-01-15,general,D,
                                                             onChange={e => handleItemChange(idx, 'unit', e.target.value)}
                                                             className="w-16 border rounded px-1 py-0.5"
                                                         >
+                                                             <option value="grams">grams</option>
+                                                            <option value="milli grams">ml</option>
                                                             <option value="kg">kg</option>
                                                             <option value="ltr">ltr</option>
                                                             <option value="piece">piece</option>

@@ -308,8 +308,7 @@ const Checkout = () => {
                 orderAmount: subtotal,
                 distance: distance,
                 weight: totalWeight,
-                category: category,
-                deliveryChargeType: orderType === 'delivery' ? null : undefined // Use default for delivery
+                category: category
             });
 
             if (response.data.success) {
@@ -503,7 +502,7 @@ const Checkout = () => {
                         </div>
 
                         {/* Settings Information */}
-                        {calculatedCharges && calculatedCharges.settings && (
+                        {/* {calculatedCharges && (
                             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Applied Settings</h3>
                                 <div className="space-y-2 text-xs text-gray-600">
@@ -514,50 +513,56 @@ const Checkout = () => {
                                     {calculatedCharges.chargeType === 'flat' && (
                                         <div className="flex justify-between">
                                             <span>Flat Delivery Charge:</span>
-                                            <span className="font-medium">₹{calculatedCharges.settings.flatDeliveryCharge}</span>
+                                            <span className="font-medium">₹30</span>
                                         </div>
                                     )}
-                                    {calculatedCharges.chargeType === 'threshold' && (
+                                    {calculatedCharges.chargeType === 'free' && (
+                                        <div className="flex justify-between">
+                                            <span>Free Delivery:</span>
+                                            <span className="font-medium text-green-600">Yes (Above ₹500)</span>
+                                        </div>
+                                    )}
+                                    {calculatedCharges.chargeType === 'distance' && (
                                         <>
                                             <div className="flex justify-between">
-                                                <span>Threshold Amount:</span>
-                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryThresholdAmount}</span>
+                                                <span>Max Distance (km):</span>
+                                                <span className="font-medium">10</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span>Free Delivery Above:</span>
-                                                <span className="font-medium">{calculatedCharges.settings.freeDeliveryAboveThreshold ? 'Yes' : 'No'}</span>
+                                                <span>Additional Charge per Km:</span>
+                                                <span className="font-medium">₹15</span>
                                             </div>
                                         </>
                                     )}
-                                    {(calculatedCharges.chargeType === 'weight' || calculatedCharges.chargeType === 'distance-weight') && (
+                                    {calculatedCharges.chargeType === 'weight' && (
                                         <>
                                             <div className="flex justify-between">
-                                                <span>Rate per Kg:</span>
-                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryRatePerKg}</span>
-                                            </div>
-                                            <div className="flex justify-between">
                                                 <span>Max Weight (kg):</span>
-                                                <span className="font-medium">{calculatedCharges.settings.maxDeliveryWeight}</span>
+                                                <span className="font-medium">15</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Additional Charge per Kg:</span>
-                                                <span className="font-medium">₹{calculatedCharges.settings.additionalChargePerKg}</span>
+                                                <span className="font-medium">₹8</span>
                                             </div>
                                         </>
                                     )}
                                     {calculatedCharges.chargeType === 'distance-weight' && (
                                         <>
                                             <div className="flex justify-between">
-                                                <span>Rate per Km:</span>
-                                                <span className="font-medium">₹{calculatedCharges.settings.deliveryRatePerKm}</span>
-                                            </div>
-                                            <div className="flex justify-between">
                                                 <span>Max Distance (km):</span>
-                                                <span className="font-medium">{calculatedCharges.settings.maxDeliveryDistance}</span>
+                                                <span className="font-medium">10</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Additional Charge per Km:</span>
-                                                <span className="font-medium">₹{calculatedCharges.settings.additionalChargePerKm}</span>
+                                                <span className="font-medium">₹15</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Max Weight (kg):</span>
+                                                <span className="font-medium">15</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Additional Charge per Kg:</span>
+                                                <span className="font-medium">₹8</span>
                                             </div>
                                         </>
                                     )}
@@ -573,7 +578,7 @@ const Checkout = () => {
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        )} */}
                     </div>
 
                     {/* Right Side - Address Management */}

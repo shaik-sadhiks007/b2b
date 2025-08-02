@@ -31,13 +31,6 @@ const settingsSchema = new mongoose.Schema({
 
     // Delivery Settings
     deliverySettings: {
-        // Delivery charge calculation type
-        deliveryChargeType: {
-            type: String,
-            enum: ['flat', 'threshold', 'weight', 'distance-weight'],
-            default: 'flat'
-        },
-        
         // Flat delivery charge (for flat type)
         flatDeliveryCharge: {
             type: Number,
@@ -54,11 +47,7 @@ const settingsSchema = new mongoose.Schema({
             default: true
         },
         
-        // Distance-based settings (for distance-weight type)
-        deliveryRatePerKm: {
-            type: Number,
-            default: 10
-        },
+       
         maxDeliveryDistance: { // Distance beyond which additional charges apply
             type: Number,
             default: 10 // km
@@ -68,11 +57,7 @@ const settingsSchema = new mongoose.Schema({
             default: 15
         },
         
-        // Weight-based settings (for weight and distance-weight types)
-        deliveryRatePerKg: {
-            type: Number,
-            default: 5
-        },
+      
         maxDeliveryWeight: { // Weight beyond which additional charges apply
             type: Number,
             default: 15 // kg

@@ -12,22 +12,8 @@ const Footer = () => {
     const [loading, setLoading] = useState(false);
     const subdomain = getSubdomain();
     const isSubdomain = subdomain && subdomain !== "shopatb2b";
-
-    const handleRestaurantClick = (e) => {
-        console.log('Restaurant click handler called');
-        e.preventDefault();
-        console.log('Opening window with URL:', RESTAURANT_URL);
-        const targetWindow = openWindowWithToken(RESTAURANT_URL, ORIGIN_URL);
-
-        if (!targetWindow) {
-            console.log('Failed to open window, navigating to login');
-            navigate('/login');
-        } else {
-            console.log('Window opened successfully');
-        }
-    };
-
     // Fetch business data if it's a subdomain
+    
     useEffect(() => {
         if (isSubdomain) {
             setLoading(true);

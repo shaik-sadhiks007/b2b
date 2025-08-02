@@ -229,8 +229,27 @@ function Navbar({ alwaysVisible }) {
   };
 
   const handleSubdomainClick = () => {
-    if (isSubdomain) {
-      window.location.href = `https://${subdomain}.shopatb2b.com`;
+    if (isSubdomain && subdomain) {
+      const currentHost = window.location.hostname;
+      let targetUrl;
+      
+      if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+        // For localhost, navigate to /restaurant/subdomain
+        navigate(`/restaurant/${subdomain}`);
+      } else if (currentHost.includes('shopatb2b.com')) {
+        // For *.shopatb2b.com, replace * with subdomain
+        if (currentHost.includes('test.shopatb2b.com')) {
+          // For *.test.shopatb2b.com
+          targetUrl = `https://${subdomain}.test.shopatb2b.com`;
+        } else {
+          // For *.shopatb2b.com
+          targetUrl = `https://${subdomain}.shopatb2b.com`;
+        }
+        window.location.href = targetUrl;
+      } else {
+        // Fallback for other domains
+        navigate(`/restaurant/${subdomain}`);
+      }
     }
   };
 

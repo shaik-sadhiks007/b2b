@@ -204,9 +204,44 @@ const Home = () => {
     }, [])
 
     const handleRestaurantClick = (restaurant) => {
-        // Get the category from the restaurant or default to 'restaurant'
-        const category = restaurant.category?.toLowerCase() || 'restaurant';
-        navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
+        // Check if restaurant has a subdomain
+        if (restaurant.subdomain) {
+            const currentHost = window.location.hostname;
+            console.log('Current hostname:', currentHost);
+            console.log('Restaurant subdomain:', restaurant.subdomain);
+            console.log('Restaurant data:', restaurant);
+
+            let targetUrl;
+            
+            if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+                // For localhost, navigate to /category/id
+                const category = restaurant.category?.toLowerCase() || 'restaurant';
+                targetUrl = `/${category}/${restaurant._id}`;
+                console.log('Localhost navigation to:', targetUrl);
+                navigate(targetUrl, { state: { restaurant } });
+            } else if (currentHost === 'customer.test.shopatb2b.com') {
+                // For customer.test.shopatb2b.com, navigate to subdomain.test.shopatb2b.com
+                targetUrl = `https://${restaurant.subdomain}.test.shopatb2b.com`;
+                console.log('Test domain navigation to:', targetUrl);
+                window.location.href = targetUrl;
+            } else if (currentHost === 'www.shopatb2b.com') {
+                // For www.shopatb2b.com, navigate to subdomain.shopatb2b.com
+                targetUrl = `https://${restaurant.subdomain}.shopatb2b.com`;
+                console.log('Production domain navigation to:', targetUrl);
+                window.location.href = targetUrl;
+            } else {
+                // Fallback for other domains
+                const category = restaurant.category?.toLowerCase() || 'restaurant';
+                targetUrl = `/${category}/${restaurant._id}`;
+                console.log('Fallback navigation to:', targetUrl);
+                navigate(targetUrl, { state: { restaurant } });
+            }
+        } else {
+            // No subdomain, use regular navigation
+            const category = restaurant.category?.toLowerCase() || 'restaurant';
+            console.log('No subdomain, regular navigation to:', `/${category}/${restaurant._id}`);
+            navigate(`/${category}/${restaurant._id}`, { state: { restaurant } });
+        }
     };
 
     // Filter businesses when category changes

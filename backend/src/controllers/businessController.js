@@ -317,7 +317,7 @@ const getAllPublicBusinesses = async (req, res) => {
             ];
         }
         const businesses = await Business.find(query)
-            .select('restaurantName serviceType images.profileImage description rating location category operatingHours')
+            .select('restaurantName serviceType images.profileImage description rating location category operatingHours subdomain')
             .lean();
         const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -355,6 +355,7 @@ const getAllPublicBusinesses = async (req, res) => {
                 location: business.location || null,
                 serviceType: business.serviceType || '',
                 category: business.category || '',
+                subdomain: business.subdomain || null,
                 online: isOnline,
                 operatingHours: {
                     openTime: openTime || null,

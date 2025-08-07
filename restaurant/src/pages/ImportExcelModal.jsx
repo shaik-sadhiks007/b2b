@@ -225,7 +225,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         <ul className="text-sm text-blue-700 space-y-1">
                             <li>• Upload Excel (.xlsx, .xls) or CSV (.csv) file</li>
                             <li>• Required columns: name, price, quantity</li>
-                            <li>• Unit options: kg,grams, ml, ltr, piece, box, bottle, packet, etc.</li>
+                            <li>• Unit options: kg, ltr</li>
                             <li>• Unit Value: Quantity per unit (e.g., 500mg, 1kg, 10ml)</li>
                             <li>• Medical fields: storageZone, rack, shelf, bin, batchNumber, requiresPrescription</li>
                             <li>• storageZone options: general, refrigerated, controlled, hazardous</li>

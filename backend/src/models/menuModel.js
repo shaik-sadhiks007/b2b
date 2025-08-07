@@ -28,27 +28,29 @@ const menuItemSchema = new mongoose.Schema(
       enum: ["veg", "nonveg", "egg"],
       default: "veg",
     },
-    // customisable: {
-    //     type: Boolean,
-    //     default: false
-    // },
-    // basePrice: {
-    //     type: String,
-    //     required: true
-    // },
     description: {
       type: String,
     },
     photos: {
       type: String,
     },
-    // serviceType: {
-    //     type: String,
-    //     enum: ['Delivery', 'Dine-in', 'Both'],
-    // },
     totalPrice: {
       type: Number,
       required: true,
+      min: 0.01
+    },
+    discountPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+      validate: {
+        validator: function(v) {
+          // Ensure discount doesn't make price zero
+          return v === 0 || this.totalPrice * (1 - v/100) > 0;
+        },
+        message: "Discount would make the price zero or negative"
+      }
     },
     unit: {
       type: String,
@@ -67,9 +69,6 @@ const menuItemSchema = new mongoose.Schema(
       ],
       default: "piece",
     },
-    // packagingCharges: {
-    //     type: String,
-    // },
     inStock: {
       type: Boolean,
       default: true,
@@ -80,9 +79,8 @@ const menuItemSchema = new mongoose.Schema(
     },
     loose: {
       type: Boolean,
-      default: false, // Default to false meaning it's not a loose item by default
+      default: false,
     },
-
     expiryDate: {
       type: Date,
       required: false,
@@ -91,9 +89,8 @@ const menuItemSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: [0.01, "Unit value must be greater than zero"],
-      default: 1, // Default to 1, can be overridden
+      default: 1,
     },
-
     storageZone: {
       type: String,
       enum: ["general", "refrigerated", "controlled", "hazardous"],
@@ -103,10 +100,10 @@ const menuItemSchema = new mongoose.Schema(
       type: String,
       uppercase: true,
       trim: true,
-      required: false, // Add this
+      required: false,
       validate: {
         validator: function (v) {
-          return !v || /^[A-Z0-9-]{1,5}$/.test(v); // Allow empty or valid format
+          return !v || /^[A-Z0-9-]{1,5}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid rack identifier!`,
       },
@@ -133,8 +130,53 @@ const menuItemSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual for current price (after discount)
+menuItemSchema.virtual('currentPrice').get(function() {
+  return parseFloat((this.totalPrice * (1 - this.discountPercentage / 100)).toFixed(2));
+});
+
+// Virtual for discount amount (money saved)
+menuItemSchema.virtual('discountAmount').get(function() {
+  return parseFloat((this.totalPrice * (this.discountPercentage / 100)).toFixed(2));
+});
+
+// Virtual for checking if item is on discount
+menuItemSchema.virtual('isOnDiscount').get(function() {
+  return this.discountPercentage > 0;
+});
+
+// Method to apply a discount (by percentage)
+menuItemSchema.methods.applyDiscount = function(percentage) {
+  if (percentage < 0 || percentage > 100) {
+    throw new Error('Discount percentage must be between 0 and 100');
+  }
+  this.discountPercentage = percentage;
+  return this;
+};
+
+// Method to set a specific discounted price
+menuItemSchema.methods.setDiscountedPrice = function(discountedPrice) {
+  if (discountedPrice >= this.totalPrice) {
+    this.discountPercentage = 0;
+  } else if (discountedPrice <= 0) {
+    throw new Error('Discounted price must be greater than zero');
+  } else {
+    const calculatedPercentage = 100 - (discountedPrice / this.totalPrice * 100);
+    this.discountPercentage = parseFloat(calculatedPercentage.toFixed(2));
+  }
+  return this;
+};
+
+// Method to remove discount
+menuItemSchema.methods.removeDiscount = function() {
+  this.discountPercentage = 0;
+  return this;
+};
 
 // Compound index
 menuItemSchema.index({ category: 1, subcategory: 1 });

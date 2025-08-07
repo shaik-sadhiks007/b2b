@@ -1,39 +1,72 @@
 const express = require('express');
-const {
-    createOffer,
-    getBusinessOffers,
-    updateOffer,
-    toggleOfferStatus,
-    deleteOffer,
-    getActiveOffersForItem,
-    getActiveOffersForBusiness,
-    // Admin functions
-    getBusinessOffersByAdmin,
-    createOfferByAdmin,
-    updateOfferByAdmin,
-    deleteOfferByAdmin
-} = require('../controllers/offersController');
-const authMiddleware = require('../middleware/authMiddleware');
-const restaurantMiddleware = require('../middleware/restaurantMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
-
 const router = express.Router();
 
-// Public routes
-router.get('/item/:menuItemId', getActiveOffersForItem);
-router.get('/business/:businessId', getActiveOffersForBusiness);
+// Controllers
+const offerController = require('../controllers/offerController');
 
-// Business owner routes
-router.post('/', authMiddleware, restaurantMiddleware, createOffer);
-router.get('/business', authMiddleware, restaurantMiddleware, getBusinessOffers);
-router.put('/:id', authMiddleware, restaurantMiddleware, updateOffer);
-router.patch('/:id/toggle-status', authMiddleware, restaurantMiddleware, toggleOfferStatus);
-router.delete('/:id', authMiddleware, restaurantMiddleware, deleteOffer);
+// Middleware
+const authMiddleware = require('../middleware/authMiddleware');         // Required to populate req.user
+const restaurantMiddleware = require('../middleware/restaurantMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');       // Optional for future admin-only routes
 
-// Admin routes
-router.get('/admin/business/:ownerId', authMiddleware, adminMiddleware, getBusinessOffersByAdmin);
-router.post('/admin', authMiddleware, adminMiddleware, createOfferByAdmin);
-router.put('/admin/:id', authMiddleware, adminMiddleware, updateOfferByAdmin);
-router.delete('/admin/:id', authMiddleware, adminMiddleware, deleteOfferByAdmin);
+
+
+// Create a new offer
+router.post(
+  '/business',
+  authMiddleware,
+  restaurantMiddleware,
+  offerController.createOffer
+);
+
+// Get offers for the authenticated business (filtered: active, expired, upcoming)
+router.get(
+  '/business',
+  authMiddleware,
+  restaurantMiddleware,
+  offerController.getBusinessOffers
+);
+
+// Update an existing offer
+router.put(
+  '/business/:id',
+  authMiddleware,
+  restaurantMiddleware,
+  offerController.updateOffer
+);
+
+// Toggle status (active/inactive)
+router.patch(
+  '/business/:id/status',
+  authMiddleware,
+  restaurantMiddleware,
+  offerController.toggleOfferStatus
+);
+
+// Delete an offer
+router.delete(
+  '/business/:id',
+  authMiddleware,
+  restaurantMiddleware,
+  offerController.deleteOffer
+);
+
+
+
+
+// Get active offers for a specific menu item
+router.get(
+  '/public/item/:menuItemId',
+  offerController.getActiveOffersForItem
+);
+
+// Get active offers for a specific business
+router.get(
+  '/public/business/:businessId',
+  offerController.getActiveOffersForBusiness
+);
+
+
+
 
 module.exports = router;

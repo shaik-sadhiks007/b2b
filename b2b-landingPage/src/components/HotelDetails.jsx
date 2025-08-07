@@ -73,10 +73,10 @@ const HotelDetails = (props) => {
   };
 
   const getQuantityLabel = (value, unit) => {
-    if (unit === 'liter') {
-      return `${value} ml`; // Convert to milliliters for display
+    if (unit === 'ltr') {
+      return `${value} ml`; // Show milliliters for liquid items
     }
-    return `${value} grams`;
+    return `${value} g`; // Show grams for solid items
   };
 
   const popularItems = useMemo(() => {
@@ -419,6 +419,11 @@ const HotelDetails = (props) => {
               <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
               <p className="text-sm text-gray-500 mb-2">
                 ₹{item.totalPrice} {pricePerText}
+                {item.loose && (
+                  <span className="text-xs text-gray-400 ml-1">
+                    ({item.unitValue} {item.unit})
+                  </span>
+                )}
               </p>
               {renderItemActions(item)}
             </div>
@@ -514,7 +519,7 @@ const HotelDetails = (props) => {
                     <span className="text-gray-700">₹{selectedItemForOffer.totalPrice}</span>
                     {selectedItemForOffer.loose && (
                       <span className="text-xs text-gray-500 ml-1">
-                        / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'}
+                        / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'} ({selectedItemForOffer.unitValue} {selectedItemForOffer.unit})
                       </span>
                     )}
                   </div>
@@ -551,7 +556,7 @@ const HotelDetails = (props) => {
                             {offer.discountPercentage}% off - Now ₹{(selectedItemForOffer.totalPrice * (1 - offer.discountPercentage/100)).toFixed(2)}
                             {selectedItemForOffer.loose && (
                               <span className="text-xs text-gray-500 ml-1">
-                                / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'}
+                                / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'} ({selectedItemForOffer.unitValue} {selectedItemForOffer.unit})
                               </span>
                             )}
                           </p>
@@ -561,7 +566,7 @@ const HotelDetails = (props) => {
                             Flat ₹{offer.flatDiscount} off - Now ₹{(selectedItemForOffer.totalPrice - offer.flatDiscount).toFixed(2)}
                             {selectedItemForOffer.loose && (
                               <span className="text-xs text-gray-500 ml-1">
-                                / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'}
+                                / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'} ({selectedItemForOffer.unitValue} {selectedItemForOffer.unit})
                               </span>
                             )}
                           </p>
@@ -673,7 +678,7 @@ const HotelDetails = (props) => {
                         </span>
                         {item.loose && (
                           <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            Loose
+                            Loose ({item.unitValue} {item.unit})
                           </span>
                         )}
                       </div>

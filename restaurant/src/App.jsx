@@ -6,7 +6,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AddRestaurant from "./pages/AddRestaurant";
 import { MobileMenuProvider } from "./context/MobileMenuContext";
-import { OfferProvider } from "./context/OfferContext";
 import Orders from "./components/Orders";
 import ItemSummary from "./components/ItemSummary";
 import InventoryManager from "./components/InventoryManager";
@@ -33,7 +32,7 @@ import AdminBusinessDashboard from "./adminComp/AdminBusinessDashboard";
 import BusinessProfile from "./adminComp/BusinessProfile";
 import AdminFeedback from "./adminComp/AdminFeedback";
 import Expiry from "./components/Expiry";
-import Offers from "./pages/Offers";
+
 
 function App() {
   return (
@@ -41,7 +40,7 @@ function App() {
       <AuthProvider>
         <Router>
           <MenuProvider>
-            <OfferProvider>
+            
               <ToastContainer autoClose={1000} />
 
               <Routes>
@@ -159,14 +158,7 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route
-                  path="/offers"
-                  element={
-                    <PrivateRoute>
-                      <Offers />
-                    </PrivateRoute>
-                  }
-                />
+                
                 <Route
                   path="/menu/expiry"
                   element={
@@ -226,7 +218,7 @@ function App() {
                   />
                 </Route>
               </Routes>
-            </OfferProvider>
+            
           </MenuProvider>
         </Router>
       </AuthProvider>

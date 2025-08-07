@@ -116,6 +116,18 @@ const getMenuItem = async (req, res) => {
 // Create a new menu item
 const createMenuItem = async (req, res) => {
     try {
+
+         if (req.body.discountPercentage !== undefined) {
+            const discount = parseFloat(req.body.discountPercentage);
+            
+            // Basic validation
+            if (isNaN(discount)) {
+                return res.status(400).json({ message: 'Discount must be a number' });
+            }
+            if (discount < 0 || discount > 100) {
+                return res.status(400).json({ message: 'Discount must be between 0-100%' });
+            }
+        }
         // Use default values if category or subcategory are empty or missing
         const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
         const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
@@ -136,8 +148,10 @@ const createMenuItem = async (req, res) => {
             photos: photoUrl,
             category,
             subcategory,
-            businessId: req.restaurant._id
+            businessId: req.restaurant._id,
+            discountPercentage: req.body.discountPercentage || 0
         });
+        
         const savedItem = await newItem.save();
         const io = req.app.get('io');
         io.emit('menuUpdated', {
@@ -157,17 +171,41 @@ const bulkCreateMenuItems = async (req, res) => {
     try {
         const { items } = req.body;
         
+        // Basic validation
         if (!Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ message: 'Items array is required and must not be empty' });
         }
 
         const menuItemsToCreate = [];
         
-        // Process each item and handle photo uploads
-        for (const item of items) {
-            const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
-            const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
+        // Process each item
+        for (const [index, item] of items.entries()) {
+            /* ===== NEW DISCOUNT VALIDATION ===== */
+            if (item.discountPercentage !== undefined) {
+                const discount = parseFloat(item.discountPercentage);
+                
+                // Validate discount is a number between 0-100
+                if (isNaN(discount)){
+                    return res.status(400).json({ 
+                        message: `Item ${index + 1}: Discount must be a number`,
+                        itemIndex: index
+                    });
+                }
+                
+                if (discount < 0 || discount > 100) {
+                    return res.status(400).json({ 
+                        message: `Item ${index + 1}: Discount must be between 0-100%`,
+                        itemIndex: index
+                    });
+                }
+            }
             
+
+            // category handling 
+            const category = (item.category || 'uncategorized').toString().trim().toLowerCase();
+            const subcategory = (item.subcategory || 'general').toString().trim().toLowerCase();
+            
+            // photo handling 
             let photoUrl = null;
             if (item.photos && typeof item.photos === 'string' && !item.photos.startsWith('http')) {
                 const base64 = extractBase64(item.photos);
@@ -177,43 +215,84 @@ const bulkCreateMenuItems = async (req, res) => {
                 }
             }
             
+            // Create menu item 
             menuItemsToCreate.push(new Menu({
                 ...item,
                 photos: photoUrl,
                 category,
                 subcategory,
-                businessId: req.restaurant._id
+                businessId: req.restaurant._id,
+                discountPercentage: item.discountPercentage || 0 // Default to 0 if not provided
             }));
         }
 
+        // Insert all items
         const savedItems = await Menu.insertMany(menuItemsToCreate);
+        
+        
+        const io = req.app.get('io');
+        io.emit('bulkMenuUpdate', {
+            businessId: req.restaurant._id,
+            count: savedItems.length
+        });
+
         res.status(201).json(savedItems);
     } catch (error) {
-        console.error('[menuController.js][bulkCreateMenuItems]', error);
-        console.trace('[menuController.js][bulkCreateMenuItems] Stack trace:');
-        res.status(400).json({ message: error.message });
+        console.error('[menuController.js][bulkCreateMenuItems] Error:', error);
+        res.status(400).json({ 
+            message: 'Failed to create menu items',
+            error: error.message,
+            ...(error.errors && { 
+                details: Object.values(error.errors).map(e => e.message) 
+            })
+        });
     }
 };
 
 // Update a menu item
 const updateMenuItem = async (req, res) => {
     try {
-        // Handle photo upload if photo is provided in the update
         let updateData = { ...req.body };
         let oldPhotoKey = null;
         let oldPhotoUrl = null;
+
+        // discount validation
+        if (updateData.discountPercentage !== undefined) {
+            // Convert to number if it's a string
+            const discount = Number(updateData.discountPercentage);
+            
+            // Basic validation
+            if (isNaN(discount) || discount < 0 || discount > 100) {
+                return res.status(400).json({ 
+                    message: 'Discount must be a number between 0 and 100' 
+                });
+            }
+            
+            // If price isn't being updated, get current price for validation
+            if (!updateData.totalPrice) {
+                const currentItem = await Menu.findById(req.params.id).select('totalPrice');
+                updateData.totalPrice = currentItem.totalPrice;
+            }
+            
+            // Final price after discount should be positive
+            if (updateData.totalPrice * (1 - discount/100) <= 0) {
+                return res.status(400).json({ 
+                    message: 'Discount would make the price zero or negative' 
+                });
+            }
+        }
+        
+
+        //  PHOTO HANDLING 
         if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
-            // Find the existing item to get the old photo URL
             const existingItem = await Menu.findOne({ _id: req.params.id, businessId: req.restaurant._id });
             if (existingItem && existingItem.photos) {
                 oldPhotoUrl = existingItem.photos;
-                // Extract the S3 key from the old photo URL
                 const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
                 if (oldPhotoUrl.startsWith(s3UrlPrefix)) {
                     oldPhotoKey = oldPhotoUrl.replace(s3UrlPrefix, '');
                 }
             }
-            // Upload single photo to S3
             const base64 = extractBase64(req.body.photos);
             if (base64 && base64.length > 0) {
                 const s3Key = await uploadBase64ImageToS3(base64);
@@ -221,30 +300,39 @@ const updateMenuItem = async (req, res) => {
             }
         }
         
+        // Added runValidators to ensure discount rules are checked
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, businessId: req.restaurant._id },
             updateData,
-            { new: true }
+            { new: true, runValidators: true }  
         );
-        // Delete the old photo from S3 after updating
+
+        
         if (oldPhotoKey) {
             await deleteS3Object(oldPhotoKey);
         }
        
         if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
 
-         if (updatedItem) {
-    const io = req.app.get('io');
-    io.emit('menuUpdated', { businessId: req.restaurant._id, menuItem: updatedItem });
-}
-        res.json(updatedItem);
+        
+        const io = req.app.get('io');
+        io.emit('menuUpdated', { 
+            businessId: req.restaurant._id, 
+            menuItem: updatedItem 
+        });
+
+        res.json(updatedItem); // Virtuals (currentPrice, etc.) will auto-include
     } catch (error) {
         console.error('[menuController.js][updateMenuItem]', error);
-        console.trace('[menuController.js][updateMenuItem] Stack trace:');
-        res.status(400).json({ message: error.message });
+        
+        res.status(400).json({ 
+            message: error.message,
+            ...(error.errors && { 
+                validationErrors: Object.values(error.errors).map(e => e.message) 
+            })
+        });
     }
 };
-
 // Delete a menu item
 const deleteMenuItem = async (req, res) => {
     try {
@@ -371,31 +459,67 @@ const createMenuItemByAdmin = async (req, res) => {
     try {
         const { ownerId } = req.query;
         if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+
         const Business = require('../models/businessModel');
         const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
-        const category = req.body.category && req.body.category.trim().toLowerCase() ? req.body.category : 'uncategorized';
-        const subcategory = req.body.subcategory && req.body.subcategory.trim().toLowerCase() ? req.body.subcategory : 'general';
+
+        // Validate discount percentage if provided
+        if (req.body.discountPercentage !== undefined) {
+            const discount = parseFloat(req.body.discountPercentage);
+            
+            if (isNaN(discount)) {
+                return res.status(400).json({ message: 'Discount must be a number' });
+            }
+            
+            if (discount < 0 || discount > 100) {
+                return res.status(400).json({ message: 'Discount must be between 0-100%' });
+            }
+            
+            if (req.body.totalPrice && (req.body.totalPrice * (1 - discount/100)) <= 0) {
+                return res.status(400).json({ 
+                    message: 'Discount would make the price zero or negative' 
+                });
+            }
+        }
+
+        // Handle category/subcategory 
+        const category = req.body.category?.trim().toLowerCase() || 'uncategorized';
+        const subcategory = req.body.subcategory?.trim().toLowerCase() || 'general';
+
+        // Handle photo upload
         let photoUrl = null;
         if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
             const base64 = extractBase64(req.body.photos);
-            if (base64 && base64.length > 0) {
+            if (base64?.length > 0) {
                 const s3Key = await uploadBase64ImageToS3(base64);
                 photoUrl = getS3ObjectUrl(s3Key);
             }
         }
+
+        // Create new menu item
         const newItem = new Menu({
             ...req.body,
             photos: photoUrl,
             category,
             subcategory,
-            businessId: business._id
+            businessId: business._id,
+            discountPercentage: req.body.discountPercentage || 0 // Default to 0 if not provided
         });
+
         const savedItem = await newItem.save();
+
+        
+
         res.status(201).json(savedItem);
     } catch (error) {
         console.error('[menuController.js][createMenuItemByAdmin]', error);
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ 
+            message: error.message,
+            ...(error.errors && {
+                errors: Object.values(error.errors).map(e => e.message)
+            })
+        });
     }
 };
 
@@ -404,40 +528,94 @@ const updateMenuItemByAdmin = async (req, res) => {
     try {
         const { ownerId } = req.query;
         if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+
         const Business = require('../models/businessModel');
         const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+
         let updateData = { ...req.body };
         let oldPhotoKey = null;
         let oldPhotoUrl = null;
+
+        // discount validation
+        if (updateData.discountPercentage !== undefined) {
+            const discount = parseFloat(updateData.discountPercentage);
+            
+            // Basic validation
+            if (isNaN(discount) || discount < 0 || discount > 100) {
+                return res.status(400).json({ 
+                    message: 'Discount must be a number between 0 and 100' 
+                });
+            }
+            
+            // If price isn't being updated, get current price for validation
+            if (!updateData.totalPrice) {
+                const currentItem = await Menu.findById(req.params.id).select('totalPrice');
+                updateData.totalPrice = currentItem?.totalPrice;
+            }
+            
+            // Final price after discount should be positive
+            if (updateData.totalPrice && (updateData.totalPrice * (1 - discount/100)) <= 0) {
+                return res.status(400).json({ 
+                    message: 'Discount would make the price zero or negative' 
+                });
+            }
+        }
+        
+
+        // Handle photo upload 
         if (req.body.photos && typeof req.body.photos === 'string' && !req.body.photos.startsWith('http')) {
-            const existingItem = await Menu.findOne({ _id: req.params.id, businessId: business._id });
-            if (existingItem && existingItem.photos) {
+            const existingItem = await Menu.findOne({ 
+                _id: req.params.id, 
+                businessId: business._id 
+            });
+            
+            if (existingItem?.photos) {
                 oldPhotoUrl = existingItem.photos;
                 const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
                 if (oldPhotoUrl.startsWith(s3UrlPrefix)) {
                     oldPhotoKey = oldPhotoUrl.replace(s3UrlPrefix, '');
                 }
             }
+            
             const base64 = extractBase64(req.body.photos);
-            if (base64 && base64.length > 0) {
+            if (base64?.length > 0) {
                 const s3Key = await uploadBase64ImageToS3(base64);
                 updateData.photos = getS3ObjectUrl(s3Key);
             }
         }
+
+        // Update with validation
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, businessId: business._id },
             updateData,
-            { new: true }
+            { 
+                new: true,
+                runValidators: true // Ensure schema validations run
+            }
         );
+
+        // Clean up old photo
         if (oldPhotoKey) {
-            await deleteS3Object(oldPhotoKey);
+            await deleteS3Object(oldPhotoKey).catch(err => 
+                console.error('Failed to delete old photo:', err)
+            );
         }
-        if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
-        res.json(updatedItem);
+       
+        if (!updatedItem) {
+            return res.status(404).json({ message: 'Menu item not found' });
+        }
+
+        res.json(updatedItem); // Will include virtual fields automatically
     } catch (error) {
-        console.error('[menuController.js][updateMenuItemByAdmin]', error);
-        res.status(400).json({ message: error.message });
+        console.error('[menuController.js][updateMenuItemByAdmin] Error:', error);
+        res.status(400).json({ 
+            message: 'Update failed',
+            error: error.message,
+            ...(error.errors && { 
+                validationErrors: Object.values(error.errors).map(e => e.message) 
+            })
+        });
     }
 };
 
@@ -479,38 +657,85 @@ const bulkCreateMenuItemsByAdmin = async (req, res) => {
     try {
         const { ownerId } = req.query;
         if (!ownerId) return res.status(400).json({ message: 'ownerId is required' });
+
         const Business = require('../models/businessModel');
         const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
+
         const { items } = req.body;
         if (!Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ message: 'Items array is required and must not be empty' });
         }
+
         const menuItemsToCreate = [];
-        for (const item of items) {
-            const category = item.category && item.category.trim().toLowerCase() ? item.category : 'uncategorized';
-            const subcategory = item.subcategory && item.subcategory.trim().toLowerCase() ? item.subcategory : 'general';
+        
+        // Process each item with validation
+        for (const [index, item] of items.entries()) {
+            // ========== [NEW] DISCOUNT VALIDATION ========== //
+            if (item.discountPercentage !== undefined) {
+                const discount = parseFloat(item.discountPercentage);
+                
+                if (isNaN(discount)) {
+                    return res.status(400).json({ 
+                        message: `Item ${index + 1}: Discount must be a number`,
+                        itemIndex: index
+                    });
+                }
+                
+                if (discount < 0 || discount > 100) {
+                    return res.status(400).json({ 
+                        message: `Item ${index + 1}: Discount must be between 0-100%`,
+                        itemIndex: index
+                    });
+                }
+                
+                if (item.totalPrice && (item.totalPrice * (1 - discount/100)) <= 0) {
+                    return res.status(400).json({ 
+                        message: `Item ${index + 1}: Discount would make price zero or negative`,
+                        itemIndex: index
+                    });
+                }
+            }
+            
+
+            // Handle category/subcategory 
+            const category = item.category?.trim().toLowerCase() || 'uncategorized';
+            const subcategory = item.subcategory?.trim().toLowerCase() || 'general';
+
+            // Handle photo upload
             let photoUrl = null;
             if (item.photos && typeof item.photos === 'string' && !item.photos.startsWith('http')) {
                 const base64 = extractBase64(item.photos);
-                if (base64 && base64.length > 0) {
+                if (base64?.length > 0) {
                     const s3Key = await uploadBase64ImageToS3(base64);
                     photoUrl = getS3ObjectUrl(s3Key);
                 }
             }
+            
+            // Prepare menu item
             menuItemsToCreate.push(new Menu({
                 ...item,
                 photos: photoUrl,
                 category,
                 subcategory,
-                businessId: business._id
+                businessId: business._id,
+                discountPercentage: item.discountPercentage || 0 // Default to 0
             }));
         }
+
+        // Insert all items
         const savedItems = await Menu.insertMany(menuItemsToCreate);
+
         res.status(201).json(savedItems);
     } catch (error) {
-        console.error('[menuController.js][bulkCreateMenuItemsByAdmin]', error);
-        res.status(400).json({ message: error.message });
+        console.error('[menuController.js][bulkCreateMenuItemsByAdmin] Error:', error);
+        res.status(400).json({ 
+            message: 'Bulk creation failed',
+            error: error.message,
+            ...(error.errors && {
+                validationErrors: Object.values(error.errors).map(e => e.message)
+            })
+        });
     }
 };
 

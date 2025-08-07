@@ -213,7 +213,7 @@ const LandingPage = () => {
                                 padding: '0 20px'
                             }}>
                             <h1 className="display-4 fw-bold mb-4 text-white">Welcome to B2B</h1>
-                            <p className="lead mb-4 text-white">Grow your business by joining our B2B application—reach more customers, boost sales, and simplify operations!</p>
+                            <p className="lead mb-4 text-white">Grow your business by joining our B2B Platform — reach more customers, boost sales, and simplify operations!</p>
                             <div className="d-flex gap-3">
                                 <button
                                     className="btn btn-primary btn-lg px-4 py-2 rounded-pill"

@@ -18,7 +18,8 @@ const createBusiness = async (req, res) => {
             sameAsOwnerPhone,
             whatsappUpdates,
             operatingHours,
-            description
+            description,
+            subdomain
         } = formDataObj;
         let profileImageUrl = null;
         if (req.file) {
@@ -30,6 +31,16 @@ const createBusiness = async (req, res) => {
             const s3Key = await uploadBase64ImageToS3(formDataObj.profileImage, 'business');
             profileImageUrl = getS3ObjectUrl(s3Key);
         }
+        // Check if subdomain is already taken
+        if (subdomain) {
+            const existingBusiness = await Business.findOne({ subdomain });
+            if (existingBusiness) {
+                return res.status(400).json({ 
+                    message: 'Subdomain already taken. Please choose a different one.' 
+                });
+            }
+        }
+
         const business = new Business({
             owner: req.user.id,
             restaurantName,
@@ -46,6 +57,7 @@ const createBusiness = async (req, res) => {
             sameAsOwnerPhone,
             whatsappUpdates,
             description,
+            subdomain: subdomain || undefined,
             images: { profileImage: profileImageUrl },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
@@ -174,6 +186,21 @@ const updateBusinessStep = async (req, res) => {
             };
         }
         updateData.currentStep = step;
+        if (step === 2) {
+            // Handle subdomain for step 2
+            if (updateData.subdomain) {
+                // Check if subdomain is already taken by another business
+                const existingBusiness = await Business.findOne({ 
+                    subdomain: updateData.subdomain,
+                    _id: { $ne: req.params.id }
+                });
+                if (existingBusiness) {
+                    return res.status(400).json({ 
+                        message: 'Subdomain already taken. Please choose a different one.' 
+                    });
+                }
+            }
+        }
         if (step === 4) {
             updateData.termsAccepted = true;
             updateData.status = 'review';
@@ -519,6 +546,52 @@ const getBusinessProfileByOwnerId = async (req, res) => {
     }
 };
 
+// Check subdomain availability
+const checkSubdomainAvailability = async (req, res) => {
+    try {
+        const { subdomain } = req.query;
+        
+        if (!subdomain) {
+            return res.status(400).json({ 
+                message: 'Subdomain is required',
+                available: false 
+            });
+        }
+
+        // Check if subdomain is valid (only lowercase letters, numbers, and hyphens)
+        const subdomainRegex = /^[a-z0-9-]+$/;
+        if (!subdomainRegex.test(subdomain)) {
+            return res.status(400).json({ 
+                message: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
+                available: false 
+            });
+        }
+
+        // Check if subdomain is already taken
+        const existingBusiness = await Business.findOne({ subdomain });
+        
+        if (existingBusiness) {
+            return res.status(200).json({ 
+                message: 'Subdomain is already taken',
+                available: false 
+            });
+        }
+
+        res.status(200).json({ 
+            message: 'Subdomain is available',
+            available: true 
+        });
+    } catch (error) {
+        console.error('[businessController.js][checkSubdomainAvailability]', error);
+        console.trace('[businessController.js][checkSubdomainAvailability] Stack trace:');
+        res.status(500).json({ 
+            message: 'Error checking subdomain availability', 
+            error: error.message,
+            available: false 
+        });
+    }
+};
+
 // Admin: Update business profile by ownerId
 const updateBusinessProfileByOwnerId = async (req, res) => {
     try {
@@ -633,5 +706,6 @@ module.exports = {
     getPublicBusinessById,
     getAllBusinessesForAdmin,
     getBusinessProfileByOwnerId,
-    updateBusinessProfileByOwnerId
+    updateBusinessProfileByOwnerId,
+    checkSubdomainAvailability
 };

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { FaClock, FaChevronDown, FaChevronUp, FaCheck, FaHotel, FaShoppingCart, FaPrescriptionBottleAlt, FaCoffee, FaAppleAlt, FaFish, FaGlassWhiskey, FaPencilAlt } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaClock, FaChevronDown, FaChevronUp, FaCheck, FaHotel, FaShoppingCart, FaPrescriptionBottleAlt, FaCoffee, FaAppleAlt, FaFish, FaGlassWhiskey, FaPencilAlt, FaSearch } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import { API_URL } from '../../api/api';
 
 const MenuDetails = ({
     categories,
@@ -11,9 +14,67 @@ const MenuDetails = ({
     onNext
 }) => {
     const [showTimeSlots, setShowTimeSlots] = useState(true);
+    const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
+    const [subdomainStatus, setSubdomainStatus] = useState(null); // null, 'available', 'taken', 'invalid'
+
+    // Generate default subdomain from business name
+    const generateDefaultSubdomain = (businessName) => {
+        if (!businessName) return '';
+        return businessName
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+            .replace(/\s+/g, '') // Remove spaces
+            .substring(0, 20); // Limit to 20 characters
+    };
+
+    // Set default subdomain when business name changes
+    useEffect(() => {
+        if (!formData.subdomain && formData.restaurantName) {
+            const defaultSubdomain = generateDefaultSubdomain(formData.restaurantName);
+            setFormData(prev => ({
+                ...prev,
+                subdomain: defaultSubdomain
+            }));
+        }
+    }, [formData.restaurantName, formData.subdomain, setFormData]);
+
+    // Check subdomain availability
+    const checkSubdomainAvailability = async () => {
+        if (!formData.subdomain) {
+            toast.error('Please enter a subdomain first');
+            return;
+        }
+
+        setIsCheckingSubdomain(true);
+        setSubdomainStatus(null);
+
+        try {
+            const response = await axios.get(`${API_URL}/api/restaurants/check-subdomain`, {
+                params: { subdomain: formData.subdomain }
+            });
+
+            if (response.data.available) {
+                setSubdomainStatus('available');
+                toast.success('Subdomain is available!');
+            } else {
+                setSubdomainStatus('taken');
+                toast.error(response.data.message || 'Subdomain is already taken');
+            }
+        } catch (error) {
+            console.error('Error checking subdomain:', error);
+            if (error.response?.status === 400) {
+                setSubdomainStatus('invalid');
+                toast.error(error.response.data.message || 'Invalid subdomain format');
+            } else {
+                toast.error('Error checking subdomain availability');
+            }
+        } finally {
+            setIsCheckingSubdomain(false);
+        }
+    };
 
     const getCategoryIcon = (categoryName) => {
-        switch(categoryName.toLowerCase()) {
+        switch (categoryName.toLowerCase()) {
             case 'hotel/restaurant':
                 return <FaHotel size={32} />;
             case 'grocery store':
@@ -39,9 +100,9 @@ const MenuDetails = ({
         setSelectedCategory(category);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!isFormValid) {
             return;
         }
@@ -65,15 +126,24 @@ const MenuDetails = ({
             timeSlots: updatedTimeSlots
         };
 
-
         const stepData = {
             category: selectedCategory?.id || '',
+            subdomain: formData.subdomain || '',
             operatingHours: updatedOperatingHours
         };
 
         console.log(stepData, 'stepdata');
 
-        onNext(stepData);
+        try {
+            await onNext(stepData);
+        } catch (error) {
+            // Handle subdomain validation error
+            if (error?.response?.status === 400 && error?.response?.data?.message?.includes('Subdomain already taken')) {
+                toast.error('Subdomain already taken. Please choose a different one.');
+            } else {
+                toast.error('An error occurred. Please try again.');
+            }
+        }
     };
 
     const handleOperatingHoursChange = (day, field, value) => {
@@ -174,6 +244,74 @@ const MenuDetails = ({
             </div>
 
             <div className="mb-4">
+                <h5 className="mb-3">Business Subdomain</h5>
+                <div className="row">
+                    <div className="col-md-9">
+                        <label className="form-label">Subdomain *</label>
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                className={`form-control ${subdomainStatus === 'available' ? 'is-valid' : subdomainStatus === 'taken' || subdomainStatus === 'invalid' ? 'is-invalid' : ''}`}
+                                name="subdomain"
+                                value={formData.subdomain || ''}
+                                onChange={(e) => {
+                                    const { name, value } = e.target;
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        [name]: value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+                                    }));
+                                    // Reset status when user starts typing
+                                    setSubdomainStatus(null);
+                                }}
+                                placeholder="Enter unique subdomain"
+                                required
+                            />
+                            <span className="input-group-text">.shopatb2b.com</span>
+                            <button
+                                type="button"
+                                className="btn btn-outline-primary d-flex align-items-center"
+                                onClick={checkSubdomainAvailability}
+                                disabled={isCheckingSubdomain || !formData.subdomain}
+                            >
+                                {isCheckingSubdomain ? (
+                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                ) : (
+                                    <FaSearch />
+                                )}
+                                {isCheckingSubdomain ? 'Checking...' : 'Check'}
+                            </button>
+                        </div>
+
+                        {/* Status indicators */}
+                        {subdomainStatus === 'available' && (
+                            <div className="valid-feedback d-block">
+                                ✅ Subdomain is available!
+                            </div>
+                        )}
+                        {subdomainStatus === 'taken' && (
+                            <div className="invalid-feedback d-block">
+                                ❌ Subdomain is already taken
+                            </div>
+                        )}
+                        {subdomainStatus === 'invalid' && (
+                            <div className="invalid-feedback d-block">
+                                ❌ Invalid subdomain format
+                            </div>
+                        )}
+
+                        {formData.subdomain && (
+                            <div className="form-text">
+                                Your business will be accessible at: <strong>{formData.subdomain}.shopatb2b.com</strong>
+                            </div>
+                        )}
+
+                        <small className="text-muted">
+                            Only lowercase letters, numbers, and hyphens are allowed
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div className="mb-4">
                 <h5 className="mb-3">Operating Hours</h5>
                 <div className="default-hours mb-4">
                     <div className="row">
@@ -207,9 +345,9 @@ const MenuDetails = ({
                 <div className="days-section">
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h6 className="mb-0">Days Open</h6>
-                        <button 
-                            type="button" 
-                            className="btn btn-link p-0" 
+                        <button
+                            type="button"
+                            className="btn btn-link p-0"
                             onClick={toggleTimeSlots}
                         >
                             {showTimeSlots ? (

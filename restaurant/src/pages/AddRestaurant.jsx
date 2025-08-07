@@ -41,7 +41,7 @@ const AddRestaurant = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [selectedLocation, setSelectedLocation] = useState(null);
-    const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]); // Default to Delhi
+    const [mapCenter, setMapCenter] = useState([16.5062, 80.6480]); // Default to bza
     const [isFormValid, setIsFormValid] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [isCoordinateMode, setIsCoordinateMode] = useState(false);
@@ -63,6 +63,7 @@ const AddRestaurant = () => {
         ownerName: '',
         serviceType: serviceType || '',
         description : '',
+        subdomain: '',
         address: {
             streetAddress: '',
             city: '',
@@ -158,7 +159,8 @@ const AddRestaurant = () => {
             formData.address?.state &&
             formData.address?.pinCode &&
             formData.location?.lat &&
-            formData.location?.lng;
+            formData.location?.lng &&
+            formData.subdomain;
         setIsFormValid(isValid);
     };
 
@@ -459,6 +461,7 @@ const AddRestaurant = () => {
 
                             formDataToSend.append('formData', JSON.stringify({
                                 category: formData.category || '',
+                                subdomain: formData.subdomain || '',
                                 operatingHours: {
                                     defaultOpenTime: formData.operatingHours?.defaultOpenTime || '09:00',
                                     defaultCloseTime: formData.operatingHours?.defaultCloseTime || '22:00',
@@ -531,6 +534,8 @@ const AddRestaurant = () => {
         } catch (error) {
             console.error('Error saving step:', error);
             setError(error.message || 'Failed to save step data. Please try again.');
+            // Re-throw the error so it can be handled by the calling component
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -563,8 +568,9 @@ const AddRestaurant = () => {
                     formData.location?.lat &&
                     formData.location?.lng;
             case 2:
-                // Check if a category is selected and at least one day is open
+                // Check if a category is selected, subdomain is provided, and at least one day is open
                 return formData.category &&
+                    formData.subdomain &&
                     formData.operatingHours?.timeSlots
             case 3:
                 // All fields are optional for step 3
@@ -638,30 +644,36 @@ const AddRestaurant = () => {
                             }));
                         }}
                         isFormValid={validateStep(2)}
-                        onNext={(stepData) => {
-                            // Update formData with the step data
-                            setFormData(prev => {
-                                const updatedData = {
-                                    ...prev,
-                                    category: stepData.category,
-                                    operatingHours: {
-                                        ...stepData.operatingHours,
-                                        defaultOpenTime: stepData.operatingHours.defaultOpenTime || prev.operatingHours.defaultOpenTime,
-                                        defaultCloseTime: stepData.operatingHours.defaultCloseTime || prev.operatingHours.defaultCloseTime,
-                                        timeSlots: Object.entries(stepData.operatingHours.timeSlots).reduce((acc, [day, slot]) => {
-                                            acc[day] = {
-                                                isOpen: slot.isOpen,
-                                                openTime: slot.isOpen ? (slot.openTime || '09:00') : slot.openTime,
-                                                closeTime: slot.isOpen ? (slot.closeTime || '22:00') : slot.closeTime
-                                            };
-                                            return acc;
-                                        }, {})
-                                    }
-                                };
-                                console.log('Updated formData:', updatedData);
-                                return updatedData;
-                            });
-                            handleStepSubmit(3);
+                        onNext={async (stepData) => {
+                            try {
+                                // Update formData with the step data
+                                setFormData(prev => {
+                                    const updatedData = {
+                                        ...prev,
+                                        category: stepData.category,
+                                        subdomain: stepData.subdomain,
+                                        operatingHours: {
+                                            ...stepData.operatingHours,
+                                            defaultOpenTime: stepData.operatingHours.defaultOpenTime || prev.operatingHours.defaultOpenTime,
+                                            defaultCloseTime: stepData.operatingHours.defaultCloseTime || prev.operatingHours.defaultCloseTime,
+                                            timeSlots: Object.entries(stepData.operatingHours.timeSlots).reduce((acc, [day, slot]) => {
+                                                acc[day] = {
+                                                    isOpen: slot.isOpen,
+                                                    openTime: slot.isOpen ? (slot.openTime || '09:00') : slot.openTime,
+                                                    closeTime: slot.isOpen ? (slot.closeTime || '22:00') : slot.closeTime
+                                                };
+                                                return acc;
+                                            }, {})
+                                        }
+                                    };
+                                    console.log('Updated formData:', updatedData);
+                                    return updatedData;
+                                });
+                                await handleStepSubmit(3);
+                            } catch (error) {
+                                // Re-throw the error so MenuDetails can handle it
+                                throw error;
+                            }
                         }}
                     />
                 );
@@ -717,10 +729,11 @@ const AddRestaurant = () => {
     // Update validation state for step 2
     useEffect(() => {
         const isStep2Valid = formData.category &&
+            formData.subdomain &&
             formData.operatingHours?.timeSlots &&
             Object.values(formData.operatingHours.timeSlots || {}).some(day => day.isOpen);
         setStepValidation(prev => ({ ...prev, step2: isStep2Valid }));
-    }, [formData.category, formData.operatingHours]);
+    }, [formData.category, formData.subdomain, formData.operatingHours]);
 
     // Update validation state for step 3
     useEffect(() => {

@@ -15,7 +15,8 @@ const {
     getPublicBusinessById,
     getAllBusinessesForAdmin,
     getBusinessProfileByOwnerId,
-    updateBusinessProfileByOwnerId
+    updateBusinessProfileByOwnerId,
+    checkSubdomainAvailability
 } = require('../controllers/businessController');
 
 // Configure multer for file uploads
@@ -78,5 +79,8 @@ router.get('/admin/profile-by-owner', authMiddleware, adminMiddleware, getBusine
 
 // Admin: Update business profile by ownerId
 router.patch('/admin/profile-by-owner', authMiddleware, adminMiddleware, updateBusinessProfileByOwnerId);
+
+// Check subdomain availability (public route - no auth required)
+router.get('/check-subdomain', checkSubdomainAvailability);
 
 module.exports = router; 

@@ -17,7 +17,9 @@ const Contactus = () => {
                         <i className="bi bi-telephone-fill text-xl text-green-600"></i>
                         <div>
                             <h2 className="font-semibold">Phone</h2>
-                            <p>+91 98765 43210</p>
+                            <p>
+                                <a href="tel:+919121234449">+91 91212 34449</a>
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">

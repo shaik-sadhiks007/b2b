@@ -889,29 +889,28 @@ exports.getDeliveryPartnerOrders = async (req, res) => {
             status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
         };
 
-        // Add time filter
+        // Add time filter (IST timezone)
         if (timeFilter) {
-            const now = new Date();
+            const timezone = 'Asia/Kolkata';
             let timeRange;
-            
             switch (timeFilter) {
                 case '1h':
-                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(1, 'hours').toDate();
                     break;
                 case '3h':
-                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(3, 'hours').toDate();
                     break;
                 case '6h':
-                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(6, 'hours').toDate();
                     break;
                 case '12h':
-                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(12, 'hours').toDate();
                     break;
                 case '24h':
-                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
                     break;
                 default:
-                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
             }
             filter.createdAt = { $gte: timeRange };
         }
@@ -976,29 +975,28 @@ exports.getAvailableDeliveryOrders = async (req, res) => {
             deliveryPartnerId: { $exists: false }
         };
 
-        // Add time filter
+        // Add time filter (IST timezone)
         if (timeFilter) {
-            const now = new Date();
+            const timezone = 'Asia/Kolkata';
             let timeRange;
-            
             switch (timeFilter) {
                 case '1h':
-                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(1, 'hours').toDate();
                     break;
                 case '3h':
-                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(3, 'hours').toDate();
                     break;
                 case '6h':
-                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(6, 'hours').toDate();
                     break;
                 case '12h':
-                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(12, 'hours').toDate();
                     break;
                 case '24h':
-                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
                     break;
                 default:
-                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
             }
             filter.createdAt = { $gte: timeRange };
         }
@@ -1157,6 +1155,187 @@ exports.getCompletedDeliveryPartnerOrders = async (req, res) => {
     } catch (error) {
         console.error('[orderController.js][getCompletedDeliveryPartnerOrders]', error);
         res.status(500).json({ error: 'Failed to get completed orders', message: error.message });
+    }
+};
+
+// Admin: Get in-progress orders for a specific delivery partner by ID
+exports.getOrdersByDeliveryPartnerAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+        const { timeFilter, businessFilter } = req.query;
+
+        let filter = {
+            deliveryPartnerId: id,
+            status: { $in: ['ORDER_DELIVERY_READY', 'OUT_FOR_DELIVERY'] }
+        };
+
+        if (timeFilter) {
+            const timezone = 'Asia/Kolkata';
+            let timeRange;
+            switch (timeFilter) {
+                case '1h':
+                    timeRange = moment().tz(timezone).subtract(1, 'hours').toDate();
+                    break;
+                case '3h':
+                    timeRange = moment().tz(timezone).subtract(3, 'hours').toDate();
+                    break;
+                case '6h':
+                    timeRange = moment().tz(timezone).subtract(6, 'hours').toDate();
+                    break;
+                case '12h':
+                    timeRange = moment().tz(timezone).subtract(12, 'hours').toDate();
+                    break;
+                case '24h':
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
+                    break;
+                default:
+                    timeRange = moment().tz(timezone).subtract(24, 'hours').toDate();
+            }
+            filter.createdAt = { $gte: timeRange };
+        }
+
+        if (businessFilter) {
+            filter.restaurantName = { $regex: businessFilter, $options: 'i' };
+        }
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
+    } catch (error) {
+        console.error('[orderController.js][getOrdersByDeliveryPartnerAdmin]', error);
+        res.status(500).json({ error: 'Failed to get delivery partner orders by admin', message: error.message });
+    }
+};
+
+// Admin: Get completed orders for a specific delivery partner by ID
+exports.getCompletedOrdersByDeliveryPartnerAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+
+        const filter = {
+            deliveryPartnerId: id,
+            status: 'ORDER_DELIVERED'
+        };
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
+    } catch (error) {
+        console.error('[orderController.js][getCompletedOrdersByDeliveryPartnerAdmin]', error);
+        res.status(500).json({ error: 'Failed to get completed orders by admin', message: error.message });
+    }
+};
+
+// Admin: Update order status for a delivery partner's order
+exports.postDeliveryPartnerOrderStatusByAdmin = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body;
+        if (!status) return res.status(400).json({ error: 'Status is required' });
+
+        const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+
+        res.status(200).json(order);
+    } catch (error) {
+        console.error('[orderController.js][postDeliveryPartnerOrderStatusByAdmin]', error);
+        res.status(500).json({ error: 'Failed to update order status by admin', message: error.message });
+    }
+};
+
+// Admin: Get all available orders (not yet assigned to any delivery partner)
+exports.getAvailableOrdersByAdmin = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+        const { timeFilter, businessFilter } = req.query;
+
+        let filter = {
+            status: 'ORDER_DELIVERY_READY',
+            deliveryPartnerId: { $exists: false }
+        };
+
+        if (timeFilter) {
+            const now = new Date();
+            let timeRange;
+            switch (timeFilter) {
+                case '1h':
+                    timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '3h':
+                    timeRange = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    timeRange = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '12h':
+                    timeRange = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            }
+            filter.createdAt = { $gte: timeRange };
+        }
+
+        if (businessFilter) {
+            filter.restaurantName = { $regex: businessFilter, $options: 'i' };
+        }
+
+        const totalOrders = await Order.countDocuments(filter);
+        const orders = await Order.find(filter)
+            .populate('customerAddress')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+
+        res.status(200).json({
+            orders,
+            pagination: {
+                total: totalOrders,
+                page,
+                pageSize,
+                totalPages: Math.ceil(totalOrders / pageSize)
+            }
+        });
+    } catch (error) {
+        console.error('[orderController.js][getAvailableOrdersByAdmin]', error);
+        res.status(500).json({ error: 'Failed to get available orders', message: error.message });
     }
 };
 

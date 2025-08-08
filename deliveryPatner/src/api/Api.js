@@ -26,6 +26,8 @@ export const logoutApi = () => api.post("/api/auth/logout");
 // Get profile
 export const getProfileApi = () => api.get("/api/auth/profile");
 
+
+
 // Get delivery partner profile
 export const getDeliveryPartnerProfileApi = () => api.get("/api/delivery-partner/profile");
 
@@ -67,3 +69,26 @@ export const acceptMultipleDeliveryOrdersApi = (orderIds) => api.post('/api/orde
 
 // Get completed orders for delivery partner
 export const getCompletedDeliveryPartnerOrdersApi = (params = {}) => api.get('/api/orders/delivery-partner/completed-orders', { params });
+
+// ===== ADMIN APIs =====
+// Get all delivery partners (admin only)
+export const getAllDeliveryPartnersApi = (params = {}) => api.get('/api/delivery-partner/admin/all', { params });
+
+// Get delivery partner by ID (admin only)
+export const getDeliveryPartnerByIdApi = (id) => api.get(`/api/delivery-partner/admin/${id}`);
+
+// Update delivery partner status (admin only)
+export const updateDeliveryPartnerStatusApi = (id, status) => api.patch(`/api/delivery-partner/admin/${id}/status`, { status });
+
+// Get delivery partner statistics (admin only)
+export const getDeliveryPartnerStatsApi = () => api.get('/api/delivery-partner/admin/stats');
+
+// Admin: Update delivery partner data
+export const updateDeliveryPartnerByAdminApi = (id, data) => api.patch(`/api/delivery-partner/admin/${id}`, data);
+
+// Admin: Delivery partner specific order views
+export const getOrdersByDeliveryPartnerAdminApi = (partnerId, params = {}) => api.get(`/api/orders/admin/delivery-partner/${partnerId}/orders`, { params });
+export const getCompletedOrdersByDeliveryPartnerAdminApi = (partnerId, params = {}) => api.get(`/api/orders/admin/delivery-partner/${partnerId}/completed-orders`, { params });
+export const updateOrderStatusByAdminForDPApi = (orderId, status) => api.patch(`/api/orders/admin/delivery-partner/order-status/${orderId}`, { status });
+// Admin: Available orders
+export const getAvailableOrdersByAdminApi = (params = {}) => api.get('/api/orders/admin/available-orders', { params });

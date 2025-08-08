@@ -183,9 +183,18 @@ const Footer = () => {
                                 </li>
                             )}
                             {isSubdomain && businessData?.contact?.primaryPhone ? (
-                                <li>Phone: {businessData.contact.primaryPhone}</li>
+                                <li>
+                                    <a href={`tel:${businessData.contact.primaryPhone}`}>
+                                        Phone: {businessData.contact.primaryPhone}
+                                    </a>
+                                </li>
                             ) : (
-                                <li>Phone: +1 234 567 890</li>
+
+                                <li>
+                                    <a href="tel:+919121234449">
+                                        Phone:+91 91212 34449
+                                    </a>
+                                </li>
                             )}
                             {isSubdomain && businessData?.address ? (
                                 <li>

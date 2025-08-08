@@ -132,11 +132,13 @@ exports.placeOrder = async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
+        // Calculate subtotal from items (this should be the base amount before charges)
+        const subtotalAmount = items.reduce((total, item) => total + (item.totalPrice * item.quantity), 0);
+
         // Calculate delivery charges and GST
         let deliveryCharge = 0;
         let gstAmount = 0;
         let gstPercentage = 5;
-        let subtotalAmount = totalAmount;
 
         if (orderType === 'delivery') {
             // Calculate distance if customer address has location
@@ -151,14 +153,16 @@ exports.placeOrder = async (req, res) => {
             // Calculate total weight of items (assuming average weight per item)
             const totalWeight = items.reduce((weight, item) => weight + (item.quantity * 0.5), 0); // 0.5kg per item as default
 
-            // Calculate delivery charges
-            const deliveryResult = await calculateDeliveryCharges(totalAmount, distance, totalWeight);
+            // Calculate delivery charges based on subtotal
+            const deliveryResult = await calculateDeliveryCharges(subtotalAmount, distance, totalWeight);
             deliveryCharge = deliveryResult.deliveryCharge;
+        } else if (orderType === 'pickup') {
+            deliveryCharge = 0;
         }
 
-        // Calculate GST based on restaurant category
+        // Calculate GST based on restaurant category and subtotal
         const category = restaurant.category || 'restaurant';
-        const gstResult = await calculateGST(totalAmount, category);
+        const gstResult = await calculateGST(subtotalAmount, category);
         gstAmount = gstResult.gstAmount;
         gstPercentage = gstResult.gstPercentage;
 
@@ -176,11 +180,11 @@ exports.placeOrder = async (req, res) => {
                 photos: item.photos || [],
                 foodType: item.foodType || 'veg'
             })),
-            subtotalAmount,
-            deliveryCharge,
-            gstAmount,
+            subtotalAmount: Math.round(subtotalAmount * 100) / 100,
+            deliveryCharge: Math.round(deliveryCharge * 100) / 100,
+            gstAmount: Math.round(gstAmount * 100) / 100,
             gstPercentage,
-            totalAmount: finalTotalAmount,
+            totalAmount: Math.round(finalTotalAmount * 100) / 100,
             paymentMethod: paymentMethod || "COD",
             paymentStatus: paymentMethod === "COD" ? "PENDING" : "COMPLETED",
             status: "ORDER_PLACED",

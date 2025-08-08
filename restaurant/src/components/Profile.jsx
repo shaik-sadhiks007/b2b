@@ -32,7 +32,7 @@ const Profile = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [selectedLocation, setSelectedLocation] = useState(null);
-    const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]); // Default to Delhi
+    const [mapCenter, setMapCenter] = useState([16.5062, 80.6480]); // Default to bza
     const [isSearching, setIsSearching] = useState(false);
     const [isCoordinateMode, setIsCoordinateMode] = useState(false);
     const [coordinates, setCoordinates] = useState({ lat: '', lng: '' });

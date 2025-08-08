@@ -320,7 +320,8 @@ const Checkout = () => {
                 orderAmount: subtotal,
                 distance: distance,
                 weight: totalWeight,
-                category: category
+                category: category,
+                orderType: orderType
             });
 
             if (response.data.success) {
@@ -479,7 +480,7 @@ const Checkout = () => {
                                             <p className="text-sm text-gray-500">
                                                 Quantity: {item.quantity} {renderQuantityLabel(item)}
                                             </p>
-                                            <p className="text-sm text-gray-600">₹{item.totalPrice.toFixed(2)} {item.loose ? 'per kg' : 'each'}</p>
+                                            <p className="text-sm text-gray-600">₹{item.totalPrice.toFixed(2)} {item.loose }</p>
                                         </div>
                                     </div>
                                     <div className="text-right">

@@ -33,7 +33,12 @@ const Login = () => {
       // Dispatch login thunk to backend
       const resultAction = await dispatch(loginThunk({ email: user.email, firebaseUid: user.uid }));
       if (loginThunk.fulfilled.match(resultAction)) {
-        navigate('/dashboard');
+        // Check if user is admin and redirect accordingly
+        if (resultAction.payload && resultAction.payload.role === 'admin') {
+          navigate('/admin/delivery-partners');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setLocalError(resultAction.payload || 'Login failed!');
       }
@@ -50,7 +55,12 @@ const Login = () => {
       // Dispatch google login thunk to backend
       const resultAction = await dispatch(googleLoginThunk({ email: user.email, name: user.displayName, firebaseUid: user.uid }));
       if (googleLoginThunk.fulfilled.match(resultAction)) {
-        navigate('/dashboard');
+        // Check if user is admin and redirect accordingly
+        if (resultAction.payload && resultAction.payload.role === 'admin') {
+          navigate('/admin/delivery-partners');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setLocalError(resultAction.payload || 'Google Login failed!');
       }

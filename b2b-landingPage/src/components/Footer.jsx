@@ -46,7 +46,10 @@ const Footer = () => {
             );
         }
 
-        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyB41DRUbKWJHPxaFjMAwRg0hVdCx7SXjSY&q=${coordinates.lat},${coordinates.lng}&zoom=15`;
+        // const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyB41DRUbKWJHPxaFjMAwRg0hVdCx7SXjSY&q=${coordinates.lat},${coordinates.lng}&zoom=15`;
+
+        // Use OpenStreetMap which doesn't require an API key
+        const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lng - 0.01}%2C${coordinates.lat - 0.01}%2C${coordinates.lng + 0.01}%2C${coordinates.lat + 0.01}&layer=mapnik&marker=${coordinates.lat}%2C${coordinates.lng}`;
 
         return (
             <div className="bg-gray-800 rounded-lg overflow-hidden h-48">
@@ -157,7 +160,7 @@ const Footer = () => {
                             ) : (
                                 businessData && (
                                     <MapComponent coordinates={businessData.location} />
-                                )   
+                                )
                             )}
                         </ul>
                     </div>
@@ -180,9 +183,18 @@ const Footer = () => {
                                 </li>
                             )}
                             {isSubdomain && businessData?.contact?.primaryPhone ? (
-                                <li>Phone: {businessData.contact.primaryPhone}</li>
+                                <li>
+                                    <a href={`tel:${businessData.contact.primaryPhone}`}>
+                                        Phone: {businessData.contact.primaryPhone}
+                                    </a>
+                                </li>
                             ) : (
-                                <li>Phone: +1 234 567 890</li>
+
+                                <li>
+                                    <a href="tel:+919121234449">
+                                        Phone:+91 91212 34449
+                                    </a>
+                                </li>
                             )}
                             {isSubdomain && businessData?.address ? (
                                 <li>

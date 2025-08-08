@@ -53,13 +53,27 @@ export const loginThunk = createAsyncThunk(
   'auth/login',
   async (credentials, { dispatch, rejectWithValue }) => {
     try {
-      await loginApi(credentials);
-      // After login, fetch the profile
-      const profileResult = await dispatch(fetchProfileThunk());
-      if (fetchProfileThunk.fulfilled.match(profileResult)) {
-        return profileResult.payload;
+      const loginResponse = await loginApi(credentials);
+      
+      // Check if user is admin
+      if (loginResponse.data.user && loginResponse.data.user.role === 'admin') {
+        // For admin users, return the user data directly without fetching delivery partner profile
+        return {
+          _id: loginResponse.data.user.id,
+          name: loginResponse.data.user.username,
+          email: loginResponse.data.user.email,
+          username: loginResponse.data.user.username,
+          role: loginResponse.data.user.role,
+          isAdmin: true
+        };
       } else {
-        return rejectWithValue(profileResult.payload || 'Failed to fetch profile after login');
+        // For regular delivery partners, fetch the profile
+        const profileResult = await dispatch(fetchProfileThunk());
+        if (fetchProfileThunk.fulfilled.match(profileResult)) {
+          return profileResult.payload;
+        } else {
+          return rejectWithValue(profileResult.payload || 'Failed to fetch profile after login');
+        }
       }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Login failed');
@@ -72,21 +86,33 @@ export const googleLoginThunk = createAsyncThunk(
   'auth/googleLogin',
   async (credentials, { dispatch, rejectWithValue }) => {
     try {
-      await googleLoginApi(credentials);
-      // After login, fetch the profile
-      const profileResult = await dispatch(fetchProfileThunk());
-      if (fetchProfileThunk.fulfilled.match(profileResult)) {
-        return profileResult.payload;
+      const loginResponse = await googleLoginApi(credentials);
+      
+      // Check if user is admin
+      if (loginResponse.data.user && loginResponse.data.user.role === 'admin') {
+        // For admin users, return the user data directly without fetching delivery partner profile
+        return {
+          _id: loginResponse.data.user.id,
+          name: loginResponse.data.user.username,
+          email: loginResponse.data.user.email,
+          username: loginResponse.data.user.username,
+          role: loginResponse.data.user.role,
+          isAdmin: true
+        };
       } else {
-        return rejectWithValue(profileResult.payload || 'Failed to fetch profile after Google login');
+        // For regular delivery partners, fetch the profile
+        const profileResult = await dispatch(fetchProfileThunk());
+        if (fetchProfileThunk.fulfilled.match(profileResult)) {
+          return profileResult.payload;
+        } else {
+          return rejectWithValue(profileResult.payload || 'Failed to fetch profile after Google login');
+        }
       }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Google login failed');
     }
   }
 );
-
-
 
 // Logout thunk
 export const logoutThunk = createAsyncThunk(
@@ -151,7 +177,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
       // Logout
       .addCase(logoutThunk.fulfilled, (state) => {
         state.isAuthenticated = false;

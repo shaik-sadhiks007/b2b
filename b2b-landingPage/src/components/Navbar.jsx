@@ -280,15 +280,19 @@ function Navbar({ alwaysVisible }) {
               <div onClick={handleLogoClick} className="cursor-pointer">
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
               </div>
-              {isSubdomain && (
+            </div>
+
+            {/* Centered Subdomain Button */}
+            {isSubdomain && (
+              <div className="absolute left-1/2 transform -translate-x-1/2">
                 <button
                   onClick={handleSubdomainClick}
-                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors "
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
                 >
                   {subdomain}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-4">
               {!isSubdomain && (
@@ -370,6 +374,7 @@ function Navbar({ alwaysVisible }) {
                   className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 relative"
                 >
                   <Bell size={20} />
+                  <span className="text-sm">Notifications</span>
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                       {unreadCount}
@@ -439,7 +444,7 @@ function Navbar({ alwaysVisible }) {
                         <UserCircle size={24} />
                       )}
                       <span className="text-md font-medium capitalize">
-                        {user.username || "Hi User"}
+                        {user.username ? user.username.split(' ')[0] : "Hi User"}
                       </span>
                     </>
                   ) : (

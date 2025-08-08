@@ -172,6 +172,172 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// ===== ADMIN FUNCTIONS =====
+
+// Get all delivery partners with pagination and filters (admin only)
+const getAllDeliveryPartners = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, search = '', status = '' } = req.query;
+    const skip = (page - 1) * pageSize;
+
+    // Build query
+    let query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { mobileNumber: { $regex: search, $options: 'i' } },
+        { vehicleNumber: { $regex: search, $options: 'i' } },
+        { serviceLocation: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Status filter
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // Get total count
+    const total = await DeliveryPartner.countDocuments(query);
+    
+    // Get delivery partners with pagination
+    const deliveryPartners = await DeliveryPartner.find(query)
+      .populate('user', 'username email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(pageSize))
+      .select('-aadhaar');
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / pageSize);
+
+    res.json({
+      deliveryPartners,
+      pagination: {
+        total,
+        totalPages,
+        page: parseInt(page),
+        pageSize: parseInt(pageSize)
+      }
+    });
+  } catch (err) {
+    console.error('Error in getAllDeliveryPartners:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get delivery partner by ID (admin only)
+const getDeliveryPartnerById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deliveryPartner = await DeliveryPartner.findById(id)
+      .populate('user', 'username email')
+
+    if (!deliveryPartner) {
+      return res.status(404).json({ error: 'Delivery partner not found' });
+    }
+
+    res.json(deliveryPartner);
+  } catch (err) {
+    console.error('Error in getDeliveryPartnerById:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Update delivery partner status (admin only)
+const updateDeliveryPartnerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['inactive', 'active', 'review', 'pending'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).populate('user', 'username email')
+    .select('-aadhaar');
+
+    if (!deliveryPartner) {
+      return res.status(404).json({ error: 'Delivery partner not found' });
+    }
+
+    res.json(deliveryPartner);
+  } catch (err) {
+    console.error('Error in updateDeliveryPartnerStatus:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get delivery partner statistics (admin only)
+const getDeliveryPartnerStats = async (req, res) => {
+  try {
+    const total = await DeliveryPartner.countDocuments();
+    const active = await DeliveryPartner.countDocuments({ status: 'active' });
+    const inactive = await DeliveryPartner.countDocuments({ status: 'inactive' });
+    const review = await DeliveryPartner.countDocuments({ status: 'review' });
+    const pending = await DeliveryPartner.countDocuments({ status: 'pending' });
+    const online = await DeliveryPartner.countDocuments({ online: true });
+
+    res.json({
+      total,
+      active,
+      inactive,
+      review,
+      pending,
+      online
+    });
+  } catch (err) {
+    console.error('Error in getDeliveryPartnerStats:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Admin: Update delivery partner profile/documents by ID
+const updateDeliveryPartnerByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    const partner = await DeliveryPartner.findById(id);
+    if (!partner) return res.status(404).json({ error: 'Delivery partner not found' });
+
+    // Allow admin to update simple fields and documents
+    const updatableFields = [
+      'name', 'mobileNumber', 'gender', 'vehicleType', 'vehicleNumber', 'serviceLocation', 'status', 'online'
+    ];
+    updatableFields.forEach((field) => {
+      if (updateData[field] !== undefined) partner[field] = updateData[field];
+    });
+
+    // Update presentAddress if provided
+    if (updateData.presentAddress) {
+      if (!partner.presentAddress) partner.presentAddress = {};
+      const addrFields = ['streetAddress','city','district','state','pinCode'];
+      addrFields.forEach((f) => {
+        if (updateData.presentAddress[f] !== undefined) partner.presentAddress[f] = updateData.presentAddress[f];
+      });
+    }
+
+    // Update aadhaar object if provided (accept direct URLs)
+    if (updateData.aadhaar) {
+      if (!partner.aadhaar) partner.aadhaar = {};
+      if (updateData.aadhaar.front !== undefined) partner.aadhaar.front = updateData.aadhaar.front;
+      if (updateData.aadhaar.back !== undefined) partner.aadhaar.back = updateData.aadhaar.back;
+    }
+
+    await partner.save();
+    res.json(partner);
+  } catch (err) {
+    console.error('Error in updateDeliveryPartnerByAdmin:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getProfile,
   register,
@@ -179,5 +345,11 @@ module.exports = {
   updateStatus,
   toggleOnline,
   getAll,
-  updateProfile
+  updateProfile,
+  // Admin functions
+  getAllDeliveryPartners,
+  getDeliveryPartnerById,
+  updateDeliveryPartnerStatus,
+  getDeliveryPartnerStats,
+  updateDeliveryPartnerByAdmin
 };

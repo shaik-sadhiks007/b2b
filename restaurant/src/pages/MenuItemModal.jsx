@@ -20,7 +20,10 @@ const defaultForm = {
   requiresPrescription: false,
   unit: "piece",
   unitValue: 1, 
-   loose: false,
+  loose: false,
+  discountPercentage: 0, 
+  discountAmount: 0,     
+  isOnDiscount: false, 
 };
 
 const ACCEPTED_IMAGE_TYPES = [
@@ -53,6 +56,11 @@ const MenuItemModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryHelp, setShowCategoryHelp] = useState(false);
   const [showSubcategoryHelp, setShowSubcategoryHelp] = useState(false);
+
+  // Determine if we should show medical-specific fields
+  const isMedicalCategory = form.category.toLowerCase() === "medical";
+  const isRestaurantCategory = form.category.toLowerCase() === "restaurant";
+  const isGroceryCategory = form.category.toLowerCase() === "grocery";
 
   useEffect(() => {
     if (item != null) {
@@ -100,16 +108,26 @@ const MenuItemModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.totalPrice || !form.unitValue || !form.unit) {
-      setError("Name, Price, unit and unit value are required");
+    if (!form.name || !form.totalPrice) {
+      setError("Name and Price are required");
       return;
     }
-    if (form.unitValue <= 0) {
-    setError("Unit Value must be greater than zero");
-    return;
-  }
+    
+    if (form.loose && (!form.unitValue || form.unitValue <= 0)) {
+      setError("Unit Value must be greater than zero for loose items");
+      return;
+    }
 
-
+    if (form.discountPercentage < 0 || form.discountPercentage > 100) {
+      setError("Discount must be between 0-100%");
+      return;
+    }
+    
+    if (form.discountPercentage > 0 && form.totalPrice * (1 - form.discountPercentage/100) <= 0) {
+      setError("Discount would make price zero or negative");
+      return;
+    }
+    
     setError("");
     setIsSubmitting(true);
 
@@ -173,6 +191,36 @@ const MenuItemModal = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Loose Item Toggle moved to top */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  name="loose"
+                  checked={form.loose}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, loose: e.target.checked }))
+                  }
+                  className="sr-only"
+                />
+                <div
+                  className={`w-10 h-5 rounded-full shadow-inner transition-colors duration-200 ${
+                    form.loose ? "bg-blue-500" : "bg-gray-300"
+                  }`}
+                ></div>
+                <div
+                  className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                    form.loose ? "translate-x-5" : "translate-x-0"
+                  }`}
+                ></div>
+              </div>
+              <span className="text-sm font-medium text-gray-700">
+                Loose Item 
+              </span>
+            </label>
+          </div>
+
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name <span className="text-red-500">*</span>
@@ -184,50 +232,46 @@ const MenuItemModal = ({
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
               required
-              placeholder="e.g., Paracetamol 500mg"
             />
           </div>
-          
-           {/* Unit Dropdown */}
-  <div className="space-y-1">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Unit
-    </label>
-    <select
-      name="unit"
-      value={form.unit}
-      onChange={handleChange}
-      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-    >
-       <option value="grams">grams</option>
-      <option value="milli grams">ml</option>
-      <option value="kg">kg</option>
-      <option value="ltr">ltr</option>
-      <option value="piece">piece</option>
-      <option value="box">box</option>
-      <option value="plate">plate</option>
-      <option value="bottle">bottle</option>
-      <option value="cup">cup</option>
-      <option value="packet">packet</option>
-    </select>
-  </div>
-  <div className="space-y-1">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Unit Value <span className="text-red-500">*</span>
-  </label>
-  <input
-    type="number"
-    name="unitValue"
-    value={form.unitValue}
-    onChange={handleChange}
-    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-    required
-    min="0.01"
-    step="0.01"
-    placeholder="e.g., 1.5"
-  />
-</div>
-  
+
+          {/* Conditionally render unit fields when loose item is checked */}
+          {form.loose && (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Unit Dropdown */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Unit <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="unit"
+                  value={form.unit}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  required={form.loose}
+                >
+                  <option value="kg">kg</option>
+                  <option value="ltr">ltr</option>
+                </select>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Unit Value <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="unitValue"
+                  value={form.unitValue}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  required={form.loose}
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -240,7 +284,14 @@ const MenuItemModal = ({
                   type="number"
                   name="totalPrice"
                   value={form.totalPrice}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const price = parseFloat(e.target.value) || 0;
+                    setForm(prev => ({
+                      ...prev,
+                      totalPrice: price,
+                      discountAmount: (price * (prev.discountPercentage / 100)).toFixed(2)
+                    }));
+                  }}
                   className="w-full pl-8 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                   required
                   min="0"
@@ -249,19 +300,79 @@ const MenuItemModal = ({
                 />
               </div>
             </div>
+            
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity <span className="text-red-500">*</span>
+                Discount (%)
               </label>
-              <input
-                type="number"
-                name="quantity"
-                value={form.quantity}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                required
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  name="discountPercentage"
+                  value={form.discountPercentage}
+                  onChange={(e) => {
+                    const value = Math.min(100, Math.max(0, e.target.valueAsNumber || 0));
+                    setForm(prev => ({
+                      ...prev,
+                      discountPercentage: value,
+                      discountAmount: (prev.totalPrice * (value / 100)).toFixed(2),
+                      isOnDiscount: value > 0
+                    }));
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  min="0"
+                  max="100"
+                  step="1"
+                />
+                <span className="text-gray-500 whitespace-nowrap">% OFF</span>
+              </div>
             </div>
+          </div>
+
+          {form.discountPercentage > 0 && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  Discounted Price: <span className="font-bold text-green-600">
+                    ₹{(form.totalPrice - (form.totalPrice * (form.discountPercentage / 100))).toFixed(2)}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Original: <span className="line-through">₹{form.totalPrice || '0.00'}</span> • 
+                  Savings: <span className="text-red-500 font-medium">
+                    ₹{(form.totalPrice * (form.discountPercentage / 100)).toFixed(2)} ({form.discountPercentage}%)
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setForm(prev => ({
+                    ...prev,
+                    discountPercentage: 0,
+                    discountAmount: 0,
+                    isOnDiscount: false
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-white text-red-600 rounded-md border border-red-200 hover:bg-red-50 transition-colors flex items-center gap-1 shadow-sm"
+              >
+                <X size={14} /> Remove
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="quantity"
+              value={form.quantity}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -300,7 +411,6 @@ const MenuItemModal = ({
                 value={form.category}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., Antibiotics"
                 readOnly={!!preSelectedCategory}
               />
             </div>
@@ -339,161 +449,165 @@ const MenuItemModal = ({
                 value={form.subcategory}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., Tablets"
                 readOnly={!!preSelectedSubcategory}
               />
             </div>
           </div>
 
-          {/* Medical Inventory Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Storage Zone
-              </label>
-              <select
-                name="storageZone"
-                value={form.storageZone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-              >
-                <option value="general">General Storage</option>
-                <option value="refrigerated">Refrigerated</option>
-                <option value="controlled">Controlled Substances</option>
-                <option value="hazardous">Hazardous Materials</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Batch Number
-              </label>
-              <input
-                type="text"
-                name="batchNumber"
-                value={form.batchNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., BX2023-045"
-              />
-            </div>
-          </div>
+          {/* Medical Inventory Fields - only shown for medical category */}
+          {isMedicalCategory && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Storage Zone
+                  </label>
+                  <select
+                    name="storageZone"
+                    value={form.storageZone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  >
+                    <option value="general">General Storage</option>
+                    <option value="refrigerated">Refrigerated</option>
+                    <option value="controlled">Controlled Substances</option>
+                    <option value="hazardous">Hazardous Materials</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Batch Number
+                  </label>
+                  <input
+                    type="text"
+                    name="batchNumber"
+                    value={form.batchNumber}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rack
-              </label>
-              <input
-                type="text"
-                name="rack"
-                value={form.rack}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., A"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Shelf
-              </label>
-              <input
-                type="text"
-                name="shelf"
-                value={form.shelf}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., 2"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bin
-              </label>
-              <input
-                type="text"
-                name="bin"
-                value={form.bin}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                placeholder="e.g., 3"
-              />
-            </div>
-          </div>
-          
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rack
+                  </label>
+                  <input
+                    type="text"
+                    name="rack"
+                    value={form.rack}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    placeholder="e.g., A"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Shelf
+                  </label>
+                  <input
+                    type="text"
+                    name="shelf"
+                    value={form.shelf}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    placeholder="e.g., 2"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bin
+                  </label>
+                  <input
+                    type="text"
+                    name="bin"
+                    value={form.bin}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    placeholder="e.g., 3"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Food Type
-            </label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div
-                  className={`relative w-5 h-5 rounded-full border-2 ${
-                    form.foodType === "veg"
-                      ? "border-green-500 bg-green-500"
-                      : "border-gray-300"
-                  } transition-colors duration-200`}
-                >
-                  {form.foodType === "veg" && (
-                    <div className="absolute inset-0.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-gray-700">Veg</span>
-                <input
-                  type="radio"
-                  name="foodType"
-                  value="veg"
-                  checked={form.foodType === "veg"}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
+          {/* Food Type - only shown for restaurant or grocery categories */}
+          {(isRestaurantCategory || isGroceryCategory) && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Food Type
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div
-                  className={`relative w-5 h-5 rounded-full border-2 ${
-                    form.foodType === "nonveg"
-                      ? "border-red-500 bg-red-500"
-                      : "border-gray-300"
-                  } transition-colors duration-200`}
-                >
-                  {form.foodType === "nonveg" && (
-                    <div className="absolute inset-0.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-gray-700">Non-Veg</span>
-                <input
-                  type="radio"
-                  name="foodType"
-                  value="nonveg"
-                  checked={form.foodType === "nonveg"}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div
-                  className={`relative w-5 h-5 rounded-full border-2 ${
-                    form.foodType === "egg"
-                      ? "border-yellow-500 bg-yellow-500"
-                      : "border-gray-300"
-                  } transition-colors duration-200`}
-                >
-                  {form.foodType === "egg" && (
-                    <div className="absolute inset-0.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-gray-700">Egg</span>
-                <input
-                  type="radio"
-                  name="foodType"
-                  value="egg"
-                  checked={form.foodType === "egg"}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <div
+                    className={`relative w-5 h-5 rounded-full border-2 ${
+                      form.foodType === "veg"
+                        ? "border-green-500 bg-green-500"
+                        : "border-gray-300"
+                    } transition-colors duration-200`}
+                  >
+                    {form.foodType === "veg" && (
+                      <div className="absolute inset-0.5 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                  <span className="text-gray-700">Veg</span>
+                  <input
+                    type="radio"
+                    name="foodType"
+                    value="veg"
+                    checked={form.foodType === "veg"}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <div
+                    className={`relative w-5 h-5 rounded-full border-2 ${
+                      form.foodType === "nonveg"
+                        ? "border-red-500 bg-red-500"
+                        : "border-gray-300"
+                    } transition-colors duration-200`}
+                  >
+                    {form.foodType === "nonveg" && (
+                      <div className="absolute inset-0.5 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                  <span className="text-gray-700">Non-Veg</span>
+                  <input
+                    type="radio"
+                    name="foodType"
+                    value="nonveg"
+                    checked={form.foodType === "nonveg"}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <div
+                    className={`relative w-5 h-5 rounded-full border-2 ${
+                      form.foodType === "egg"
+                        ? "border-yellow-500 bg-yellow-500"
+                        : "border-gray-300"
+                    } transition-colors duration-200`}
+                  >
+                    {form.foodType === "egg" && (
+                      <div className="absolute inset-0.5 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                  <span className="text-gray-700">Egg</span>
+                  <input
+                    type="radio"
+                    name="foodType"
+                    value="egg"
+                    checked={form.foodType === "egg"}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -505,7 +619,7 @@ const MenuItemModal = ({
               onChange={handleChange}
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-              placeholder="Describe the item (composition, dosage, etc.)"
+              placeholder="Describe the item"
             />
           </div>
 
@@ -523,64 +637,40 @@ const MenuItemModal = ({
                 placeholder="Select expiry date"
               />
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    name="requiresPrescription"
-                    checked={form.requiresPrescription}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, requiresPrescription: e.target.checked }))
-                    }
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-10 h-5 rounded-full shadow-inner transition-colors duration-200 ${
-                      form.requiresPrescription ? "bg-blue-500" : "bg-gray-300"
-                    }`}
-                  ></div>
-                  <div
-                    className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                      form.requiresPrescription ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <Pill className="w-4 h-4" /> Prescription Required
-                </span>
-              </label>
-            </div>
+            
+            {/* Prescription required toggle - only for medical category */}
+            {isMedicalCategory && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      name="requiresPrescription"
+                      checked={form.requiresPrescription}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, requiresPrescription: e.target.checked }))
+                      }
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-10 h-5 rounded-full shadow-inner transition-colors duration-200 ${
+                        form.requiresPrescription ? "bg-blue-500" : "bg-gray-300"
+                      }`}
+                    ></div>
+                    <div
+                      className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                        form.requiresPrescription ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <Pill className="w-4 h-4" /> Prescription Required
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
-                    {/* Add this code block with the other toggle fields */}
-<div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-  <label className="flex items-center gap-2 cursor-pointer">
-    <div className="relative">
-      <input
-        type="checkbox"
-        name="loose"
-        checked={form.loose}
-        onChange={(e) =>
-          setForm((prev) => ({ ...prev, loose: e.target.checked }))
-        }
-        className="sr-only"
-      />
-      <div
-        className={`w-10 h-5 rounded-full shadow-inner transition-colors duration-200 ${
-          form.loose ? "bg-blue-500" : "bg-gray-300"
-        }`}
-      ></div>
-      <div
-        className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-          form.loose ? "translate-x-5" : "translate-x-0"
-        }`}
-      ></div>
-    </div>
-    <span className="text-sm font-medium text-gray-700">
-      Loose Item (unpackaged)
-    </span>
-  </label>
-</div>
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Item Image

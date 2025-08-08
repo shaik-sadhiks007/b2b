@@ -1,14 +1,21 @@
 import React, { useState, useContext, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+} from "lucide-react";
 import MenuItemModal from "./MenuItemModal";
 import BulkAddModal from "./BulkAddModal";
 import ImportExcelModal from "./ImportExcelModal";
 import { MenuContext } from "../context/MenuContext";
 import ConfirmModal from "../reusable/ConfirmModal";
 import { AuthContext } from "../context/AuthContext";
-import Offers from './Offers';
+import { toast } from "react-toastify";
 
 // Veg/NonVeg icons for menu items
 const VegIcon = () => (
@@ -86,21 +93,10 @@ function MenuEditor() {
     unit: "piece",
     unitValue: 1, // Default unit value
   });
-  // State for offer form
-const [offerFormOpenForItem, setOfferFormOpenForItem] = useState(null);
 
-  // Handler for opening offer form
-const handleOpenOfferForm = (item) => {
-  setOfferFormOpenForItem(item._id);
-};
+  
 
-  // Toggle subcategory expansion
-  const toggleSubcategory = (subcategoryName) => {
-    setExpandedSubcategories((prev) => ({
-      ...prev,
-      [subcategoryName]: !prev[subcategoryName],
-    }));
-  };
+ 
 
   // Set default selected category and subcategory on load
   useEffect(() => {
@@ -279,7 +275,7 @@ const handleOpenOfferForm = (item) => {
         inStock: true,
         quantity: "",
         expiryDate: "",
-         unit: "piece", // Add default unit
+        unit: "piece", // Add default unit
         unitValue: "1",
         loose: false, // Default to not loose
       });
@@ -309,7 +305,7 @@ const handleOpenOfferForm = (item) => {
       price: parseFloat(newItemData.price),
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
-      unit: newItemData.unit || 'piece',
+      unit: newItemData.unit || "piece",
       unitValue: newItemData.unitValue || 1,
       loose: newItemData.loose || false, // Add loose field
       expiryDate: newItemData.expiryDate
@@ -322,19 +318,18 @@ const handleOpenOfferForm = (item) => {
 
   return (
     <div className="container-fluid px-0">
-
-      {
-        (user && user?.role !== 'admin') && (
-          <div style={{ marginTop: "60px" }}>
-            <Navbar />
-            <Sidebar />
-          </div>
-        )
-      }
+      {user && user?.role !== "admin" && (
+        <div style={{ marginTop: "60px" }}>
+          <Navbar />
+          <Sidebar />
+        </div>
+      )}
 
       <div
-        className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
-        style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+        className={`${
+          user?.role === "admin" ? "col-lg-12" : "col-lg-10"
+        } ms-auto`}
+        style={{ marginTop: user?.role === "admin" ? "0px" : "60px" }}
       >
         <div className="p-4">
           <style>{`
@@ -493,15 +488,29 @@ const handleOpenOfferForm = (item) => {
                 {showCategoryHelp && (
                   <div className="absolute z-10 mt-8 ml-[-8px] bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-xs">
                     <p className="text-sm text-gray-700">
-                      Here is the list of categories. To create a new category, go to "Add New Item" and enter a new category name in the category field when adding an item, if no category is given item falls under uncategorized .
+                      Here is the list of categories. To create a new category,
+                      go to "Add New Item" and enter a new category name in the
+                      category field when adding an item, if no category is
+                      given item falls under uncategorized .
                     </p>
                     <button
                       type="button"
                       className="absolute top-1 right-1 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowCategoryHelp(false)}
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -511,10 +520,11 @@ const handleOpenOfferForm = (item) => {
                 {menuItems.map((categoryObj) => (
                   <div
                     key={categoryObj.category}
-                    className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${selectedCategory === categoryObj.category
-                      ? "font-bold text-orange-500"
-                      : ""
-                      }`}
+                    className={`flex items-center justify-between text-gray-600 hover:text-gray-800 cursor-pointer py-2 text-sm transition-colors ${
+                      selectedCategory === categoryObj.category
+                        ? "font-bold text-orange-500"
+                        : ""
+                    }`}
                     onClick={() => setSelectedCategory(categoryObj.category)}
                   >
                     <span>{categoryObj.category}</span>
@@ -551,10 +561,11 @@ const handleOpenOfferForm = (item) => {
                     className="flex items-center gap-2 w-full"
                   >
                     <button
-                      className={`mobile-category-btn${selectedCategory === categoryObj.category
-                        ? " selected"
-                        : ""
-                        }`}
+                      className={`mobile-category-btn${
+                        selectedCategory === categoryObj.category
+                          ? " selected"
+                          : ""
+                      }`}
                       onClick={() => setSelectedCategory(categoryObj.category)}
                     >
                       {categoryObj.category}
@@ -618,21 +629,21 @@ const handleOpenOfferForm = (item) => {
                         subcategories.length === 1 &&
                         subcategories[0].subcategory === "general"
                       ) && (
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-lg font-semibold">
-                              Subcategories
-                            </span>
-                            <button
-                              className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
-                              onClick={() =>
-                                handleOpenModal(selectedCategory, "", null)
-                              }
-                            >
-                              <Plus size={20} />
-                              Add Subcategory
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-lg font-semibold">
+                            Subcategories
+                          </span>
+                          <button
+                            className="flex items-center gap-2 bg-black/80 text-white px-4 py-1 rounded hover:bg-gray-800 transition-colors"
+                            onClick={() =>
+                              handleOpenModal(selectedCategory, "", null)
+                            }
+                          >
+                            <Plus size={20} />
+                            Add Subcategory
+                          </button>
+                        </div>
+                      )}
                       <div className="flex flex-column gap-4">
                         {/* Bulk Delete Controls */}
                         {bulkDeleteMode && (
@@ -695,24 +706,25 @@ const handleOpenOfferForm = (item) => {
                         {/* Filter subcategories based on search and out-of-stock */}
                         {(searchTerm || showOutOfStock
                           ? subcategories.filter((subcat) =>
-                            subcat.items.some(
-                              (item) =>
-                                item.name
-                                  .toLowerCase()
-                                  .includes(searchTerm.toLowerCase()) &&
-                                (!showOutOfStock || item.inStock === false)
+                              subcat.items.some(
+                                (item) =>
+                                  item.name
+                                    .toLowerCase()
+                                    .includes(searchTerm.toLowerCase()) &&
+                                  (!showOutOfStock || item.inStock === false)
+                              )
                             )
-                          )
                           : subcategories
                         ).map((subcat) => (
                           <div key={subcat.subcategory}>
                             <div
-                              className={`flex items-center justify-between gap-4 px-3 py-3 rounded-md border ${bulkDeleteMode
-                                ? selectedSubcategories[subcat.subcategory]
-                                  ? "border-red-300 bg-red-50"
+                              className={`flex items-center justify-between gap-4 px-3 py-3 rounded-md border ${
+                                bulkDeleteMode
+                                  ? selectedSubcategories[subcat.subcategory]
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-200 bg-white"
                                   : "border-gray-200 bg-white"
-                                : "border-gray-200 bg-white"
-                                }`}
+                              }`}
                             >
                               <div className="flex items-center gap-3">
                                 {/* Subcategory checkbox - only show in bulk delete mode */}
@@ -721,7 +733,7 @@ const handleOpenOfferForm = (item) => {
                                     type="checkbox"
                                     checked={
                                       selectedSubcategories[
-                                      subcat.subcategory
+                                        subcat.subcategory
                                       ] || false
                                     }
                                     onChange={(e) =>
@@ -799,7 +811,10 @@ const handleOpenOfferForm = (item) => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Item Name <span className="text-red-500">*</span>
+                                          Item Name{" "}
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
                                         </label>
                                         <input
                                           type="text"
@@ -810,45 +825,13 @@ const handleOpenOfferForm = (item) => {
                                           required
                                         />
                                       </div>
-                                       <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Unit <span className="text-red-500">*</span>
-    </label>
-    <select
-      name="unit"
-      value={newItemData.unit || 'piece'} // default to 'piece'
-      onChange={handleAccordionInputChange}
-      className="w-full border border-gray-300 rounded-md px-3 py-2"
-      required
-    >
-      <option value="grams">grams</option>
-      <option value="milli grams">ml</option>
-      <option value="kg">kg</option>
-      <option value="ltr">ltr</option>
-      <option value="piece">piece</option>
-      <option value="box">box</option>
-      <option value="plate">plate</option>
-      <option value="bottle">bottle</option>
-      <option value="cup">cup</option>
-      <option value="packet">packet</option>
-    </select>
-  </div>
-   <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Unit Value
-          </label>
-          <input
-            type="text"
-            name="unitValue"
-            value={newItemData.unitValue}
-            onChange={handleAccordionInputChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-            placeholder="e.g., 1, 250, 0.5"
-          />
-        </div>
+
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Price<span className="text-red-500">*</span>
+                                          Price
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
                                         </label>
                                         <input
                                           type="number"
@@ -863,9 +846,14 @@ const handleOpenOfferForm = (item) => {
                                       </div>
 
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1"
-                                          htmlFor="quantity-input">
-                                          Quantity <span className="text-red-500">*</span>
+                                        <label
+                                          className="block text-sm font-medium text-gray-700 mb-1"
+                                          htmlFor="quantity-input"
+                                        >
+                                          Quantity{" "}
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
                                         </label>
                                         <input
                                           type="number"
@@ -878,13 +866,12 @@ const handleOpenOfferForm = (item) => {
                                           step="1"
                                         />
                                       </div>
-                                       <div>
+                                      <div>
                                         <label
                                           className="block text-sm font-medium text-gray-700 mb-1"
                                           htmlFor="expiry-date-input"
                                         >
                                           Expiry Date{" "}
-                                          
                                         </label>
                                         <input
                                           type="date"
@@ -892,38 +879,9 @@ const handleOpenOfferForm = (item) => {
                                           value={newItemData.expiryDate}
                                           onChange={handleAccordionInputChange}
                                           className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                          
                                         />
                                       </div>
-                                      <div className="flex items-center gap-4">
-  {/* Add this block with the other toggle buttons */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Loose Item
-    </label>
-    <label className="flex items-center cursor-pointer">
-      <div className="relative">
-        <input
-          type="checkbox"
-          name="loose"
-          checked={newItemData.loose}
-          onChange={handleAccordionInputChange}
-          className="sr-only"
-        />
-        <div
-          className={`block w-10 h-6 rounded-full ${
-            newItemData.loose ? "bg-blue-500" : "bg-gray-400"
-          }`}
-        ></div>
-        <div
-          className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-            newItemData.loose ? "translate-x-4" : ""
-          }`}
-        ></div>
-      </div>
-    </label>
-  </div>
-</div>
+                                      <div className="flex items-center gap-4"></div>
                                       <div className="flex items-center gap-4">
                                         <div>
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1003,166 +961,178 @@ const handleOpenOfferForm = (item) => {
                             {(expandedSubcategories[subcat.subcategory] ||
                               searchTerm ||
                               showOutOfStock) && (
-                                <div className="space-y-8">
-                                  <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
+                              <div className="space-y-8">
+                                <div className="bg-white border border-gray-300 rounded-lg shadow-sm py-4 space-y-4">
                                   {/* Inside your item mapping */}
-{subcat.items
-  .filter(
-    (item) =>
-      item.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) &&
-      (!showOutOfStock || item.inStock === false)
-  )
-  .map((item, index) => (
-    <React.Fragment key={item._id || index}>
-      <div className={`flex items-center justify-between rounded-md p-3 ${bulkDeleteMode && selectedItems[item._id]
-        ? "bg-red-50 border border-red-200"
-        : "bg-white"}`}>
-        
-        <div className="flex items-center gap-3">
-          {/* Item checkbox - only show in bulk delete mode */}
-          {bulkDeleteMode && (
-            <input
-              type="checkbox"
-              checked={selectedItems[item._id] || false}
-              onChange={(e) => handleItemSelection(item._id, e.target.checked)}
-              className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
-            />
-          )}
-          {/* Veg/Non-Veg Icon */}
-          <span
-            title={item.foodType === "veg" ? "Veg" : "Non-Veg"}
-            className="inline-block align-middle"
-          >
-            {item.foodType === "veg" ? <VegIcon /> : <NonVegIcon />}
-          </span>
-          <div>
-            <div className="font-medium text-gray-800">
-              {item.name}
-            </div>
-            <div className="flex gap-4 text-sm text-gray-600">
-              <span>₹{item.price || item.totalPrice}</span>
-              <span>Qty: {item.quantity}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          {/* InStock Toggle */}
-          <label className="flex items-center cursor-pointer">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={item.inStock}
-                onChange={() =>
-                  updateMenuItem(item._id, {
-                    ...item,
-                    inStock: !item.inStock,
-                  })
-                }
-                className="sr-only"
-              />
-              <div
-                className={`block w-10 h-6 rounded-full ${item.inStock
-                  ? "bg-green-500"
-                  : "bg-red-500"
-                  }`}
-              ></div>
-              <div
-                className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${item.inStock
-                  ? "translate-x-4"
-                  : ""
-                  }`}
-              ></div>
-            </div>
-          </label>
-          
-          {/* Action Buttons */}
-          {!bulkDeleteMode && (
-            <>
-              {/* Desktop buttons */}
-              <span className="hidden sm:flex gap-2">
-                <button
-                  className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm transition-colors bg-blue-100/60 border border-blue-200 rounded"
-                  onClick={() => handleOpenOfferForm(item)}
-                >
-                  Add Offer
-                </button>
-                <button
-                  className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                  onClick={() =>
-                    handleOpenModal(
-                      selectedCategory,
-                      selectedSubcategory,
-                      item
-                    )
-                  }
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-red-600 hover:text-red-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
-                  onClick={() => {
-                    setItemToDelete(item);
-                    setDeleteConfirmOpen(true);
-                  }}
-                >
-                  Delete
-                </button>
-              </span>
-              
-              {/* Mobile buttons */}
-              <span className="sm:hidden flex gap-2">
-                <button
-                  className="text-blue-600 hover:text-blue-800 p-2 rounded-full"
-                  onClick={() => handleOpenOfferForm(item)}
-                  title="Add Offer"
-                >
-                  <Plus size={18} />
-                </button>
-                <button
-                  className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
-                  onClick={() =>
-                    handleOpenModal(
-                      selectedCategory,
-                      selectedSubcategory,
-                      item
-                    )
-                  }
-                  title="Edit"
-                >
-                  <Pencil size={18} />
-                </button>
-                <button
-                  className="text-red-600 hover:text-red-800 p-2 rounded-full"
-                  onClick={() => {
-                    setItemToDelete(item);
-                    setDeleteConfirmOpen(true);
-                  }}
-                  title="Delete"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      
-      {/* Offer Form - Only show for this item */}
-      {offerFormOpenForItem === item._id && (
-        <div className="mt-2 mb-4 bg-gray-50 p-4 rounded-md border border-gray-200">
-          <Offers 
-            menuItemId={item._id} 
-            onClose={() => setOfferFormOpenForItem(null)}
-          />
-        </div>
-      )}
-    </React.Fragment>
-  ))}
-                                  </div>
+                                  {subcat.items
+                                    .filter(
+                                      (item) =>
+                                        item.name
+                                          .toLowerCase()
+                                          .includes(searchTerm.toLowerCase()) &&
+                                        (!showOutOfStock ||
+                                          item.inStock === false)
+                                    )
+                                    .map((item, index) => (
+                                      <React.Fragment key={item._id || index}>
+                                        <div
+                                          className={`flex items-center justify-between rounded-md p-3 ${
+                                            bulkDeleteMode &&
+                                            selectedItems[item._id]
+                                              ? "bg-red-50 border border-red-200"
+                                              : "bg-white"
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            {/* Item checkbox - only show in bulk delete mode */}
+                                            {bulkDeleteMode && (
+                                              <input
+                                                type="checkbox"
+                                                checked={
+                                                  selectedItems[item._id] ||
+                                                  false
+                                                }
+                                                onChange={(e) =>
+                                                  handleItemSelection(
+                                                    item._id,
+                                                    e.target.checked
+                                                  )
+                                                }
+                                                className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
+                                              />
+                                            )}
+                                            {/* Veg/Non-Veg Icon */}
+                                            <span
+                                              title={
+                                                item.foodType === "veg"
+                                                  ? "Veg"
+                                                  : "Non-Veg"
+                                              }
+                                              className="inline-block align-middle"
+                                            >
+                                              {item.foodType === "veg" ? (
+                                                <VegIcon />
+                                              ) : (
+                                                <NonVegIcon />
+                                              )}
+                                            </span>
+                                            <div>
+                                             
+                                              <div className="flex gap-4 text-sm text-gray-600">
+                                                <span>
+                                                  ₹
+                                                  {item.price ||
+                                                    item.totalPrice}
+                                                </span>
+                                                <span>
+                                                  Qty: {item.quantity}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center space-x-4">
+                                            {/* InStock Toggle */}
+                                            <label className="flex items-center cursor-pointer">
+                                              <div className="relative">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={item.inStock}
+                                                  onChange={() =>
+                                                    updateMenuItem(item._id, {
+                                                      ...item,
+                                                      inStock: !item.inStock,
+                                                    })
+                                                  }
+                                                  className="sr-only"
+                                                />
+                                                <div
+                                                  className={`block w-10 h-6 rounded-full ${
+                                                    item.inStock
+                                                      ? "bg-green-500"
+                                                      : "bg-red-500"
+                                                  }`}
+                                                ></div>
+                                                <div
+                                                  className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
+                                                    item.inStock
+                                                      ? "translate-x-4"
+                                                      : ""
+                                                  }`}
+                                                ></div>
+                                              </div>
+                                            </label>
+
+                                            {/* Action Buttons */}
+                                            {!bulkDeleteMode && (
+                                              <>
+                                                {/* Desktop buttons */}
+                                                <span className="hidden sm:flex gap-2">
+                                          
+
+                                                  <button
+                                                    className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                    onClick={() =>
+                                                      handleOpenModal(
+                                                        selectedCategory,
+                                                        selectedSubcategory,
+                                                        item
+                                                      )
+                                                    }
+                                                  >
+                                                    Edit
+                                                  </button>
+                                                  <button
+                                                    className="text-red-600 hover:text-red-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                    onClick={() => {
+                                                      setItemToDelete(item);
+                                                      setDeleteConfirmOpen(
+                                                        true
+                                                      );
+                                                    }}
+                                                  >
+                                                    Delete
+                                                  </button>
+                                                </span>
+
+                                                {/* Mobile buttons */}
+                                                <span className="sm:hidden flex gap-2">
+                                                 
+
+                                                  <button
+                                                    className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
+                                                    onClick={() =>
+                                                      handleOpenModal(
+                                                        selectedCategory,
+                                                        selectedSubcategory,
+                                                        item
+                                                      )
+                                                    }
+                                                    title="Edit"
+                                                  >
+                                                    <Pencil size={18} />
+                                                  </button>
+                                                  <button
+                                                    className="text-red-600 hover:text-red-800 p-2 rounded-full"
+                                                    onClick={() => {
+                                                      setItemToDelete(item);
+                                                      setDeleteConfirmOpen(
+                                                        true
+                                                      );
+                                                    }}
+                                                    title="Delete"
+                                                  >
+                                                    <Trash2 size={18} />
+                                                  </button>
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </React.Fragment>
+                                    ))}
                                 </div>
-                              )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1314,6 +1284,7 @@ const handleOpenOfferForm = (item) => {
             title="Confirm Delete"
             message={`Are you sure you want to delete all items in the category '${categoryToDelete}'? This action cannot be undone.`}
           />
+          
         </div>
       </div>
     </div>

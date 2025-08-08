@@ -47,6 +47,16 @@ const getActiveSettings = async () => {
 const calculateDeliveryCharges = async (orderAmount, distance, weight) => {
     try {
         const settings = await getActiveSettings();
+        
+        // If no settings found, use default values
+        if (!settings || !settings.deliverySettings) {
+            const defaultDeliveryCharge = 30;
+            return {
+                deliveryCharge: defaultDeliveryCharge,
+                chargeType: 'flat'
+            };
+        }
+        
         const deliverySettings = settings.deliverySettings;
         
         let deliveryCharge = 0;
@@ -93,7 +103,11 @@ const calculateDeliveryCharges = async (orderAmount, distance, weight) => {
         };
     } catch (error) {
         console.error('Error calculating delivery charges:', error);
-        throw error;
+        // Return default values on error
+        return {
+            deliveryCharge: 30,
+            chargeType: 'flat'
+        };
     }
 };
 
@@ -101,12 +115,24 @@ const calculateDeliveryCharges = async (orderAmount, distance, weight) => {
 const calculateGST = async (amount, category = 'others') => {
     try {
         const settings = await getActiveSettings();
+        
+        // If no settings found, use default values
+        if (!settings || !settings.gstSettings) {
+            const defaultGstPercentage = 5;
+            const gstAmount = (amount * defaultGstPercentage) / 100;
+            return {
+                gstAmount: Math.round(gstAmount * 100) / 100,
+                gstPercentage: defaultGstPercentage,
+                category: category
+            };
+        }
+        
         const gstSettings = settings.gstSettings;
         
         // Get GST percentage for the category
         let gstPercentage = gstSettings.defaultGstPercentage;
         
-        if (category && gstSettings.categoryGstPercentages[category]) {
+        if (category && gstSettings.categoryGstPercentages && gstSettings.categoryGstPercentages[category]) {
             gstPercentage = gstSettings.categoryGstPercentages[category];
         }
         
@@ -119,7 +145,14 @@ const calculateGST = async (amount, category = 'others') => {
         };
     } catch (error) {
         console.error('Error calculating GST:', error);
-        throw error;
+        // Return default values on error
+        const defaultGstPercentage = 5;
+        const gstAmount = (amount * defaultGstPercentage) / 100;
+        return {
+            gstAmount: Math.round(gstAmount * 100) / 100,
+            gstPercentage: defaultGstPercentage,
+            category: category
+        };
     }
 };
 
@@ -130,7 +163,8 @@ const calculateCheckoutCharges = async (req, res) => {
             orderAmount, 
             distance, 
             weight, 
-            category = 'others'
+            category = 'others',
+            orderType = 'delivery' // Default to delivery if not specified
         } = req.body;
         
         if (!orderAmount || orderAmount <= 0) {
@@ -140,29 +174,37 @@ const calculateCheckoutCharges = async (req, res) => {
             });
         }
         
-        // Calculate delivery charges
-        const deliveryResult = await calculateDeliveryCharges(
-            orderAmount, 
-            distance || 0, 
-            weight || 0
-        );
+        let deliveryCharge = 0;
+        let chargeType = 'none';
+        
+        // Only calculate delivery charges for delivery orders
+        if (orderType === 'delivery') {
+            const deliveryResult = await calculateDeliveryCharges(
+                orderAmount, 
+                distance || 0, 
+                weight || 0
+            );
+            deliveryCharge = deliveryResult.deliveryCharge;
+            chargeType = deliveryResult.chargeType;
+        }
         
         // Calculate GST
         const gstResult = await calculateGST(orderAmount, category);
         
         // Calculate total
-        const totalAmount = orderAmount + deliveryResult.deliveryCharge + gstResult.gstAmount;
+        const totalAmount = orderAmount + deliveryCharge + gstResult.gstAmount;
         
         res.json({
             success: true,
             data: {
                 subtotalAmount: orderAmount,
-                deliveryCharge: deliveryResult.deliveryCharge,
+                deliveryCharge: deliveryCharge,
                 gstAmount: gstResult.gstAmount,
                 gstPercentage: gstResult.gstPercentage,
                 category: gstResult.category,
                 totalAmount: Math.round(totalAmount * 100) / 100,
-                chargeType: deliveryResult.chargeType
+                chargeType: chargeType,
+                orderType: orderType
             }
         });
     } catch (error) {

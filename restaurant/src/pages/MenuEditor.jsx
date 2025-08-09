@@ -16,7 +16,8 @@ import { MenuContext } from "../context/MenuContext";
 import ConfirmModal from "../reusable/ConfirmModal";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-
+import { OfferContext } from "../context/OfferContext";
+import Offers from "./Offers";
 // Veg/NonVeg icons for menu items
 const VegIcon = () => (
   <div className="w-4 h-4 border-2 border-green-600 flex items-center justify-center">
@@ -94,9 +95,14 @@ function MenuEditor() {
     unitValue: 1, // Default unit value
   });
 
-  
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [selectedOfferItem, setSelectedOfferItem] = useState(null);
 
- 
+  // Handler for opening offer modal
+  const handleOpenOfferModal = (item) => {
+    setSelectedOfferItem(item);
+    setOfferModalOpen(true);
+  };
 
   // Set default selected category and subcategory on load
   useEffect(() => {
@@ -1017,7 +1023,18 @@ function MenuEditor() {
                                               )}
                                             </span>
                                             <div>
-                                             
+                                              <div className="font-medium text-gray-800">
+                                                {item.name}
+                                                {item.offers &&
+                                                  item.offers.length > 0 && (
+                                                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                                      {item.offers.length} offer
+                                                      {item.offers.length > 1
+                                                        ? "s"
+                                                        : ""}
+                                                    </span>
+                                                  )}
+                                              </div>
                                               <div className="flex gap-4 text-sm text-gray-600">
                                                 <span>
                                                   ₹
@@ -1067,7 +1084,17 @@ function MenuEditor() {
                                               <>
                                                 {/* Desktop buttons */}
                                                 <span className="hidden sm:flex gap-2">
-                                          
+                                                  <button
+                                                    className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
+                                                    onClick={() => {
+                                                      setSelectedOfferItem(
+                                                        item
+                                                      ); // full item
+                                                      setOfferModalOpen(true);
+                                                    }}
+                                                  >
+                                                    Add Offer
+                                                  </button>
 
                                                   <button
                                                     className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
@@ -1096,7 +1123,15 @@ function MenuEditor() {
 
                                                 {/* Mobile buttons */}
                                                 <span className="sm:hidden flex gap-2">
-                                                 
+                                                  <button
+                                                    className="text-blue-600 hover:text-blue-800 p-2 rounded-full"
+                                                    onClick={() =>
+                                                      handleOpenOfferModal(item)
+                                                    }
+                                                    title="Add Offer"
+                                                  >
+                                                    <Plus size={18} />
+                                                  </button>
 
                                                   <button
                                                     className="text-gray-600 hover:text-gray-800 p-2 rounded-full"
@@ -1284,7 +1319,22 @@ function MenuEditor() {
             title="Confirm Delete"
             message={`Are you sure you want to delete all items in the category '${categoryToDelete}'? This action cannot be undone.`}
           />
-          
+          {/* Offer Modal */}
+          {offerModalOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+              <div className="bg-white rounded-lg p-6 w-full max-w-xl">
+                <Offers
+                  visible={offerModalOpen}
+                  item={selectedOfferItem}
+                  // omit offerId to force CREATE
+                  onHide={() => {
+                    setOfferModalOpen(false);
+                    setSelectedOfferItem(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

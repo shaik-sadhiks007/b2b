@@ -74,6 +74,9 @@ export const getCompletedDeliveryPartnerOrdersApi = (params = {}) => api.get('/a
 // Get all delivery partners (admin only)
 export const getAllDeliveryPartnersApi = (params = {}) => api.get('/api/delivery-partner/admin/all', { params });
 
+// Get delivery partner list (admin only, lightweight)
+export const getDeliveryPartnerListApi = (params = {}) => api.get('/api/delivery-partner/admin/list', { params });
+
 // Get delivery partner by ID (admin only)
 export const getDeliveryPartnerByIdApi = (id) => api.get(`/api/delivery-partner/admin/${id}`);
 
@@ -92,3 +95,6 @@ export const getCompletedOrdersByDeliveryPartnerAdminApi = (partnerId, params = 
 export const updateOrderStatusByAdminForDPApi = (orderId, status) => api.patch(`/api/orders/admin/delivery-partner/order-status/${orderId}`, { status });
 // Admin: Available orders
 export const getAvailableOrdersByAdminApi = (params = {}) => api.get('/api/orders/admin/available-orders', { params });
+export const assignOrdersByAdminApi = (payload) => api.post('/api/orders/admin/assign-orders', payload);
+// Admin: Get all business names
+export const getAllBusinessNamesApiForAdmin = () => api.get('/api/orders/admin/business-names');

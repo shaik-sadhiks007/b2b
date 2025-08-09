@@ -28,7 +28,7 @@ const Footer = () => {
                         <ul className="list-unstyled text-white">
                             <li>Email : <a href="mailto:info@shopatb2b.com">info@shopatb2b.com</a>
                             </li>
-                            <li>Phone: <a href="tel:+919121234449">+91 91212 34449</a></li>
+                            <li>Phone: <a href="tel:+919121234449">+91 912 123 4449</a></li>
                             <li>Address: Vijayawada, India</li>
                         </ul>
                     </div>

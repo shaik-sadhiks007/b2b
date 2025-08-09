@@ -13,7 +13,8 @@ const {
   getDeliveryPartnerById,
   updateDeliveryPartnerStatus,
   getDeliveryPartnerStats,
-  updateDeliveryPartnerByAdmin
+  updateDeliveryPartnerByAdmin,
+  getDeliveryPartnerList
 } = require('../controllers/deliveryPartnerController.js');
 const deliveryPartnerMiddleware = require('../middleware/deliveryPartnerMiddleware.js');
 const authMiddleware = require('../middleware/authMiddleware.js');
@@ -43,6 +44,9 @@ router.get('/', authMiddleware, deliveryPartnerMiddleware, getAll);
 // ===== ADMIN ROUTES =====
 // Get all delivery partners with pagination and filters (admin only)
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllDeliveryPartners);
+
+// Lightweight list for dropdowns (admin only)
+router.get('/admin/list', authMiddleware, adminMiddleware, getDeliveryPartnerList);
 
 // Get delivery partner by ID (admin only)
 router.get('/admin/:id', authMiddleware, adminMiddleware, getDeliveryPartnerById);

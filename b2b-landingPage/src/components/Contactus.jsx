@@ -18,7 +18,7 @@ const Contactus = () => {
                         <div>
                             <h2 className="font-semibold">Phone</h2>
                             <p>
-                                <a href="tel:+919121234449">+91 91212 34449</a>
+                                <a href="tel:+919121234449">+91 912 123 4449</a>
                             </p>
                         </div>
                     </div>

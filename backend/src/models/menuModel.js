@@ -84,7 +84,7 @@ const menuItemSchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
       required: false,
-    },
+          },
     unitValue: {
       type: Number,
       required: true,

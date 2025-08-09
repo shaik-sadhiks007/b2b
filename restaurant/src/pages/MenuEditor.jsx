@@ -1087,10 +1087,9 @@ function MenuEditor() {
                                                   <button
                                                     className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm transition-colors bg-gray-200/60 border"
                                                     onClick={() => {
-                                                      setSelectedOfferItem({
-                                                        menuItemId: item._id,
-                                                       
-                                                      });
+                                                      setSelectedOfferItem(
+                                                        item
+                                                      ); // full item
                                                       setOfferModalOpen(true);
                                                     }}
                                                   >
@@ -1322,19 +1321,20 @@ function MenuEditor() {
           />
           {/* Offer Modal */}
           {offerModalOpen && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-              <div className="bg-white rounded-lg p-6 w-full max-w-xl">
-                <Offers
-                  visible={offerModalOpen}
-                  initialData={selectedOfferItem}
-                  onHide={() => {
-                    setOfferModalOpen(false);
-                    setSelectedOfferItem(null);
-                  }}
-                />
-              </div>
-            </div>
-          )}
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+    <div className="bg-white rounded-lg p-6 w-full max-w-xl">
+      <Offers
+        visible={offerModalOpen}
+        item={selectedOfferItem}
+        // omit offerId to force CREATE
+        onHide={() => {
+          setOfferModalOpen(false);
+          setSelectedOfferItem(null);
+        }}
+      />
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>

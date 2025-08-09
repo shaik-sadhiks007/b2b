@@ -1,10 +1,12 @@
 import { createContext, useContext, useState } from 'react';
 import axios from 'axios';
-import { API_URL as RAW_API_URL } from '../api/api'; // Keep original import
+import { API_URL as RAW_API_URL } from '../api/api';
 import { toast } from 'react-toastify';
 
-
 const API_URL = RAW_API_URL.endsWith('/api') ? RAW_API_URL : `${RAW_API_URL}/api`;
+
+// If using cookie auth/JWT via cookies, keep this on:
+axios.defaults.withCredentials = true;
 
 export const OfferContext = createContext();
 
@@ -14,19 +16,51 @@ export const OfferProvider = ({ children }) => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(false);
 
- 
-  // Fetch Offers
-  const fetchBusinessOffers = async (status = 'active', page = 1, limit = 10) => {
+  // Track the last-used filters so CRUD refresh respects current view
+  const [currentStatus, setCurrentStatus] = useState('active');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLimit, setCurrentLimit] = useState(10);
+
+  const handleErrorToast = (err, fallback = 'Something went wrong') => {
+    const data = err?.response?.data;
+    const msg =
+      (Array.isArray(data?.errors) && data.errors.join(', ')) ||
+      data?.message ||
+      err?.message ||
+      fallback;
+    toast.error(msg);
+  };
+
+  // Fetch Offers (Business)
+  const fetchBusinessOffers = async (status = currentStatus, page = currentPage, limit = currentLimit) => {
     try {
       setLoading(true);
+      setCurrentStatus(status);
+      setCurrentPage(page);
+      setCurrentLimit(limit);
+
       const res = await axios.get(`${API_URL}/offers/business`, {
-        params: { status, page, limit }
+        params: { status, page, limit },
       });
-      setOffers(res.data.data || []);
-      return res.data;
+
+      const list = res?.data?.data || [];
+      setOffers(list);
+
+      // Return pagination for UI if needed
+      return {
+        success: !!res?.data?.success,
+        data: list,
+        pagination: res?.data?.pagination || {
+          total: list.length,
+          page,
+          limit,
+          totalPages: 1,
+          hasMore: false,
+        },
+      };
     } catch (err) {
-      console.error('Fetch business offers error:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || 'Failed to fetch offers');
+      console.error('Fetch business offers error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to fetch offers');
       throw err;
     } finally {
       setLoading(false);
@@ -37,12 +71,13 @@ export const OfferProvider = ({ children }) => {
   const createOffer = async (payload) => {
     try {
       const res = await axios.post(`${API_URL}/offers/business`, payload);
+      // Refresh with current filters
       await fetchBusinessOffers();
       toast.success('Offer created successfully');
       return res.data;
     } catch (err) {
-      console.error('Create offer error:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || 'Failed to create offer');
+      console.error('Create offer error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to create offer');
       throw err;
     }
   };
@@ -55,8 +90,8 @@ export const OfferProvider = ({ children }) => {
       toast.success('Offer updated successfully');
       return res.data;
     } catch (err) {
-      console.error('Update offer error:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || 'Failed to update offer');
+      console.error('Update offer error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to update offer');
       throw err;
     }
   };
@@ -66,11 +101,12 @@ export const OfferProvider = ({ children }) => {
     try {
       const res = await axios.patch(`${API_URL}/offers/business/${offerId}/status`);
       await fetchBusinessOffers();
-      toast.success(`Offer ${res.data.data?.isActive ? 'activated' : 'deactivated'} successfully`);
+      const active = res?.data?.data?.isActive;
+      toast.success(`Offer ${active ? 'activated' : 'deactivated'} successfully`);
       return res.data;
     } catch (err) {
-      console.error('Toggle status error:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || 'Failed to toggle offer status');
+      console.error('Toggle status error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to toggle offer status');
       throw err;
     }
   };
@@ -83,32 +119,34 @@ export const OfferProvider = ({ children }) => {
       toast.success('Offer deleted successfully');
       return res.data;
     } catch (err) {
-      console.error('Delete offer error:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || 'Failed to delete offer');
+      console.error('Delete offer error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to delete offer');
       throw err;
     }
   };
 
-  // Get Offers for Menu Item
+  // Public: Get Offers for Menu Item
   const getActiveOffersForItem = async (menuItemId) => {
     try {
       const res = await axios.get(`${API_URL}/offers/public/item/${menuItemId}`);
-      return res.data;
+      return res.data.data || [];
     } catch (err) {
-      console.error('Get item offers error:', err.response?.data || err.message);
+      console.error('Get item offers error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to fetch item offers');
       throw err;
     }
   };
 
-  // Get Active Offers for Business (Public)
-  const getActiveOffersForBusiness = async (businessId, category = null, limit = 10) => {
+  // Public: Get Active Offers for Business
+  const getActiveOffersForBusiness = async (businessId, category, limit = 10) => {
     try {
-      const res = await axios.get(`${API_URL}/offers/public/business/${businessId}`, {
-        params: { category, limit }
-      });
+      const params = { limit };
+      if (category) params.category = category; // don't send null
+      const res = await axios.get(`${API_URL}/offers/public/business/${businessId}`, { params });
       return res.data;
     } catch (err) {
-      console.error('Get business offers error:', err.response?.data || err.message);
+      console.error('Get business offers error:', err?.response?.data || err?.message);
+      handleErrorToast(err, 'Failed to fetch business offers');
       throw err;
     }
   };
@@ -118,6 +156,11 @@ export const OfferProvider = ({ children }) => {
       value={{
         offers,
         loading,
+        // current filters (handy for pagination controls)
+        currentStatus,
+        currentPage,
+        currentLimit,
+
         fetchBusinessOffers,
         createOffer,
         updateOffer,
@@ -125,6 +168,7 @@ export const OfferProvider = ({ children }) => {
         deleteOffer,
         getActiveOffersForItem,
         getActiveOffersForBusiness,
+        setOffers, // expose if you need local UI tweaks
       }}
     >
       {children}

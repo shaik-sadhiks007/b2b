@@ -54,6 +54,11 @@ const HotelDetails = (props) => {
   }, []);
   const [showClosingSoonPopup, setShowClosingSoonPopup] = useState(false);
   
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const quantityOptions = [
     { value: 100, label: '100' },
     { value: 150, label: '150' },
@@ -301,20 +306,18 @@ const HotelDetails = (props) => {
                 e.stopPropagation();
                 handleQuantityChange(item._id, -1);
               }}
-              disabled={isUpdating}
               className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
             >
               -
             </button>
             <span className="w-6 text-center">
-              {isUpdating ? <Skeleton width={20} /> : cartItem.quantity}
+              {cartItem.quantity}
             </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleQuantityChange(item._id, 1);
               }}
-              disabled={isUpdating}
               className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
             >
               +
@@ -324,7 +327,6 @@ const HotelDetails = (props) => {
                 e.stopPropagation();
                 handleRemoveItem(item._id);
               }}
-              disabled={isUpdating}
               className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
             >
               Remove

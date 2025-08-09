@@ -1339,6 +1339,54 @@ exports.getAvailableOrdersByAdmin = async (req, res) => {
     }
 };
 
+// Admin: Assign one or multiple orders to a delivery partner
+exports.assignOrdersToDeliveryPartnerByAdmin = async (req, res) => {
+    try {
+        const { orderIds, orderId, deliveryPartnerId } = req.body;
+        if (!deliveryPartnerId) {
+            return res.status(400).json({ error: 'deliveryPartnerId is required' });
+        }
+
+        // Support both single and multiple assignment
+        let ids = [];
+        if (Array.isArray(orderIds) && orderIds.length > 0) {
+            ids = orderIds;
+        } else if (orderId) {
+            ids = [orderId];
+        } else {
+            return res.status(400).json({ error: 'orderIds (array) or orderId is required' });
+        }
+
+        // Only assign orders that are delivery-ready and unassigned
+        const filter = {
+            _id: { $in: ids },
+            status: 'ORDER_DELIVERY_READY',
+            deliveryPartnerId: { $exists: false }
+        };
+
+        // Ensure all requested orders are assignable
+        const countAssignable = await Order.countDocuments(filter);
+        if (countAssignable !== ids.length) {
+            return res.status(400).json({ error: 'Some orders are not available or already assigned' });
+        }
+
+        // Update using updateMany to avoid full document validation on unrelated required fields
+        await Order.updateMany(filter, { $set: { deliveryPartnerId } }, { runValidators: false });
+
+        const updatedOrders = await Order.find({ _id: { $in: ids } })
+            .populate('deliveryPartnerId', 'name mobileNumber email');
+
+        const io = req.app.get('io');
+        if (io) {
+            updatedOrders.forEach((u) => io.emit('deliveryPartnerAssigned', u));
+        }
+
+        return res.status(200).json({ success: true, orders: updatedOrders });
+    } catch (error) {
+        console.error('[orderController.js][assignOrdersToDeliveryPartnerByAdmin]', error);
+        return res.status(500).json({ error: 'Failed to assign orders', message: error.message });
+    }
+};
 // Get all unique business names for filtering
 exports.getAllBusinessNames = async (req, res) => {
     try {

@@ -32,7 +32,8 @@ const {
     getOrdersByDeliveryPartnerAdmin,
     getCompletedOrdersByDeliveryPartnerAdmin,
     postDeliveryPartnerOrderStatusByAdmin,
-    getAvailableOrdersByAdmin
+    getAvailableOrdersByAdmin,
+    assignOrdersToDeliveryPartnerByAdmin
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
@@ -75,6 +76,12 @@ router.patch('/admin/delivery-partner/order-status/:orderId', authMiddleware, ad
 
 // Admin: Available orders (unassigned)
 router.get('/admin/available-orders', authMiddleware, adminMiddleware, getAvailableOrdersByAdmin);
+
+// Admin: Assign order(s) to a delivery partner
+router.post('/admin/assign-orders', authMiddleware, adminMiddleware, assignOrdersToDeliveryPartnerByAdmin);
+
+
+router.get('/admin/business-names', authMiddleware, adminMiddleware, getAllBusinessNames);
 
 // Test email route
 router.post('/test-email', async (req, res) => {

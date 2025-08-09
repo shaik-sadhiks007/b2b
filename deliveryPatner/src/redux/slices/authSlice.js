@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginApi, googleLoginApi, logoutApi, getDeliveryPartnerProfileApi, updateDeliveryPartnerProfileApi, registerApi } from '../../api/Api';
+import { loginApi, googleLoginApi, logoutApi, getDeliveryPartnerProfileApi, updateDeliveryPartnerProfileApi, registerApi, getProfileApi } from '../../api/Api';
 
 const initialState = {
   isAuthenticated: false,
@@ -35,6 +35,19 @@ export const fetchProfileThunk = createAsyncThunk(
   }
 );
 
+// Fetch authenticated user profile (role, username, email)
+export const fetchAuthProfileThunk = createAsyncThunk(
+  'auth/fetchAuthProfile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await getProfileApi();
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Fetch auth profile failed');
+    }
+  }
+);
+
 // Update delivery partner profile thunk
 export const updateProfileThunk = createAsyncThunk(
   'auth/updateProfile',
@@ -53,27 +66,36 @@ export const loginThunk = createAsyncThunk(
   'auth/login',
   async (credentials, { dispatch, rejectWithValue }) => {
     try {
-      const loginResponse = await loginApi(credentials);
-      
-      // Check if user is admin
-      if (loginResponse.data.user && loginResponse.data.user.role === 'admin') {
-        // For admin users, return the user data directly without fetching delivery partner profile
+      // 1) Login
+      await loginApi(credentials);
+
+      // 2) Fetch authenticated profile to determine role
+      const authProfileRes = await getProfileApi();
+      const authUser = authProfileRes?.data;
+
+      if (authUser?.role === 'admin') {
+        // Admin user: return compact admin object
         return {
-          _id: loginResponse.data.user.id,
-          name: loginResponse.data.user.username,
-          email: loginResponse.data.user.email,
-          username: loginResponse.data.user.username,
-          role: loginResponse.data.user.role,
-          isAdmin: true
+          _id: authUser._id,
+          name: authUser.username,
+          email: authUser.email,
+          username: authUser.username,
+          role: authUser.role,
+          isAdmin: true,
+        };
+      }
+
+      // Non-admin (delivery partner): fetch DP profile and merge role
+      const profileResult = await dispatch(fetchProfileThunk());
+      if (fetchProfileThunk.fulfilled.match(profileResult)) {
+        const dp = profileResult.payload;
+        return {
+          ...dp,
+          role: authUser?.role || 'user',
+          isAdmin: false,
         };
       } else {
-        // For regular delivery partners, fetch the profile
-        const profileResult = await dispatch(fetchProfileThunk());
-        if (fetchProfileThunk.fulfilled.match(profileResult)) {
-          return profileResult.payload;
-        } else {
-          return rejectWithValue(profileResult.payload || 'Failed to fetch profile after login');
-        }
+        return rejectWithValue(profileResult.payload || 'Failed to fetch profile after login');
       }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Login failed');
@@ -86,27 +108,35 @@ export const googleLoginThunk = createAsyncThunk(
   'auth/googleLogin',
   async (credentials, { dispatch, rejectWithValue }) => {
     try {
-      const loginResponse = await googleLoginApi(credentials);
-      
-      // Check if user is admin
-      if (loginResponse.data.user && loginResponse.data.user.role === 'admin') {
-        // For admin users, return the user data directly without fetching delivery partner profile
+      // 1) Google login
+      await googleLoginApi(credentials);
+
+      // 2) Fetch authenticated profile to determine role
+      const authProfileRes = await getProfileApi();
+      const authUser = authProfileRes?.data;
+
+      if (authUser?.role === 'admin') {
         return {
-          _id: loginResponse.data.user.id,
-          name: loginResponse.data.user.username,
-          email: loginResponse.data.user.email,
-          username: loginResponse.data.user.username,
-          role: loginResponse.data.user.role,
-          isAdmin: true
+          _id: authUser._id,
+          name: authUser.username,
+          email: authUser.email,
+          username: authUser.username,
+          role: authUser.role,
+          isAdmin: true,
+        };
+      }
+
+      // Non-admin (delivery partner): fetch DP profile and merge role
+      const profileResult = await dispatch(fetchProfileThunk());
+      if (fetchProfileThunk.fulfilled.match(profileResult)) {
+        const dp = profileResult.payload;
+        return {
+          ...dp,
+          role: authUser?.role || 'user',
+          isAdmin: false,
         };
       } else {
-        // For regular delivery partners, fetch the profile
-        const profileResult = await dispatch(fetchProfileThunk());
-        if (fetchProfileThunk.fulfilled.match(profileResult)) {
-          return profileResult.payload;
-        } else {
-          return rejectWithValue(profileResult.payload || 'Failed to fetch profile after Google login');
-        }
+        return rejectWithValue(profileResult.payload || 'Failed to fetch profile after Google login');
       }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Google login failed');
@@ -160,6 +190,29 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(loginThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch auth profile
+      .addCase(fetchAuthProfileThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAuthProfileThunk.fulfilled, (state, action) => {
+        state.isAuthenticated = true;
+        const authUser = action.payload || {};
+        state.user = {
+          _id: authUser._id,
+          name: authUser.username, // temp until DP profile overrides
+          email: authUser.email,
+          username: authUser.username,
+          role: authUser.role,
+          isAdmin: authUser.role === 'admin',
+          ...authUser,
+        };
+        state.loading = false;
+      })
+      .addCase(fetchAuthProfileThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

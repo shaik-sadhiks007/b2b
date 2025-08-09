@@ -227,6 +227,33 @@ const getAllDeliveryPartners = async (req, res) => {
   }
 };
 
+// Lightweight list for dropdowns (admin only)
+const getDeliveryPartnerList = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const query = {};
+    if (status) {
+      query.status = status;
+    }
+    const list = await DeliveryPartner.find(query)
+      .select('name mobileNumber status user')
+      .populate('user', 'username email')
+      .sort({ name: 1 });
+
+    const mapped = list.map((p) => ({
+      _id: p._id,
+      name: p.name,
+      mobileNumber: p.mobileNumber,
+      status: p.status,
+      user: p.user,
+    }));
+    res.json({ deliveryPartners: mapped });
+  } catch (err) {
+    console.error('Error in getDeliveryPartnerList:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get delivery partner by ID (admin only)
 const getDeliveryPartnerById = async (req, res) => {
   try {
@@ -351,5 +378,6 @@ module.exports = {
   getDeliveryPartnerById,
   updateDeliveryPartnerStatus,
   getDeliveryPartnerStats,
-  updateDeliveryPartnerByAdmin
+  updateDeliveryPartnerByAdmin,
+  getDeliveryPartnerList
 };

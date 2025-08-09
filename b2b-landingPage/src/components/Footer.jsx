@@ -3,35 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
 import { RESTAURANT_URL, API_URL, DELIVERY_URL } from '../api/api';
 import { Link } from 'react-router-dom';
-import { getSubdomain } from '../utils/getSubdomain';
-import axios from 'axios';
+import { useSubdomain } from '../context/SubdomainContext';
 import { MapPin } from 'lucide-react';
 
 const Footer = () => {
     const navigate = useNavigate();
-    const [businessData, setBusinessData] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const subdomain = getSubdomain();
-    const isSubdomain = subdomain && subdomain !== "shopatb2b";
-    // Fetch business data if it's a subdomain
-
-    useEffect(() => {
-        if (isSubdomain) {
-            setLoading(true);
-            axios.get(`${API_URL}/api/subdomain/business/${subdomain}`)
-                .then(response => {
-                    setBusinessData(response.data);
-                })
-                .catch(error => {
-                    console.error('Error fetching business data:', error);
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
-        }
-    }, [isSubdomain, subdomain]);
-
-
+    const { isSubdomain, businessData, restaurantName, loading } = useSubdomain();
 
     // Map component
     const MapComponent = ({ coordinates }) => {
@@ -74,7 +51,7 @@ const Footer = () => {
                     {/* Company/Business Info */}
                     <div>
                         <h3 className="text-xl font-bold mb-4">
-                            {isSubdomain ? (businessData?.restaurantName || 'Restaurant') : 'B2B'}
+                            {isSubdomain ? (restaurantName || 'Restaurant') : 'B2B'}
                         </h3>
                         <p className="text-gray-400">
                             {isSubdomain

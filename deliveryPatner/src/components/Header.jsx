@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logoutThunk, fetchProfileThunk } from '../redux/slices/authSlice';
+import { logoutThunk, fetchProfileThunk, fetchAuthProfileThunk } from '../redux/slices/authSlice';
 import { toggleOnlineStatus, getDeliveryPartnerProfile } from '../redux/slices/deliveryPartnerRegSlice';
 import { useEffect, useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -11,6 +11,7 @@ import { auth, sendPasswordResetEmail } from '../utils/commonFunction';
 function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, isAuthenticated } = useSelector((state) => state.auth);
   const deliveryPartner = useSelector((state) => state.deliveryPartnerReg);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
@@ -18,15 +19,26 @@ function Header() {
   const profileRef = useRef(null);
 
   useEffect(() => {
+    // Always try to populate auth profile (role, username, email)
     if (!user) {
-      dispatch(fetchProfileThunk());
+      dispatch(fetchAuthProfileThunk());
     }
-    // Fetch delivery partner profile for online status
-    if (isAuthenticated && !deliveryPartner.id) {
+    // Fetch delivery partner profile for online status only for non-admin users
+    if (isAuthenticated && !deliveryPartner.id && !(user && user.isAdmin)) {
       dispatch(getDeliveryPartnerProfile());
     }
     // eslint-disable-next-line
   }, [isAuthenticated, user, deliveryPartner.id, dispatch]);
+
+  // If admin, ensure we are on admin routes
+  useEffect(() => {
+    if (isAuthenticated && user && user.isAdmin) {
+      if (!location.pathname.startsWith('/admin')) {
+        navigate('/admin/delivery-partners');
+      }
+    }
+    // eslint-disable-next-line
+  }, [isAuthenticated, user && user.isAdmin, location.pathname]);
 
   // Close profile popup when clicking outside
   useEffect(() => {
@@ -64,7 +76,11 @@ function Header() {
   const handleLogoClick = (e) => {
     e.preventDefault();
     if (isAuthenticated && user) {
-      navigate('/dashboard');
+      if (user.isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       navigate('/');
     }
@@ -135,7 +151,7 @@ function Header() {
           ) : isAuthenticated && user ? (
             <div className="flex items-center space-x-4">
               {/* Online/Offline Toggle using ToggleSwitch component */}
-              {deliveryPartner.id && (
+              {deliveryPartner.id && !(user && user.isAdmin) && (
                 <ToggleSwitch
                   id="online-status-toggle"
                   checked={!!deliveryPartner.form.online}

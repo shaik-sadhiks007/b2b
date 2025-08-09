@@ -59,6 +59,9 @@ function CompletedOrders() {
               <span className="font-medium">Total:</span> ₹{order.totalAmount}
             </div>
             <div className="mb-2">
+              <span className="font-medium">Payment:</span> {order.paymentMethod}
+            </div>
+            <div className="mb-2">
               <span className="font-medium">Items:</span>
               <ul className="list-disc ml-6">
                 {order.items.map((item, idx) => (

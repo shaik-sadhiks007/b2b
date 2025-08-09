@@ -8,6 +8,7 @@ import {
   MessageSquare,
   User,
   LogOut,
+  Home,
 } from "lucide-react";
 import LocationSuggestions from "./LocationSuggestions";
 import { useState, useEffect, useContext, useRef } from "react";
@@ -19,7 +20,7 @@ import { toast } from "react-toastify";
 import { API_URL } from "../api/api";
 import io from "socket.io-client";
 import logo from "../assets/b2bupdate.png";
-import { getSubdomain } from "../utils/getSubdomain";
+import { useSubdomain } from "../context/SubdomainContext";
 
 function Navbar({ alwaysVisible }) {
   const [showLoginOptions, setShowLoginOptions] = useState(false);
@@ -44,15 +45,7 @@ function Navbar({ alwaysVisible }) {
   const notificationsRef = useRef(null);
   const profileButtonRef = useRef(null);
   const socketRef = useRef(null);
-  const [isSubdomain, setIsSubdomain] = useState(false);
-  const [subdomain, setSubdomain] = useState(null);
-
-  // Check if this is a subdomain on initial load
-  useEffect(() => {
-    const subdomain = getSubdomain();
-    setSubdomain(subdomain);
-    setIsSubdomain(subdomain && subdomain !== "shopatb2b");
-  }, []);
+  const { isSubdomain, subdomain, restaurantName } = useSubdomain();
 
   // Load saved location from localStorage
   useEffect(() => {
@@ -232,7 +225,7 @@ function Navbar({ alwaysVisible }) {
     // if (isSubdomain && subdomain) {
     //   const currentHost = window.location.hostname;
     //   let targetUrl;
-      
+
     //   if (currentHost === 'localhost' || currentHost.includes('localhost')) {
     //     // For localhost, navigate to /restaurant/subdomain
     //     navigate(`/restaurant/${subdomain}`);
@@ -257,7 +250,7 @@ function Navbar({ alwaysVisible }) {
 
   const handleLogoClick = () => {
     const currentHost = window.location.hostname;
-    
+
     if (currentHost.includes('test.shopatb2b.com')) {
       // If on *.test.shopatb2b.com, navigate to customer.test.shopatb2b.com
       window.location.href = 'https://customer.test.shopatb2b.com';
@@ -282,17 +275,7 @@ function Navbar({ alwaysVisible }) {
               </div>
             </div>
 
-            {/* Centered Subdomain Button */}
-            {isSubdomain && (
-              <div className="absolute left-1/2 transform -translate-x-1/2">
-                <button
-                  onClick={handleSubdomainClick}
-                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
-                >
-                  {subdomain}
-                </button>
-              </div>
-            )}
+            {/* Subdomain Button moved into actions (before Cart) */}
 
             <div className="flex items-center gap-4">
               {!isSubdomain && (
@@ -336,6 +319,16 @@ function Navbar({ alwaysVisible }) {
                     <span className="text-sm">Search</span>
                   </Link>
                 </>
+              )}
+
+              {isSubdomain && (
+                <button
+                  onClick={handleSubdomainClick}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors flex items-center gap-2"
+                >
+                  <Home size={16} />
+                  <span>{restaurantName || subdomain}</span>
+                </button>
               )}
 
               <Link
@@ -542,14 +535,7 @@ function Navbar({ alwaysVisible }) {
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
               </div>
 
-              {isSubdomain && (
-                <button
-                  onClick={handleSubdomainClick}
-                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
-                >
-                  {subdomain}
-                </button>
-              )}
+              {/* Subdomain will be centered when present */}
             </div>
 
             {!isSubdomain && (
@@ -584,6 +570,18 @@ function Navbar({ alwaysVisible }) {
                     />
                   )}
                 </div>
+              </div>
+            )}
+
+            {isSubdomain && (
+              <div className="flex-1 flex justify-center">
+                <button
+                  onClick={handleSubdomainClick}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors flex items-center gap-2"
+                >
+                  <Home size={16} />
+                  <span>{restaurantName || subdomain}</span>
+                </button>
               </div>
             )}
 

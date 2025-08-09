@@ -25,6 +25,7 @@ import Helpbutton from './components/Helpbutton';
 import Whatsappbutton from './components/Whatsappbutton';
 import Contactus from './components/Contactus';
 import Footer from './components/Footer';
+import SubdomainProvider from './context/SubdomainContext';
 import OrderDetails from './components/OrderDetails';
 import OrderStatus from './components/OrderStatus';
 import Features from './components/Features';
@@ -147,21 +148,23 @@ function App() {
         <HotelDataProvider>
           <CartProvider>
             <LocationProvider>
-              <AppContent />
-              <PWAInstallPrompt />
-              {/* <ReactQueryDevtools initialIsOpen={false} /> */}
-              <ToastContainer
-                position="top-right"
-                autoClose={2000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-              />
+              <SubdomainProvider>
+                <AppContent />
+                <PWAInstallPrompt />
+                {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+                <ToastContainer
+                  position="top-right"
+                  autoClose={2000}
+                  hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="light"
+                />
+              </SubdomainProvider>
             </LocationProvider>
           </CartProvider>
         </HotelDataProvider>

@@ -12,6 +12,13 @@ import Profile from './pages/protected/profile/Profile.jsx'
 import MyOrders from './pages/protected/orders/MyOrders.jsx'
 import CompletedOrders from './pages/protected/orders/CompletedOrders.jsx'
 import ForgotPassword from './pages/unprotected/login/ForgotPassword.jsx'
+// Admin imports
+import AdminLayout from './pages/protected/admin/AdminLayout.jsx'
+import DeliveryPartners from './pages/protected/admin/DeliveryPartners.jsx'
+import DeliveryPartnerDetails from './pages/protected/admin/DeliveryPartnerDetails.jsx'
+import DeliveryPartnerOrders from './pages/protected/admin/DeliveryPartnerOrders.jsx'
+import DeliveryPartnerCompletedOrders from './pages/protected/admin/DeliveryPartnerCompletedOrders.jsx'
+import AvailableOrders from './pages/protected/admin/AvailableOrders.jsx'
 
 function App() {
 
@@ -36,6 +43,15 @@ function App() {
           <Route path="my-orders" element={<MyOrders />} />
           <Route path="profile" element={<Profile />} />
           <Route path="completed-orders" element={<CompletedOrders />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="delivery-partners" element={<DeliveryPartners />} />
+          <Route path="delivery-partners/:id" element={<DeliveryPartnerDetails />} />
+          <Route path="delivery-partners/:id/orders" element={<DeliveryPartnerOrders />} />
+          <Route path="delivery-partners/:id/completed-orders" element={<DeliveryPartnerCompletedOrders />} />
+          <Route path="available-orders" element={<AvailableOrders />} />
         </Route>
 
 

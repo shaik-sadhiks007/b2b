@@ -27,7 +27,12 @@ const {
     acceptMultipleDeliveryOrders,
     getAllBusinessNames,
     getDeliveryPartnerBusinessNames,
-    getCompletedDeliveryPartnerOrders
+    getCompletedDeliveryPartnerOrders,
+    // Admin DP controls
+    getOrdersByDeliveryPartnerAdmin,
+    getCompletedOrdersByDeliveryPartnerAdmin,
+    postDeliveryPartnerOrderStatusByAdmin,
+    getAvailableOrdersByAdmin
 } = require('../controllers/orderController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restaurantMiddleware = require('../middleware/restaurantMiddleware');
@@ -62,6 +67,14 @@ router.patch('/admin/status/:orderId', authMiddleware, adminMiddleware, postRest
 router.get('/admin/accepted-items-summary', authMiddleware, adminMiddleware, getAcceptedItemsSummaryByAdmin);
 // Admin: Place in-store order for a business by ownerId
 router.post('/admin/instore-order', authMiddleware, adminMiddleware, postInstoreOrderByAdmin);
+
+// Admin: Delivery partner specific order routes
+router.get('/admin/delivery-partner/:id/orders', authMiddleware, adminMiddleware, getOrdersByDeliveryPartnerAdmin);
+router.get('/admin/delivery-partner/:id/completed-orders', authMiddleware, adminMiddleware, getCompletedOrdersByDeliveryPartnerAdmin);
+router.patch('/admin/delivery-partner/order-status/:orderId', authMiddleware, adminMiddleware, postDeliveryPartnerOrderStatusByAdmin);
+
+// Admin: Available orders (unassigned)
+router.get('/admin/available-orders', authMiddleware, adminMiddleware, getAvailableOrdersByAdmin);
 
 // Test email route
 router.post('/test-email', async (req, res) => {

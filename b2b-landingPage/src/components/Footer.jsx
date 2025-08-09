@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openWindowWithToken } from '../utils/windowUtils';
-import { ORIGIN_URL, RESTAURANT_URL, API_URL } from '../api/api';
+import { RESTAURANT_URL, API_URL, DELIVERY_URL } from '../api/api';
 import { Link } from 'react-router-dom';
 import { getSubdomain } from '../utils/getSubdomain';
 import axios from 'axios';
+import { MapPin } from 'lucide-react';
 
 const Footer = () => {
     const navigate = useNavigate();
@@ -13,7 +14,7 @@ const Footer = () => {
     const subdomain = getSubdomain();
     const isSubdomain = subdomain && subdomain !== "shopatb2b";
     // Fetch business data if it's a subdomain
-    
+
     useEffect(() => {
         if (isSubdomain) {
             setLoading(true);
@@ -32,6 +33,40 @@ const Footer = () => {
 
 
 
+    // Map component
+    const MapComponent = ({ coordinates }) => {
+        if (!coordinates || !coordinates.lat || !coordinates.lng) {
+            return (
+                <div className="bg-gray-800 rounded-lg p-4 h-48 flex items-center justify-center">
+                    <div className="text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-gray-400 text-sm">Location not available</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyB41DRUbKWJHPxaFjMAwRg0hVdCx7SXjSY&q=${coordinates.lat},${coordinates.lng}&zoom=15`;
+
+        // Use OpenStreetMap which doesn't require an API key
+        const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lng - 0.01}%2C${coordinates.lat - 0.01}%2C${coordinates.lng + 0.01}%2C${coordinates.lat + 0.01}&layer=mapnik&marker=${coordinates.lat}%2C${coordinates.lng}`;
+
+        return (
+            <div className="bg-gray-800 rounded-lg overflow-hidden h-48">
+                <iframe
+                    title="Business Location"
+                    src={mapUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                />
+            </div>
+        );
+    };
+
     return (
         <footer className="bg-gray-900 text-white py-12">
             <div className="container mx-auto px-4">
@@ -42,7 +77,7 @@ const Footer = () => {
                             {isSubdomain ? (businessData?.restaurantName || 'Restaurant') : 'B2B'}
                         </h3>
                         <p className="text-gray-400">
-                            {isSubdomain 
+                            {isSubdomain
                                 ? (businessData?.description || 'Delicious food at your doorstep')
                                 : 'one-stop solution for online shopping.'
                             }
@@ -61,11 +96,35 @@ const Footer = () => {
                                 </li>
                             )}
                             {isSubdomain && businessData && (
-                                <li>
-                                    <span className="text-gray-400">
-                                        Service Type: {businessData.serviceType || 'Delivery'}
-                                    </span>
-                                </li>
+
+                                <>
+                                    <li>
+                                        <Link to="/aboutb2b" className="text-gray-400 hover:text-white">
+                                            About B2B
+                                        </Link>
+                                    </li>
+
+                                    <li>
+                                        <a
+                                            href={RESTAURANT_URL}
+                                            target='_blank'
+                                            className="text-gray-400 hover:text-white cursor-pointer"
+                                        >
+                                            Add your Business
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a
+                                            href={DELIVERY_URL}
+                                            target='_blank'
+                                            className="text-gray-400 hover:text-white cursor-pointer"
+                                        >
+                                            Delivery Partner
+                                        </a>
+                                    </li>
+                                </>
+
                             )}
                         </ul>
                     </div>
@@ -77,34 +136,30 @@ const Footer = () => {
                         </h3>
                         <ul className="space-y-2">
                             {!isSubdomain ? (
-                                <li>
-                                    <a
-                                        href={RESTAURANT_URL}
-                                        target='_blank'
-                                        className="text-gray-400 hover:text-white cursor-pointer"
-                                    >
-                                        Add your Business
-                                    </a>
-                                </li>
+                                <>
+                                    <li>
+                                        <a
+                                            href={RESTAURANT_URL}
+                                            target='_blank'
+                                            className="text-gray-400 hover:text-white cursor-pointer"
+                                        >
+                                            Add your Business
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a
+                                            href={DELIVERY_URL}
+                                            target='_blank'
+                                            className="text-gray-400 hover:text-white cursor-pointer"
+                                        >
+                                            Delivery Partner
+                                        </a>
+                                    </li>
+                                </>
                             ) : (
                                 businessData && (
-                                    <>
-                                        {businessData.address?.streetAddress && (
-                                            <li className="text-gray-400">
-                                                {businessData.address.streetAddress}
-                                            </li>
-                                        )}
-                                        {businessData.address?.city && (
-                                            <li className="text-gray-400">
-                                                {businessData.address.city}
-                                            </li>
-                                        )}
-                                        {businessData.address?.state && (
-                                            <li className="text-gray-400">
-                                                {businessData.address.state}
-                                            </li>
-                                        )}
-                                    </>
+                                    <MapComponent coordinates={businessData.location} />
                                 )
                             )}
                         </ul>
@@ -128,9 +183,18 @@ const Footer = () => {
                                 </li>
                             )}
                             {isSubdomain && businessData?.contact?.primaryPhone ? (
-                                <li>Phone: {businessData.contact.primaryPhone}</li>
+                                <li>
+                                    <a href={`tel:${businessData.contact.primaryPhone}`}>
+                                        Phone: {businessData.contact.primaryPhone}
+                                    </a>
+                                </li>
                             ) : (
-                                <li>Phone: +1 234 567 890</li>
+
+                                <li>
+                                    <a href="tel:+919121234449">
+                                        Phone:+91 91212 34449
+                                    </a>
+                                </li>
                             )}
                             {isSubdomain && businessData?.address ? (
                                 <li>
@@ -146,7 +210,10 @@ const Footer = () => {
 
                 {/* Bottom Bar */}
                 <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                    <p>&copy; {new Date().getFullYear()} {isSubdomain ? (businessData?.restaurantName || 'Restaurant') : 'B2B'}. All rights reserved.</p>
+                    {/* <p>&copy; {new Date().getFullYear()} {isSubdomain ? (businessData?.restaurantName || 'Restaurant') : 'B2B'}. All rights reserved.</p> */}
+
+                    <p>&copy; {new Date().getFullYear()} B2B. All rights reserved.</p>
+
                 </div>
             </div>
         </footer>

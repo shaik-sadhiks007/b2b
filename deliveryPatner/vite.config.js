@@ -15,6 +15,10 @@ export default defineConfig(({ command, mode }) => {
   
   return {
     plugins: [react(), tailwindcss()],
+    server: {
+      port: 5175,
+      // host: true
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),

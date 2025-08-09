@@ -98,7 +98,7 @@ const businessSchema = new mongoose.Schema({
         type: String,
         unique: true,
         sparse: true,
-        default: null
+        index: true
     }
 }, {
     timestamps: true
@@ -106,6 +106,15 @@ const businessSchema = new mongoose.Schema({
 
 // Index for location-based queries
 businessSchema.index({ location: '2dsphere' });
+
+// Pre-save hook to handle subdomain
+businessSchema.pre('save', function(next) {
+    // If subdomain is null or empty string, set it to undefined to avoid unique constraint issues
+    if (this.subdomain === null || this.subdomain === '') {
+        this.subdomain = undefined;
+    }
+    next();
+});
 
 // Check if the model exists before creating it
 const Business = mongoose.models.Business || mongoose.model('Business', businessSchema);

@@ -1321,20 +1321,20 @@ function MenuEditor() {
           />
           {/* Offer Modal */}
           {offerModalOpen && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-    <div className="bg-white rounded-lg p-6 w-full max-w-xl">
-      <Offers
-        visible={offerModalOpen}
-        item={selectedOfferItem}
-        // omit offerId to force CREATE
-        onHide={() => {
-          setOfferModalOpen(false);
-          setSelectedOfferItem(null);
-        }}
-      />
-    </div>
-  </div>
-)}
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+              <div className="bg-white rounded-lg p-6 w-full max-w-xl">
+                <Offers
+                  visible={offerModalOpen}
+                  item={selectedOfferItem}
+                  // omit offerId to force CREATE
+                  onHide={() => {
+                    setOfferModalOpen(false);
+                    setSelectedOfferItem(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

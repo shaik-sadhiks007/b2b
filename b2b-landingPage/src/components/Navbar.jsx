@@ -229,27 +229,44 @@ function Navbar({ alwaysVisible }) {
   };
 
   const handleSubdomainClick = () => {
-    if (isSubdomain && subdomain) {
-      const currentHost = window.location.hostname;
-      let targetUrl;
+    // if (isSubdomain && subdomain) {
+    //   const currentHost = window.location.hostname;
+    //   let targetUrl;
       
-      if (currentHost === 'localhost' || currentHost.includes('localhost')) {
-        // For localhost, navigate to /restaurant/subdomain
-        navigate(`/restaurant/${subdomain}`);
-      } else if (currentHost.includes('shopatb2b.com')) {
-        // For *.shopatb2b.com, replace * with subdomain
-        if (currentHost.includes('test.shopatb2b.com')) {
-          // For *.test.shopatb2b.com
-          targetUrl = `https://${subdomain}.test.shopatb2b.com`;
-        } else {
-          // For *.shopatb2b.com
-          targetUrl = `https://${subdomain}.shopatb2b.com`;
-        }
-        window.location.href = targetUrl;
-      } else {
-        // Fallback for other domains
-        navigate(`/restaurant/${subdomain}`);
-      }
+    //   if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+    //     // For localhost, navigate to /restaurant/subdomain
+    //     navigate(`/restaurant/${subdomain}`);
+    //   } else if (currentHost.includes('shopatb2b.com')) {
+    //     // For *.shopatb2b.com, replace * with subdomain
+    //     if (currentHost.includes('test.shopatb2b.com')) {
+    //       // For *.test.shopatb2b.com
+    //       targetUrl = `https://${subdomain}.test.shopatb2b.com`;
+    //     } else {
+    //       // For *.shopatb2b.com
+    //       targetUrl = `https://${subdomain}.shopatb2b.com`;
+    //     }
+    //     window.location.href = targetUrl;
+    //   } else {
+    //     // Fallback for other domains
+    //     navigate(`/restaurant/${subdomain}`);
+    //   }
+    // }
+
+    navigate(`/`);
+  };
+
+  const handleLogoClick = () => {
+    const currentHost = window.location.hostname;
+    
+    if (currentHost.includes('test.shopatb2b.com')) {
+      // If on *.test.shopatb2b.com, navigate to customer.test.shopatb2b.com
+      window.location.href = 'https://customer.test.shopatb2b.com';
+    } else if (currentHost.includes('shopatb2b.com')) {
+      // If on *.shopatb2b.com, navigate to www.shopatb2b.com
+      window.location.href = 'https://www.shopatb2b.com';
+    } else {
+      // For localhost or other domains, navigate to home
+      navigate('/');
     }
   };
 
@@ -260,18 +277,22 @@ function Navbar({ alwaysVisible }) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Link to="/">
+              <div onClick={handleLogoClick} className="cursor-pointer">
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
-              </Link>
-              {isSubdomain && (
+              </div>
+            </div>
+
+            {/* Centered Subdomain Button */}
+            {isSubdomain && (
+              <div className="absolute left-1/2 transform -translate-x-1/2">
                 <button
                   onClick={handleSubdomainClick}
                   className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
                 >
                   {subdomain}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-4">
               {!isSubdomain && (
@@ -353,6 +374,7 @@ function Navbar({ alwaysVisible }) {
                   className="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 relative"
                 >
                   <Bell size={20} />
+                  <span className="text-sm">Notifications</span>
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                       {unreadCount}
@@ -422,7 +444,7 @@ function Navbar({ alwaysVisible }) {
                         <UserCircle size={24} />
                       )}
                       <span className="text-md font-medium capitalize">
-                        {user.username || "Hi User"}
+                        {user.username ? user.username.split(' ')[0] : "Hi User"}
                       </span>
                     </>
                   ) : (
@@ -516,9 +538,9 @@ function Navbar({ alwaysVisible }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
 
-              <Link to="/">
+              <div onClick={handleLogoClick} className="cursor-pointer">
                 <img src={logo} loading="lazy" alt="logo" width="40px" />
-              </Link>
+              </div>
 
               {isSubdomain && (
                 <button

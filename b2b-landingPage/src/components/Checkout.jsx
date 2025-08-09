@@ -320,7 +320,8 @@ const Checkout = () => {
                 orderAmount: subtotal,
                 distance: distance,
                 weight: totalWeight,
-                category: category
+                category: category,
+                orderType: orderType
             });
 
             if (response.data.success) {

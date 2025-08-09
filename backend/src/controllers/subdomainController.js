@@ -23,7 +23,7 @@ const getBusinessBySubdomain = async (req, res) => {
     const business = await Business.findOne({ 
       subdomain,
       status: 'published'
-    }).select('restaurantName address contact description serviceType');
+    }).select('restaurantName address contact description serviceType location');
     
     if (!business) return res.status(404).json({ error: 'Business not found' });
     

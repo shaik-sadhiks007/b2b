@@ -13,7 +13,7 @@ export const NonVegIcon = () => (
 );
 
 function formatName(name = "") {
-  if (name.toLowerCase() === "uncategorized") return '';
+  if (name.toLowerCase() === "uncategorized") return 'Uncategorized';
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
@@ -105,7 +105,7 @@ const HotelMenu = ({ menu, renderItemActions, restaurantOnline, boldHeaders = fa
             >
               {formatName(cat.category) !== null && (
                 <h2 className={`${boldHeaders ? 'text-2xl md:text-4xl font-bold' : 'text-2xl font-semibold'} text-gray-800 font-sans`}>
-                  {formatName(cat.category)}
+                  {formatName(cat.category) === 'Uncategorized' ? '' : formatName(cat.category)}
                 </h2>
               )}
               {expandedCategories.has(cat.category) ? (
@@ -165,10 +165,10 @@ const HotelMenu = ({ menu, renderItemActions, restaurantOnline, boldHeaders = fa
 
 const MenuItem = ({ item, renderItemActions, restaurantOnline }) => {
   const hasDiscount = item.discountPercentage > 0;
-  const currentPrice = hasDiscount 
+  const currentPrice = hasDiscount
     ? (item.totalPrice * (1 - item.discountPercentage / 100)).toFixed(2)
     : item.totalPrice.toFixed(2);
-  const discountAmount = hasDiscount 
+  const discountAmount = hasDiscount
     ? (item.totalPrice - currentPrice).toFixed(2)
     : 0;
 
@@ -217,10 +217,10 @@ const MenuItem = ({ item, renderItemActions, restaurantOnline }) => {
         </div>
         <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-lg overflow-hidden relative block md:hidden">
           {item?.photos && item.photos !== '' ? (
-            <img 
-              src={item.photos} 
-              alt={item.name} 
-              className={`w-full h-full object-cover ${(!restaurantOnline || !item.inStock) ? 'grayscale' : ''}`} 
+            <img
+              src={item.photos}
+              alt={item.name}
+              className={`w-full h-full object-cover ${(!restaurantOnline || !item.inStock) ? 'grayscale' : ''}`}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
@@ -232,10 +232,10 @@ const MenuItem = ({ item, renderItemActions, restaurantOnline }) => {
       <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
         <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-lg overflow-hidden relative hidden md:block">
           {item?.photos && item.photos !== '' ? (
-            <img 
-              src={item.photos} 
-              alt={item.name} 
-              className={`w-full h-full object-cover ${(!restaurantOnline || !item.inStock) ? 'grayscale' : ''}`} 
+            <img
+              src={item.photos}
+              alt={item.name}
+              className={`w-full h-full object-cover ${(!restaurantOnline || !item.inStock) ? 'grayscale' : ''}`}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-300">

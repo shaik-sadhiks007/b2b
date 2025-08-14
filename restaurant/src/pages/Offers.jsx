@@ -43,8 +43,8 @@ const Offers = ({ visible, onHide, item = null }) => {
   const loadOffersForItem = async (menuItemId) => {
     try {
       setLoadingOffers(true);
-      const list = await getActiveOffersForItem(menuItemId);
-      setOfferList(Array.isArray(list) ? list : []);
+      const res = await getActiveOffersForItem(menuItemId);
+      setOfferList(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
       console.error('Load offers error:', err?.response?.data || err?.message);
       toast.error('Failed to load offers for this item');
@@ -252,226 +252,243 @@ const Offers = ({ visible, onHide, item = null }) => {
   if (!visible) return null;
 
   return (
-    <div className="bg-white border rounded-lg shadow-md p-6 mt-4 w-full max-w-3xl mx-auto">
-      <h2 className="text-lg font-semibold mb-4">Offers for this item</h2>
-
-      {/* Existing offers list */}
-      <div className="mb-5">
-        {loadingOffers ? (
-          <div className="text-sm text-gray-500">Loading offers…</div>
-        ) : offerList.length === 0 ? (
-          <div className="text-sm text-gray-500">No active offers yet.</div>
-        ) : (
-          <div className="space-y-2">
-            {offerList.map((off) => (
-              <div
-                key={off._id}
-                className={`flex items-center justify-between border rounded p-2 ${
-                  selectedOfferId === off._id ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="text-sm">
-                  <div className="font-medium">
-                    {off.title} <span className="text-xs text-gray-500">({off.offerType})</span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {off.offerType === 'bulk-price'
-                      ? `Buy ${off.purchaseQuantity} for ₹${off.discountedPrice}`
-                      : `Buy ${off.buyQuantity} get ${off.freeQuantity} free`}
-                    {off.startDate && ` · From ${off.startDate.slice(0, 10)}`}
-                    {off.endDate && ` to ${off.endDate.slice(0, 10)}`}
-                    {off.isActive ? ' · Active' : ' · Inactive'}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="px-2 py-1 text-sm border rounded hover:bg-gray-50"
-                    onClick={() => handleEditOffer(off)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="px-2 py-1 text-sm border rounded hover:bg-gray-50"
-                    onClick={() => handleToggleStatus(off)}
-                  >
-                    {off.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button
-                    className="px-2 py-1 text-sm border rounded text-red-600 hover:bg-red-50"
-                    onClick={() => handleDeleteOffer(off)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <div
+      className="
+        bg-white border rounded-lg shadow-lg mt-4 w-full max-w-3xl mx-auto
+        max-h-[85vh] overflow-hidden flex flex-col
+      "
+    >
+      {/* Sticky header */}
+      <div className="px-6 py-4 border-b sticky top-0 bg-white z-10">
+        <h2 className="text-lg font-semibold">Offers for this item</h2>
       </div>
 
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-md font-semibold">{selectedOfferId ? 'Edit Offer' : 'Create Offer'}</h3>
-        <button
-          className="text-sm border rounded px-2 py-1 hover:bg-gray-50"
-          onClick={handleNewOfferMode}
-          disabled={submitting}
-        >
-          New Offer
-        </button>
-      </div>
-
-      {/* Offer form */}
-      <form ref={formRef} onSubmit={handleSubmit} noValidate={false}>
-        <label className="block text-xs text-gray-500 mb-1">Menu Item ID</label>
-        <input
-          type="text"
-          name="menuItemId"
-          className="border p-2 rounded w-full mb-3 bg-gray-100 text-gray-500"
-          value={form.menuItemId}
-          readOnly
-          required
-        />
-
-        <label className="block text-xs text-gray-700 mb-1">Offer Title *</label>
-        <input
-          type="text"
-          name="title"
-          placeholder="Offer Title"
-          className="border p-2 rounded w-full mb-3"
-          value={form.title}
-          onChange={handleChange}
-          required
-        />
-
-        <label className="block text-xs text-gray-700 mb-1">Description</label>
-        <textarea
-          name="description"
-          placeholder="Description"
-          className="border p-2 rounded w-full mb-3"
-          value={form.description}
-          onChange={handleChange}
-        />
-
-        <label className="block text-xs text-gray-700 mb-1">Offer Type</label>
-        <select
-          name="offerType"
-          className="border p-2 rounded w-full mb-3"
-          value={form.offerType}
-          onChange={handleChange}
-        >
-          <option value="bulk-price">Bulk Price</option>
-          <option value="buy-x-get-y-free">Buy X Get Y Free</option>
-        </select>
-
-        {form.offerType === 'bulk-price' && (
-          <>
-            <label className="block text-xs text-gray-700 mb-1">Purchase Quantity *</label>
-            <input
-              type="number"
-              name="purchaseQuantity"
-              placeholder="Purchase Quantity"
-              className="border p-2 rounded w-full mb-3"
-              value={form.purchaseQuantity}
-              onChange={handleChange}
-              required
-              min="1"
-              step="1"
-            />
-            <label className="block text-xs text-gray-700 mb-1">Discounted Price *</label>
-            <input
-              type="number"
-              name="discountedPrice"
-              placeholder="Discounted Price"
-              className="border p-2 rounded w-full mb-3"
-              value={form.discountedPrice}
-              onChange={handleChange}
-              required
-              min="0"
-              step="0.01"
-            />
-          </>
-        )}
-
-        {form.offerType === 'buy-x-get-y-free' && (
-          <>
-            <label className="block text-xs text-gray-700 mb-1">Buy Quantity *</label>
-            <input
-              type="number"
-              name="buyQuantity"
-              placeholder="Buy Quantity"
-              className="border p-2 rounded w-full mb-3"
-              value={form.buyQuantity}
-              onChange={handleChange}
-              required
-              min="1"
-              step="1"
-            />
-            <label className="block text-xs text-gray-700 mb-1">Free Quantity *</label>
-            <input
-              type="number"
-              name="freeQuantity"
-              placeholder="Free Quantity"
-              className="border p-2 rounded w-full mb-3"
-              value={form.freeQuantity}
-              onChange={handleChange}
-              required
-              min="1"
-              step="1"
-            />
-          </>
-        )}
-
-        <div className="flex gap-2 mb-3">
-          <div className="flex-1">
-            <label className="block text-xs text-gray-700 mb-1">Start Date</label>
-            <input
-              type="date"
-              name="startDate"
-              className="border p-2 rounded w-full"
-              value={form.startDate}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-gray-700 mb-1">End Date</label>
-            <input
-              type="date"
-              name="endDate"
-              className="border p-2 rounded w-full"
-              value={form.endDate}
-              onChange={handleChange}
-            />
-          </div>
+      {/* Scrollable body */}
+      <div className="px-6 pt-4 pb-2 overflow-y-auto flex-1">
+        {/* Existing offers list */}
+        <div className="mb-5">
+          {loadingOffers ? (
+            <div className="text-sm text-gray-500">Loading offers…</div>
+          ) : offerList.length === 0 ? (
+            <div className="text-sm text-gray-500">No active offers yet.</div>
+          ) : (
+            <div className="space-y-2">
+              {offerList.map((off) => (
+                <div
+                  key={off._id}
+                  className={`flex items-center justify-between border rounded p-2 ${
+                    selectedOfferId === off._id ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
+                  }`}
+                >
+                  <div className="text-sm">
+                    <div className="font-medium">
+                      {off.title}{' '}
+                      <span className="text-xs text-gray-500">({off.offerType})</span>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {off.offerType === 'bulk-price'
+                        ? `Buy ${off.purchaseQuantity} for ₹${off.discountedPrice}`
+                        : `Buy ${off.buyQuantity} get ${off.freeQuantity} free`}
+                      {off.startDate && ` · From ${off.startDate.slice(0, 10)}`}
+                      {off.endDate && ` to ${off.endDate.slice(0, 10)}`}
+                      {off.isActive ? ' · Active' : ' · Inactive'}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-2 py-1 text-sm border rounded hover:bg-gray-50"
+                      onClick={() => handleEditOffer(off)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="px-2 py-1 text-sm border rounded hover:bg-gray-50"
+                      onClick={() => handleToggleStatus(off)}
+                    >
+                      {off.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      className="px-2 py-1 text-sm border rounded text-red-600 hover:bg-red-50"
+                      onClick={() => handleDeleteOffer(off)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <label className="flex items-center gap-2 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-md font-semibold">
+            {selectedOfferId ? 'Edit Offer' : 'Create Offer'}
+          </h3>
+          <button
+            className="text-sm border rounded px-2 py-1 hover:bg-gray-50"
+            onClick={handleNewOfferMode}
+            disabled={submitting}
+          >
+            New Offer
+          </button>
+        </div>
+
+        {/* Offer form */}
+        <form ref={formRef} onSubmit={handleSubmit} noValidate={false}>
+          <label className="block text-xs text-gray-500 mb-1">Menu Item ID</label>
           <input
-            type="checkbox"
-            name="isActive"
-            checked={form.isActive}
+            type="text"
+            name="menuItemId"
+            className="border p-2 rounded w-full mb-3 bg-gray-100 text-gray-500"
+            value={form.menuItemId}
+            readOnly
+            required
+          />
+
+          <label className="block text-xs text-gray-700 mb-1">Offer Title *</label>
+          <input
+            type="text"
+            name="title"
+            placeholder="Offer Title"
+            className="border p-2 rounded w-full mb-3"
+            value={form.title}
+            onChange={handleChange}
+            required
+          />
+
+          <label className="block text-xs text-gray-700 mb-1">Description</label>
+          <textarea
+            name="description"
+            placeholder="Description"
+            className="border p-2 rounded w-full mb-3"
+            value={form.description}
             onChange={handleChange}
           />
-          <span>Active</span>
-        </label>
 
-        <div className="flex justify-between mt-4">
-          <button
-            type="button"
-            className="px-4 py-2 bg-gray-400 text-white rounded"
-            onClick={onHide}
-            disabled={submitting}
+          <label className="block text-xs text-gray-700 mb-1">Offer Type</label>
+          <select
+            name="offerType"
+            className="border p-2 rounded w-full mb-3"
+            value={form.offerType}
+            onChange={handleChange}
           >
-            Close
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-            disabled={submitting}
-          >
-            {submitting ? 'Saving...' : selectedOfferId ? 'Update Offer' : 'Create Offer'}
-          </button>
-        </div>
-      </form>
+            <option value="bulk-price">Bulk Price</option>
+            <option value="buy-x-get-y-free">Buy X Get Y Free</option>
+          </select>
+
+          {form.offerType === 'bulk-price' && (
+            <>
+              <label className="block text-xs text-gray-700 mb-1">Purchase Quantity *</label>
+              <input
+                type="number"
+                name="purchaseQuantity"
+                placeholder="Purchase Quantity"
+                className="border p-2 rounded w-full mb-3"
+                value={form.purchaseQuantity}
+                onChange={handleChange}
+                required
+                min="1"
+                step="1"
+              />
+              <label className="block text-xs text-gray-700 mb-1">Discounted Price *</label>
+              <input
+                type="number"
+                name="discountedPrice"
+                placeholder="Discounted Price"
+                className="border p-2 rounded w-full mb-3"
+                value={form.discountedPrice}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+              />
+            </>
+          )}
+
+          {form.offerType === 'buy-x-get-y-free' && (
+            <>
+              <label className="block text-xs text-gray-700 mb-1">Buy Quantity *</label>
+              <input
+                type="number"
+                name="buyQuantity"
+                placeholder="Buy Quantity"
+                className="border p-2 rounded w-full mb-3"
+                value={form.buyQuantity}
+                onChange={handleChange}
+                required
+                min="1"
+                step="1"
+              />
+              <label className="block text-xs text-gray-700 mb-1">Free Quantity *</label>
+              <input
+                type="number"
+                name="freeQuantity"
+                placeholder="Free Quantity"
+                className="border p-2 rounded w-full mb-3"
+                value={form.freeQuantity}
+                onChange={handleChange}
+                required
+                min="1"
+                step="1"
+              />
+            </>
+          )}
+
+          <div className="flex gap-2 mb-3">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                name="startDate"
+                className="border p-2 rounded w-full"
+                value={form.startDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                name="endDate"
+                className="border p-2 rounded w-full"
+                value={form.endDate}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              name="isActive"
+              checked={form.isActive}
+              onChange={handleChange}
+            />
+            <span>Active</span>
+          </label>
+
+          {/* Sticky footer actions inside the scrollable area */}
+          <div className="sticky bottom-0 bg-white py-3 border-t mt-4">
+            <div className="flex justify-between">
+              <button
+                type="button"
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+                onClick={onHide}
+                disabled={submitting}
+              >
+                Close
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                disabled={submitting}
+              >
+                {submitting ? 'Saving...' : selectedOfferId ? 'Update Offer' : 'Create Offer'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

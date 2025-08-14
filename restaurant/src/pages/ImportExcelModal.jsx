@@ -73,7 +73,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                         price: rowData.price || 0,
                         quantity: rowData.quantity || '',
                         unit: rowData.unit || 'piece',
-                        unitValue: rowData.unitvalue || '1',
+                       
                         category: rowData.category || '',
                         subcategory: rowData.subcategory || 'general',
                         description: rowData.description || '',
@@ -124,7 +124,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                 totalPrice: parseFloat(item.price) || 0,
                 quantity: parseInt(item.quantity) || 0,
                 unit: item.unit || 'piece',
-                unitValue: item.unitValue || '1',
+               
                 category: item.category,
                 subcategory: item.subcategory,
                 description: item.description,
@@ -167,7 +167,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
     const downloadTemplate = () => {
         const templateData = [
             [
-                'name', 'price', 'quantity', 'unit', 'unitValue', 'category', 'subcategory', 'description',
+                'name', 'price', 'quantity', 'unit',  'category', 'subcategory', 'description',
                 'foodType', 'inStock', 'expiryDate', 'storageZone', 'rack',
                 'shelf', 'bin', 'batchNumber', 'requiresPrescription', 'isLooseItem'
             ],
@@ -226,7 +226,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                             <li>• Upload Excel (.xlsx, .xls) or CSV (.csv) file</li>
                             <li>• Required columns: name, price, quantity</li>
                             <li>• Unit options: kg, ltr</li>
-                            <li>• Unit Value: Quantity per unit (e.g., 500mg, 1kg, 10ml)</li>
+                           
                             <li>• Medical fields: storageZone, rack, shelf, bin, batchNumber, requiresPrescription</li>
                             <li>• storageZone options: general, refrigerated, controlled, hazardous</li>
                             <li>• isLooseItem: Set to true for items sold individually (like nails, screws, etc.)</li>
@@ -288,7 +288,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Value</th>
+                                            
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loose</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Storage</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
@@ -304,7 +304,7 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">₹{item.price}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unit}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unitValue}</td>
+                                               
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm">
                                                     {item.isLooseItem ? (
                                                         <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
@@ -381,4 +381,4 @@ const ImportExcelModal = ({ open, onClose, onImport }) => {
     );
 };
 
-export default ImportExcelModal;
+export default ImportExcelModal; 

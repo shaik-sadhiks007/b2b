@@ -19,7 +19,6 @@ const defaultForm = {
   batchNumber: "",
   requiresPrescription: false,
   unit: "piece",
-  unitValue: 1, 
   loose: false,
   discountPercentage: 0, 
   discountAmount: 0,     
@@ -112,12 +111,6 @@ const MenuItemModal = ({
       setError("Name and Price are required");
       return;
     }
-    
-    if (form.loose && (!form.unitValue || form.unitValue <= 0)) {
-      setError("Unit Value must be greater than zero for loose items");
-      return;
-    }
-
     if (form.discountPercentage < 0 || form.discountPercentage > 100) {
       setError("Discount must be between 0-100%");
       return;
@@ -253,22 +246,6 @@ const MenuItemModal = ({
                   <option value="kg">kg</option>
                   <option value="ltr">ltr</option>
                 </select>
-              </div>
-              
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Unit Value <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="unitValue"
-                  value={form.unitValue}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                  required={form.loose}
-                  min="0.01"
-                  step="0.01"
-                />
               </div>
             </div>
           )}
@@ -810,4 +787,4 @@ const MenuItemModal = ({
   );
 };
 
-export default MenuItemModal;
+export default MenuItemModal; 

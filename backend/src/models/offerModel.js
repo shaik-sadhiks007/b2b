@@ -138,4 +138,4 @@ offerSchema.statics.getActiveOffersForBusiness = function (businessId) {
   }).populate('menuItemId', 'name totalPrice photos category');
 };
 
-module.exports = mongoose.models.Offer || mongoose.model('Offer', offerSchema);
+module.exports = mongoose.models.Offer || mongoose.model('Offer', offerSchema);  

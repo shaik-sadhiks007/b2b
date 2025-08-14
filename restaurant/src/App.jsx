@@ -17,6 +17,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Review from "./components/Review";
 import Aboutus from "./components/Aboutus";
 import { MenuProvider } from "./context/MenuContext";
+import { OfferProvider } from './context/OfferContext';
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./adminComp/AdminRoute";
 import AuthProvider from "./context/AuthContext";
@@ -31,7 +32,8 @@ import Business from "./adminComp/Business";
 import AdminBusinessDashboard from "./adminComp/AdminBusinessDashboard";
 import BusinessProfile from "./adminComp/BusinessProfile";
 import AdminFeedback from "./adminComp/AdminFeedback";
-import Expiry from "./components/Expiry";
+import Expiry from "./components/Expiry"
+import Offers from "./pages/Offers";
 
 
 function App() {
@@ -40,7 +42,7 @@ function App() {
       <AuthProvider>
         <Router>
           <MenuProvider>
-            
+            <OfferProvider>
               <ToastContainer autoClose={1000} />
 
               <Routes>
@@ -107,6 +109,14 @@ function App() {
                   element={
                     <PrivateRoute>
                       <MenuEditor />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/Offers"
+                  element={
+                    <PrivateRoute>
+                      <Offers />
                     </PrivateRoute>
                   }
                 />
@@ -218,7 +228,7 @@ function App() {
                   />
                 </Route>
               </Routes>
-            
+            </OfferProvider>
           </MenuProvider>
         </Router>
       </AuthProvider>

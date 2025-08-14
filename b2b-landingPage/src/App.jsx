@@ -11,6 +11,7 @@ import ForgotPassword from "./authentication/ForgotPassword"
 import Home from "./components/Home"
 import HotelDetails from "./components/HotelDetails"
 import { CartProvider } from './context/CartContext'
+import { OfferProvider } from './context/OfferContext'
 import CartPage from './components/CartPage'
 import SearchPage from './pages/SearchPage'
 import LocationProvider from "./context/LocationContext"
@@ -42,6 +43,7 @@ import { API_URL } from "./api/api"
 import axios from 'axios';
 import HomeOrHotelDetails from './components/HomeOrHotelDetails';
 import bgImage from './assets/bgImage.jpg'
+import Payment from './components/Payment';
 
 
 function AppContent() {
@@ -118,6 +120,7 @@ function AppContent() {
         <Route path="/features" element={<Features />} />
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/payment" element={<Payment />} />
         
       </Routes>
 
@@ -147,6 +150,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <HotelDataProvider>
           <CartProvider>
+            <OfferProvider>
             <LocationProvider>
               <SubdomainProvider>
                 <AppContent />
@@ -166,6 +170,7 @@ function App() {
                 />
               </SubdomainProvider>
             </LocationProvider>
+            </OfferProvider>
           </CartProvider>
         </HotelDataProvider>
       </QueryClientProvider>

@@ -92,7 +92,6 @@ function MenuEditor() {
     quantity: "",
     expiryDate: "",
     unit: "piece",
-    unitValue: 1, // Default unit value
   });
 
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -282,7 +281,6 @@ function MenuEditor() {
         quantity: "",
         expiryDate: "",
         unit: "piece", // Add default unit
-        unitValue: "1",
         loose: false, // Default to not loose
       });
     }
@@ -312,7 +310,6 @@ function MenuEditor() {
       totalPrice: parseFloat(newItemData.price),
       quantity: parseInt(newItemData.quantity, 10),
       unit: newItemData.unit || "piece",
-      unitValue: newItemData.unitValue || 1,
       loose: newItemData.loose || false, // Add loose field
       expiryDate: newItemData.expiryDate
         ? new Date(newItemData.expiryDate)
@@ -1326,7 +1323,6 @@ function MenuEditor() {
                 <Offers
                   visible={offerModalOpen}
                   item={selectedOfferItem}
-                  // omit offerId to force CREATE
                   onHide={() => {
                     setOfferModalOpen(false);
                     setSelectedOfferItem(null);

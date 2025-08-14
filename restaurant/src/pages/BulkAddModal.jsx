@@ -13,7 +13,7 @@ const BulkAddModal = ({ open, onClose, onBulkAdd, preSelectedCategory = '', preS
 
     // Define the default header order as a constant
     const DEFAULT_HEADER = [
-        'Name', 'Price', 'Quantity', 'Loose Item', 'Unit', 'UnitValue', 'Category', 'Subcategory', 'Food Type', 
+        'Name', 'Price', 'Quantity', 'Loose Item', 'Unit',  'Category', 'Subcategory', 'Food Type', 
         'Description', 'In Stock', 'Expiry Date', ...(businessCategory === 'medical' ? ['Storage Zone', 'Rack', 
         'Shelf', 'Bin', 'Batch Number', 'Requires Prescription'] : [])
     ];
@@ -39,7 +39,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                     quantity: null,
                     looseItem: false,
                     unit: 'piece',
-                    unitValue: '',
+                   
                     category: category || '',
                     subcategory: subcategory || '',
                     foodType: 'veg',
@@ -83,7 +83,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                 quantity: null,
                 looseItem: false,
                 unit: 'piece',
-                unitValue: '',
+               
                 category: category || '',
                 subcategory: subcategory || '',
                 foodType: 'veg',
@@ -119,7 +119,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
             const processedItems = parsedItems.map(item => ({
                 ...item,
                 unit: item.looseItem ? (item.unit || 'piece') : 'piece',
-                unitValue: item.looseItem ? (item.unitValue || '') : '',
+               
                 category: item.category || category || 'uncategorized',
                 subcategory: item.subcategory || subcategory || 'general',
                 foodType: item.foodType || 'veg',
@@ -183,7 +183,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                 quantity: null,
                 looseItem: false,
                 unit: 'piece',
-                unitValue: '',
+                
                 category: '',
                 subcategory: '',
                 foodType: 'veg',
@@ -223,10 +223,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                         case 'unit':
                             item.unit = value || 'piece';
                             break;
-                        case 'unitvalue':
-                        case 'unit value':
-                            item.unitValue = value || '';
-                            break;
+                       
                         case 'category':
                             item.category = value;
                             break;
@@ -281,7 +278,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                     quantity: values[2] ? parseInt(values[2]) : null,
                     looseItem: typeof values[3] !== 'undefined' ? (values[3].toLowerCase() === 'true' || values[3].toLowerCase() === 'yes' || values[3] === '1') : false,
                     unit: values[4] || 'piece',
-                    unitValue: values[5] || '',
+                   
                     category: values[6] || '',
                     subcategory: values[7] || '',
                     foodType: (values[8] || 'veg').toLowerCase(),
@@ -320,7 +317,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                 quantity: null,
                 looseItem: false,
                 unit: 'piece',
-                unitValue: '',
+               
                 category: category || '',
                 subcategory: subcategory || '',
                 foodType: 'veg',
@@ -461,7 +458,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                                                 {parsedItems.some(item => item.looseItem) && (
                                                     <>
                                                         <th className="border px-2 py-1">Unit</th>
-                                                        <th className="border px-2 py-1">Unit Value</th>
+                                                       
                                                     </>
                                                 )}
                                                 <th className="border px-2 py-1">Category</th>
@@ -522,19 +519,7 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
                                                                     <div className="w-16 px-1 py-0.5 text-gray-400">-</div>
                                                                 )}
                                                             </td>
-                                                            <td className="border px-2 py-1">
-                                                                {item.looseItem ? (
-                                                                    <input 
-                                                                        type="text" 
-                                                                        value={item.unitValue || ''} 
-                                                                        onChange={e => handleItemChange(idx, 'unitValue', e.target.value)} 
-                                                                        className="w-16 border rounded px-1 py-0.5" 
-                                                                        placeholder="500mg, 10ml" 
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-16 px-1 py-0.5 text-gray-400">-</div>
-                                                                )}
-                                                            </td>
+                                                          
                                                         </>
                                                     )}
                                                     <td className="border px-2 py-1">
@@ -639,4 +624,4 @@ Flour,1.80,1,true,kg,,Groceries,Staples,veg,Wheat flour,true,2025-03-15`}`;
     );
 };
 
-export default BulkAddModal;
+export default BulkAddModal; 

@@ -6,17 +6,15 @@ const router = express.Router();
 // Controllers
 const offerController = require('../controllers/offerController');
 
-// Middleware you already have
-const authMiddleware = require('../middleware/authMiddleware');           // sets req.user
-const restaurantMiddleware = require('../middleware/restaurantMiddleware'); // sets req.restaurant
+// Middleware 
+const authMiddleware = require('../middleware/authMiddleware');           
+const restaurantMiddleware = require('../middleware/restaurantMiddleware'); 
 
 
 
-// Async wrapper to avoid try/catch in routes
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// Validate ObjectId params like :id, :menuItemId, :businessId
 const validateObjectId = (paramName) => (req, res, next) => {
   const id = req.params[paramName];
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -25,7 +23,7 @@ const validateObjectId = (paramName) => (req, res, next) => {
   next();
 };
 
-// Basic body validation (lightweight; controller still does deep validation)
+// Basic body validation 
 const validateOfferBody = (req, res, next) => {
   const { menuItemId, offerType, title } = req.body || {};
 
@@ -51,7 +49,9 @@ const shortPublicCache = (req, res, next) => {
   next();
 };
 
-
+// ───────────────────────────────────────────────────────────────────────────────
+// Business (authenticated)
+// ───────────────────────────────────────────────────────────────────────────────
 
 // Create a new offer
 router.post(
@@ -98,7 +98,9 @@ router.delete(
   asyncHandler(offerController.deleteOffer)
 );
 
-
+// ───────────────────────────────────────────────────────────────────────────────
+// Public (no auth)
+// ───────────────────────────────────────────────────────────────────────────────
 
 // Get active offers for a specific menu item
 router.get(

@@ -94,8 +94,8 @@ exports.placeOrder = async (req, res) => {
                 customerName = newAddress.fullName;
                 customerPhone = newAddress.phone;
             }
-        } else if (orderType === 'pickup') {
-            // For pickup orders, address is optional
+        } else if (orderType === 'pickup' || orderType === 'dineOut') {
+            // For pickup and dineout orders, address is optional but can be provided
             if (addressId) {
                 const address = await CustomerAddress.findById(addressId);
                 if (address) {
@@ -104,7 +104,7 @@ exports.placeOrder = async (req, res) => {
                     customerPhone = address.phone;
                 }
             } else if (customerAddressData) {
-                // If customer provides address data for pickup, save it but don't require it
+                // If customer provides address data for pickup/dineout, save it but don't require it
                 const newAddress = new CustomerAddress({
                     userId,
                     fullName: customerAddressData.fullName,
@@ -123,7 +123,7 @@ exports.placeOrder = async (req, res) => {
             }
         } else {
             console.error('[orderController.js][placeOrder-invalidOrderType]', { orderType });
-            return res.status(400).json({ error: "Invalid order type. Must be either 'delivery' or 'pickup'" });
+            return res.status(400).json({ error: "Invalid order type. Must be either 'delivery', 'pickup', or 'dineOut'" });
         }
 
         // Validate restaurant exists
@@ -156,13 +156,18 @@ exports.placeOrder = async (req, res) => {
             // Calculate delivery charges based on subtotal
             const deliveryResult = await calculateDeliveryCharges(subtotalAmount, distance, totalWeight);
             deliveryCharge = deliveryResult.deliveryCharge;
-        } else if (orderType === 'pickup') {
+        } else if (orderType === 'pickup' || orderType === 'dineOut') {
             deliveryCharge = 0;
         }
 
-        // Calculate GST based on restaurant category and subtotal
+        // Calculate GST based on restaurant category and subtotal (set to 0 for dineout orders)
         const category = restaurant.category || 'restaurant';
-        const gstResult = await calculateGST(subtotalAmount, category);
+        let gstResult;
+        if (orderType === 'dineOut') {
+            gstResult = { gstAmount: 0, gstPercentage: 0 };
+        } else {
+            gstResult = await calculateGST(subtotalAmount, category);
+        }
         gstAmount = gstResult.gstAmount;
         gstPercentage = gstResult.gstPercentage;
 

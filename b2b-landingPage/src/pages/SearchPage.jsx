@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext, useRef} from 'react';
-import { Search, Star, MapPin, Clock, X } from 'lucide-react';
+import { Search, Star, MapPin, Clock, X, Tag, ChevronDown } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useCart } from '../context/CartContext';
 import { HotelContext } from '../contextApi/HotelContextProvider';
@@ -20,13 +20,44 @@ function SearchPage() {
   const [popularLoading, setPopularLoading] = useState(true);
   const [showRestaurantModal, setShowRestaurantModal] = useState(false);
   const [pendingAddItem, setPendingAddItem] = useState(null);
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [selectedQuantities, setSelectedQuantities] = useState({});
+  const [isResettingCart, setIsResettingCart] = useState(false);
 
   const {
     carts,
     isItemInCart,
     addToCart,
     clearCart,
+    updateCartItem,
+    removeCartItem,
   } = useCart();
+
+  // Quantity options for loose items (same as HotelDetails.jsx)
+  const quantityOptions = [
+    { value: 100, label: '100' },
+    { value: 150, label: '150' },
+    { value: 250, label: '250' },
+    { value: 300, label: '300' },
+    { value: 500, label: '500' },
+    { value: 750, label: '750' },
+    { value: 1000, label: '1000' },
+  ];
+
+  const calculatePrice = (basePrice, quantity, unit) => {
+    if (unit === 'liter') {
+      // Convert liter price to ml (divide by 1000)
+      return (basePrice * quantity / 1000).toFixed(2);
+    }
+    return (basePrice * quantity / 1000).toFixed(2);
+  };
+
+  const getQuantityLabel = (value, unit) => {
+    if (unit === 'ltr') {
+      return `${value} ml`; // Show milliliters for liquid items
+    }
+    return `${value} g`; // Show grams for solid items
+  };
 
   const hasFetched = useRef(false);
   useEffect(() => {
@@ -113,38 +144,64 @@ function SearchPage() {
     };
   }, [searchQuery, searchType]);
 
+  const getCartItem = (itemId) => {
+    return carts[0]?.items?.find(item =>
+      item.itemId === itemId || item.itemId === itemId.toString()
+    );
+  };
+
+  const handleQuantitySelect = (itemId, quantity) => {
+    setSelectedQuantities(prev => ({
+      ...prev,
+      [itemId]: quantity
+    }));
+  };
+
   const handleAddToCart = async (item) => {
     if (!user) {
+      toast.error("Please login to add items to cart");
       navigate('/login');
       return;
     }
 
-    const cartForRestaurant = carts.find(c => c.restaurantId === item.restaurant?.id);
-    let items = [];
-
-    if (cartForRestaurant) {
-      const existingItem = cartForRestaurant.items.find(i => i.itemId === item.id);
-      if (existingItem) {
-        navigate('/cart');
-        return;
-      } else {
-        items = [...cartForRestaurant.items, {
-          itemId: item.id,
-          name: item.name,
-          quantity: 1,
-          totalPrice: Number(item.price),
-          foodType: item.foodType,
-        }];
-      }
-    } else {
-      items = [{
-        itemId: item.id,
-        name: item.name,
-        quantity: 1,
-        totalPrice: Number(item.price),
-        foodType: item.foodType,
-      }];
+    if (!item.inStock) {
+      toast.error("This item is out of stock");
+      return;
     }
+
+    if (isItemInCart(item.id)) {
+      return;
+    }
+
+    // Don't show modal if we're in the middle of resetting cart
+    if (!isResettingCart && carts.length > 0 && carts[0].restaurantId._id !== item.restaurant?.id) {
+      setPendingAddItem(item);
+      setShowRestaurantModal(true);
+      return;
+    }
+
+    const selectedQuantity = item.loose ? (selectedQuantities[item.id] || 100) : 1;
+    const quantityLabel = item.loose
+      ? `${selectedQuantity} ${item.unit || 'g'}`
+      : `${item.unitValue || 1} ${item.unit || 'unit'}`;
+    const calculatedPrice = item.loose
+      ? (item.price * selectedQuantity / 1000).toFixed(2)
+      : item.price;
+
+    const items = [{
+      itemId: item.id,
+      name: item.name,
+      quantity: 1,
+      quantityValue: selectedQuantity,
+      quantityLabel: quantityLabel,
+      totalPrice: Number(calculatedPrice),
+      foodType: item.foodType,
+      photos: item.image ? [item.image] : [],
+      unit: item.unit || 'unit',
+      unitValue: item.unitValue || 1,
+      loose: item.loose || false,
+      category: item.restaurant?.category || 'Restaurant'
+    }];
 
     const result = await addToCart(
       item.restaurant.id,
@@ -153,26 +210,83 @@ function SearchPage() {
       item.restaurant.serviceType
     );
 
-    if (result.success) {
-      toast.success('Item added to cart');
-    } else if (result.error === 'Different restaurant') {
-      setPendingAddItem(item);
-      setShowRestaurantModal(true);
+    if (!result.success) {
+      toast.error(result.error || "Failed to add to cart");
     } else {
-      toast.error('Failed to add to cart');
+      toast.success('Item added to cart');
+      // Reset the flag after successful addition
+      setIsResettingCart(false);
+    }
+  };
+
+  const handleQuantityChange = async (itemId, change) => {
+    if (!carts.length || !carts[0]) {
+      toast.error("Cart not loaded yet");
+      return;
+    }
+
+    setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
+
+    try {
+      const item = getCartItem(itemId);
+      if (!item) {
+        toast.error("Item not in cart");
+        return;
+      }
+
+      const newQuantity = item.quantity + change;
+      if (newQuantity < 1) {
+        toast.error("Minimum quantity is 1");
+        return;
+      }
+
+      const result = await updateCartItem(itemId, newQuantity);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update quantity');
+      }
+    } finally {
+      setUpdatingItems(prev => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
+
+    try {
+      const result = await removeCartItem(itemId);
+      if (result.success) {
+        toast.success("Item removed from cart");
+      } else {
+        toast.error(result.error || "Failed to remove item");
+      }
+    } finally {
+      setUpdatingItems(prev => ({ ...prev, [itemId]: false }));
     }
   };
 
   const handleRestaurantModalResponse = async (resetCart) => {
     if (resetCart) {
       try {
-        await clearCart();
+        // Set flag to prevent modal from appearing again
+        setIsResettingCart(true);
+        
+        // Close modal first
         setShowRestaurantModal(false);
+        setPendingAddItem(null);
+        
+        // Clear cart
+        await clearCart();
+        
+        // Add item to cart after cart is cleared
         if (pendingAddItem) {
-          setTimeout(() => handleAddToCart(pendingAddItem), 100);
+          handleAddToCart(pendingAddItem);
         }
       } catch (err) {
         toast.error('Failed to reset cart');
+        // Reset flag and reopen modal if there's an error
+        setIsResettingCart(false);
+        setShowRestaurantModal(true);
+        setPendingAddItem(pendingAddItem);
       }
     } else {
       setShowRestaurantModal(false);
@@ -188,6 +302,141 @@ function SearchPage() {
   const handleSearch = (e) => {
     e.preventDefault();
     performSearch(searchQuery);
+  };
+
+  const handleRestaurantClick = (restaurant) => {
+    // Check if restaurant has a subdomain
+    if (restaurant.subdomain) {
+      const currentHost = window.location.hostname;
+      console.log('Current hostname:', currentHost);
+      console.log('Restaurant subdomain:', restaurant.subdomain);
+      console.log('Restaurant data:', restaurant);
+
+      let targetUrl;
+      
+      if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+        // For localhost, navigate to /category/id
+        const category = restaurant.category?.toLowerCase() || 'restaurant';
+        targetUrl = `/${category}/${restaurant.id}`;
+        console.log('Localhost navigation to:', targetUrl);
+        navigate(targetUrl, { state: { restaurant } });
+      } else if (currentHost === 'customer.test.shopatb2b.com') {
+        // For customer.test.shopatb2b.com, navigate to subdomain.test.shopatb2b.com
+        targetUrl = `https://${restaurant.subdomain}.test.shopatb2b.com`;
+        console.log('Test domain navigation to:', targetUrl);
+        window.location.href = targetUrl;
+      } else if (currentHost === 'www.shopatb2b.com') {
+        // For www.shopatb2b.com, navigate to subdomain.shopatb2b.com
+        targetUrl = `https://${restaurant.subdomain}.shopatb2b.com`;
+        console.log('Production domain navigation to:', targetUrl);
+        window.location.href = targetUrl;
+      } else {
+        // Fallback for other domains
+        const category = restaurant.category?.toLowerCase() || 'restaurant';
+        targetUrl = `/${category}/${restaurant.id}`;
+        console.log('Fallback navigation to:', targetUrl);
+        navigate(targetUrl, { state: { restaurant } });
+      }
+    } else {
+      // No subdomain, use regular navigation
+      const category = restaurant.category?.toLowerCase() || 'restaurant';
+      console.log('No subdomain, regular navigation to:', `/${category}/${restaurant.id}`);
+      navigate(`/${category}/${restaurant.id}`, { state: { restaurant } });
+    }
+  };
+
+  const renderItemActions = (item) => {
+    if (!item.inStock) {
+      return <span className="text-red-500 text-sm">Out of Stock</span>;
+    }
+
+    const cartItem = getCartItem(item.id);
+    const isUpdating = updatingItems[item.id];
+    const selectedQuantity = selectedQuantities[item.id] || 100;
+    const displayPrice = item.loose ?
+      (cartItem ? cartItem.totalPrice : calculatePrice(item.price, selectedQuantity, item.unit))
+      : null;
+
+    if (cartItem) {
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuantityChange(item.id, -1);
+              }}
+              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              -
+            </button>
+            <span className="w-6 text-center">
+              {cartItem.quantity}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuantityChange(item.id, 1);
+              }}
+              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              +
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveItem(item.id);
+              }}
+              className="text-red-500 hover:text-red-700 ml-2 text-sm disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              Remove
+            </button>
+          </div>
+          <div className="text-xs text-gray-500">
+            {cartItem.quantityLabel && (
+              <span>Size: {cartItem.quantityLabel}</span>
+            )}
+            {displayPrice && (
+              <span className="block">Price: ₹{displayPrice}</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        {item.loose && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">₹{displayPrice}</span>
+            <select
+              value={selectedQuantity}
+              onChange={(e) => handleQuantitySelect(item.id, parseInt(e.target.value))}
+              className="text-xs p-1 border rounded"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {quantityOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {getQuantityLabel(option.value, item.unit)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart(item);
+          }}
+          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+        >
+          Add to Cart
+        </button>
+      </div>
+    );
   };
 
   const renderSearchResults = () => {
@@ -214,17 +463,88 @@ function SearchPage() {
             key={result.id}
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
           >
-            <div className="p-4">
-              <h3 className="text-lg font-semibold">{result.name}</h3>
-              {result.price && (
-                <p className="text-sm text-gray-600">₹{result.price}</p>
+            <div className="relative h-48 w-full">
+              {result.image ? (
+                <img 
+                  src={result.image} 
+                  alt={result.name} 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                  {result.name}
+                </div>
               )}
-              <button
-                onClick={() => handleAddToCart(result)}
-                className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Add to Cart
-              </button>
+              {result.restaurant && (
+                <div className="absolute top-2 left-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {result.restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
+                  </span>
+                </div>
+              )}
+              {result.restaurant && (
+                <div className="absolute top-2 right-2">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${result.restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${result.restaurant.online ? 'bg-green-500' : 'bg-gray-500'} mr-1`}></span>
+                    {result.restaurant.online ? 'Open' : 'Closed'}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{result.name}</h3>
+              
+              {/* Restaurant Information */}
+              {result.restaurant && (
+                <div className="mb-3">
+                  <h4 
+                    className="font-medium text-gray-800 mb-1 cursor-pointer hover:text-blue-600"
+                    onClick={() => handleRestaurantClick(result.restaurant)}
+                  >
+                    {result.restaurant.name}
+                  </h4>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <MapPin size={14} />
+                    <span>
+                      {result.restaurant.address ? 
+                        (result.restaurant.address.fullAddress || 
+                         `${result.restaurant.address.streetAddress || ''} ${result.restaurant.address.city || ''} ${result.restaurant.address.state || ''}`.trim() || 
+                         'Address not available') 
+                        : 'Address not available'}
+                    </span>
+                  </div>
+                  {result.restaurant.operatingHours && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock size={14} />
+                      <span>
+                        {result.restaurant.operatingHours.openTime} - {result.restaurant.operatingHours.closeTime}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Price Information */}
+              <div className="mb-3">
+                <p className="text-lg font-semibold text-green-600">
+                  ₹{result.price}
+                  {result.loose && (
+                    <span className="text-sm text-gray-500 ml-1">
+                      / {result.unit === 'liter' ? 'liter' : 'kg'}
+                    </span>
+                  )}
+                </p>
+                {result.loose && (
+                  <p className="text-sm text-gray-500">
+                    ({result.unitValue} {result.unit} available)
+                  </p>
+                )}
+              </div>
+
+              {/* Item Actions */}
+              <div className="mt-3">
+                {renderItemActions(result)}
+              </div>
             </div>
           </div>
         ))}
@@ -323,15 +643,15 @@ function SearchPage() {
                       }}
                     >
                       <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-200 shadow-sm mb-2 hover:border-green-500 transition-colors">
-                        {item.image || item.img ? (
+                        {item.image  ? (
                           <img
-                            src={item.image || item.img}
+                            src={item.image}
                             alt={item.name}
                             className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                            No Image
+                            {item.name}
                           </div>
                         )}
                       </div>

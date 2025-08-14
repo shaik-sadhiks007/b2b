@@ -186,7 +186,7 @@ const Feedback = () => {
                             </div>
                             <button
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg shadow-md hover:from-blue-700 hover:to-blue-600 transition disabled:opacity-50"
+                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg shadow-md hover:from-blue-700 hover:to-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={feedbackUploading}
                             >
                                 {feedbackUploading ? 'Submitting...' : 'Submit Feedback'}

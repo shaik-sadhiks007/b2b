@@ -53,7 +53,7 @@ const HotelDetails = (props) => {
     return window.location.hostname === "pantulugaarimess.shopatb2b.com";
   }, []);
   const [showClosingSoonPopup, setShowClosingSoonPopup] = useState(false);
-  
+
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -164,7 +164,7 @@ const HotelDetails = (props) => {
   }, [restaurant]);
 
   const getCartItem = (itemId) => {
-    return carts[0]?.items?.find(item => 
+    return carts[0]?.items?.find(item =>
       item.itemId === itemId || item.itemId === itemId.toString()
     );
   };
@@ -196,10 +196,10 @@ const HotelDetails = (props) => {
     }
 
     const selectedQuantity = item.loose ? (selectedQuantities[item._id] || 100) : 1;
-    const quantityLabel = item.loose 
+    const quantityLabel = item.loose
       ? getQuantityLabel(selectedQuantity, item.unit)
       : `${item.unitValue} ${item.unit}`;
-    const calculatedPrice = item.loose 
+    const calculatedPrice = item.loose
       ? calculatePrice(item.totalPrice, selectedQuantity, item.unit)
       : item.totalPrice;
 
@@ -211,10 +211,11 @@ const HotelDetails = (props) => {
       quantityLabel: quantityLabel,
       totalPrice: Number(calculatedPrice),
       foodType: item.foodType,
-      photos: Array.isArray(item.photos) ? item.photos.filter(p => typeof p === 'string') : [],
+      photos: item.photos,
       unit: item.unit || 'unit',
       unitValue: item.unitValue || 1,
-      loose: item.loose || false
+      loose: item.loose || false,
+      category: restaurant?.category || 'Restaurant'
     }];
 
     const result = await addToCart(
@@ -236,7 +237,7 @@ const HotelDetails = (props) => {
     }
 
     setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
-    
+
     try {
       const item = getCartItem(itemId);
       if (!item) {
@@ -252,7 +253,7 @@ const HotelDetails = (props) => {
 
       const originalPricePerUnit = (item.totalPrice * (item.unit === 'liter' ? 1000 : 1000)) / item.quantityValue;
       const calculatedPrice = calculatePrice(originalPricePerUnit, item.quantityValue, item.unit);
-      
+
       const result = await updateCartItem(itemId, newQuantity, {
         totalPrice: calculatedPrice
       });
@@ -266,7 +267,7 @@ const HotelDetails = (props) => {
 
   const handleRemoveItem = async (itemId) => {
     setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
-    
+
     try {
       const result = await removeCartItem(itemId);
       if (result.success) {
@@ -293,10 +294,10 @@ const HotelDetails = (props) => {
     const cartItem = getCartItem(item._id);
     const isUpdating = updatingItems[item._id];
     const selectedQuantity = selectedQuantities[item._id] || 100;
-    const displayPrice = item.loose ? 
+    const displayPrice = item.loose ?
       (cartItem ? cartItem.totalPrice : calculatePrice(item.totalPrice, selectedQuantity, item.unit))
       : null;
-    
+
     if (cartItem) {
       return (
         <div className="flex flex-col gap-2">
@@ -393,9 +394,9 @@ const HotelDetails = (props) => {
   };
 
   const renderItemCard = (item) => {
-    const pricePerText = item.loose 
-      ? item.unit === 'liter' 
-        ? '/ liter' 
+    const pricePerText = item.loose
+      ? item.unit === 'liter'
+        ? '/ liter'
         : '/ kg'
       : '';
 
@@ -512,7 +513,7 @@ const HotelDetails = (props) => {
             <h2 className="text-xl font-bold mb-4">
               Offers for {selectedItemForOffer.name}
             </h2>
-            
+
             <div className="mb-6">
               <div className="bg-gray-50 p-4 rounded-md mb-4">
                 <h3 className="font-medium mb-2">Regular Price</h3>
@@ -552,10 +553,10 @@ const HotelDetails = (props) => {
                           )}
                         </div>
                         <p className="text-sm text-yellow-700 mb-3">{offer.description}</p>
-                        
+
                         {offer.offerType === 'percentage-off' && (
                           <p className="text-sm">
-                            {offer.discountPercentage}% off - Now ₹{(selectedItemForOffer.totalPrice * (1 - offer.discountPercentage/100)).toFixed(2)}
+                            {offer.discountPercentage}% off - Now ₹{(selectedItemForOffer.totalPrice * (1 - offer.discountPercentage / 100)).toFixed(2)}
                             {selectedItemForOffer.loose && (
                               <span className="text-xs text-gray-500 ml-1">
                                 / {selectedItemForOffer.unit === 'liter' ? 'liter' : 'kg'} ({selectedItemForOffer.unitValue} {selectedItemForOffer.unit})
@@ -575,10 +576,10 @@ const HotelDetails = (props) => {
                         )}
                         {offer.offerType === 'bulk-purchase' && (
                           <p className="text-sm">
-                            Buy {offer.minQuantity} for ₹{(selectedItemForOffer.totalPrice * offer.minQuantity * (1 - offer.discountPercentage/100)).toFixed(2)} ({offer.discountPercentage}% off)
+                            Buy {offer.minQuantity} for ₹{(selectedItemForOffer.totalPrice * offer.minQuantity * (1 - offer.discountPercentage / 100)).toFixed(2)} ({offer.discountPercentage}% off)
                           </p>
                         )}
-                        
+
                         <button
                           onClick={() => {
                             handleAddToCart(selectedItemForOffer);

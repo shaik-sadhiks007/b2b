@@ -65,13 +65,14 @@ const getCartItems = async (req, res) => {
         const carts = await Cart.find({ userId })
             .populate({
                 path: 'restaurantId',
-                select: 'serviceType' // Only select the serviceType field
+                select: 'serviceType category' // Only select the serviceType field
             });
 
         // Transform the response to include serviceType
         const transformedCarts = carts.map(cart => ({
             ...cart.toObject(),
-            serviceType: cart.restaurantId?.serviceType || null
+            serviceType: cart.restaurantId?.serviceType || null,
+            category: cart.restaurantId?.category || null
         }));
 
         res.json(transformedCarts);

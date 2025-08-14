@@ -96,7 +96,7 @@ const orderSchema = new mongoose.Schema({
     orderType: {
         type: String,
         required: true,
-        enum: ["pickup", "delivery"]
+        enum: ["pickup", "delivery","dineOut"]
     },
     deliveryTime: {
         type: Number,

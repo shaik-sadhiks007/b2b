@@ -9,32 +9,6 @@ const getActiveSettings = async () => {
             isActive: true 
         });
         
-        // if (!settings) {
-        //     // Return default settings if none exist
-        //     return {
-        //         gstSettings: {
-        //             defaultGstPercentage: 5,
-        //             categoryGstPercentages: {
-        //                 pharma: 12,
-        //                 grocery: 2,
-        //                 restaurant: 5,
-        //                 others: 5
-        //             }
-        //         },
-        //         deliverySettings: {
-        //             flatDeliveryCharge: 30,
-        //             deliveryThresholdAmount: 500,
-        //             freeDeliveryAboveThreshold: true,
-        //             deliveryRatePerKm: 10,
-        //             maxDeliveryDistance: 10,
-        //             additionalChargePerKm: 15,
-        //             deliveryRatePerKg: 5,
-        //             maxDeliveryWeight: 15,
-        //             additionalChargePerKg: 8,
-        //             minimumOrderAmount: 100
-        //         }
-        //     };
-        // }
         
         return settings;
     } catch (error) {
@@ -188,8 +162,13 @@ const calculateCheckoutCharges = async (req, res) => {
             chargeType = deliveryResult.chargeType;
         }
         
-        // Calculate GST
-        const gstResult = await calculateGST(orderAmount, category);
+        // Calculate GST (set to 0 for dineout orders)
+        let gstResult;
+        if (orderType === 'dineOut') {
+            gstResult = { gstAmount: 0, gstPercentage: 0, category: category };
+        } else {
+            gstResult = await calculateGST(orderAmount, category);
+        }
         
         // Calculate total
         const totalAmount = orderAmount + deliveryCharge + gstResult.gstAmount;

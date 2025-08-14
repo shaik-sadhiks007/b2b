@@ -6,6 +6,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,6 +15,8 @@ const ForgotPassword = () => {
       return;
     }
 
+    setLoading(true);
+    setError("");
     try {
       await sendPasswordResetEmail(email);
       setSuccessMessage("Password reset email sent! Please check your inbox.");
@@ -22,6 +25,8 @@ const ForgotPassword = () => {
       console.error('Password reset error:', error);
       setError(error.message || "Failed to send password reset email");
       setSuccessMessage("");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,9 +54,10 @@ const ForgotPassword = () => {
 
           <button
             type="submit"
-            className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            disabled={loading}
+            className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Send Reset Link
+            {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
 

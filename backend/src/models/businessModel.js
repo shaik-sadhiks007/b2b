@@ -15,14 +15,13 @@ const businessSchema = new mongoose.Schema({
     },
     serviceType: {
         type: String,
-        enum: ['delivery', 'pickup', 'both'],
+        enum: ['delivery', 'pickup', 'both', 'dineOut'],
         default: 'delivery'
     },
     ownerName: {
         type: String,
         required: true
     },
-
     sameAsOwnerPhone: {
         type: Boolean,
         default: false

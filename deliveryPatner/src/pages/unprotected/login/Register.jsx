@@ -17,6 +17,7 @@ const Register = () => {
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error, registerSuccess } = useSelector((state) => state.auth);
@@ -56,6 +57,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     setLocalError('');
     try {
       // Create user in Firebase
@@ -67,6 +69,8 @@ const Register = () => {
       setShowVerification(true);
     } catch (error) {
       setLocalError(error.message || 'Registration failed!');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -146,14 +150,14 @@ const Register = () => {
             <button
               onClick={handleVerifyEmail}
               disabled={verifying || loading}
-              className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {verifying || loading ? 'Verifying...' : 'Verify Email'}
             </button>
             <button
               onClick={handleResendVerification}
               disabled={resending}
-              className="w-full py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {resending ? 'Sending...' : 'Resend Verification Email'}
             </button>
@@ -230,10 +234,10 @@ const Register = () => {
           </div>
           <button
             type="submit"
-            className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            disabled={loading}
+            disabled={submitting || loading}
+            className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {submitting ? 'Registering...' : 'Register'}
           </button>
         </form>
         <div className="mt-6 flex items-center justify-between">

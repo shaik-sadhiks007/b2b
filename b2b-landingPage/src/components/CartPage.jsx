@@ -243,9 +243,9 @@ const CartPage = () => {
                                             {/* Desktop/tablet layout */}
                                             <div className="hidden sm:flex items-center gap-4">
                                                 <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden relative">
-                                                    {item.photos?.length > 0 && item.photos[0] != null && item.photos[0] != '' ? (
+                                                    {item.photos?.length > 0 && item.photos != null && item.photos != '' ? (
                                                         <img
-                                                            src={item.photos[0]}
+                                                            src={item.photos}
                                                             alt={item.name}
                                                             className="w-full h-full object-cover"
                                                         />

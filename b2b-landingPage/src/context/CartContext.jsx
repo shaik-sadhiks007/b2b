@@ -75,12 +75,15 @@ export const CartProvider = ({ children }) => {
                 newCarts[existingCartIndex] = { ...newCarts[existingCartIndex], items: items };
                 newCartCount = cartCount - oldItemCount + items.reduce((sum, item) => sum + item.quantity, 0);
             } else {
+
+                console.log(items, "category in context");
                 // Handle both empty cart and existing cart cases
                 if (carts.length === 0) {
                     newCarts = [{
                         restaurantId: {
                             _id: restaurantId,
-                            serviceType
+                            serviceType,
+                            category: items[0].category
                         },
                         restaurantName,
                         items: [...items],
@@ -92,7 +95,8 @@ export const CartProvider = ({ children }) => {
                     newCarts = [{
                         restaurantId: {
                             _id: restaurantId,
-                            serviceType
+                            serviceType,
+                            category: items[0].category
                         },
                         restaurantName,
                         items: [...items],
@@ -104,7 +108,8 @@ export const CartProvider = ({ children }) => {
                     newCarts[0] = {
                         ...newCarts[0],
                         items: [...newCarts[0].items, ...items],
-                        serviceType
+                        serviceType,
+                        category: items[0].category
                     };
                     newCartCount = cartCount + items.reduce((sum, item) => sum + item.quantity, 0);
                 }

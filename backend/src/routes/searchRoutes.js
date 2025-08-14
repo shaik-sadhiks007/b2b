@@ -35,7 +35,8 @@ router.get('/', async (req, res) => {
                             { name: { $regex: query, $options: 'i' } },
                             { description: { $regex: query, $options: 'i' } },
                             { category: { $regex: query, $options: 'i' } },
-                            { subcategory: { $regex: query, $options: 'i' } }
+                            { subcategory: { $regex: query, $options: 'i' } },
+                            { photos: { $regex: query, $options: 'i' } }
                         ]
                     }
                 },
@@ -75,12 +76,29 @@ router.get('/', async (req, res) => {
                 subcategory: item.subcategory,
                 inStock: item.inStock,
                 quantity: item.quantity,
+                expiryDate: item.expiryDate,
+                storageZone: item.storageZone,
+                requiresPrescription: item.requiresPrescription,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                loose: item.loose,
+                unit: item.unit,
+                unitValue: item.unitValue,
+                discountPercentage: item.discountPercentage,
+                currentPrice: item.currentPrice,
+                discountAmount: item.discountAmount,
+                isOnDiscount: item.isOnDiscount,
+                businessId: item.businessId,
                 restaurant: item.restaurant ? {
                     id: item.restaurant._id,
                     name: item.restaurant.restaurantName,
                     online: true, // Simplified for debugging
                     distance: null,
-                    serviceType: item.restaurant.serviceType
+                    serviceType: item.restaurant.serviceType,
+                    address: item.restaurant.address,
+                    operatingHours: item.restaurant.operatingHours,
+                    subdomain: item.restaurant.subdomain,
+                    category: item.restaurant.category
                 } : null
             }));
 
@@ -176,6 +194,7 @@ router.get('/', async (req, res) => {
                     name: restaurant.restaurantName,
                     category: restaurant.category,
                     serviceType: restaurant.serviceType,
+                    subdomain: restaurant.subdomain,
                     address: {
                         fullAddress: restaurant.address.fullAddress,
                         locality: restaurant.address.locality,

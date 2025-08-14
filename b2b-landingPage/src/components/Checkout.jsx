@@ -136,14 +136,30 @@ const Checkout = () => {
                 const addressesResponse = await axios.get(`${API_URL}/api/customer-address`);
 
                 const cartData = carts[0];
+                console.log(cartData,'cartdata');
 
-                // Set default order type based on service type
-                if (cartData?.serviceType === 'pickup') {
-                    setOrderType('pickup');
-                } else if (cartData?.serviceType === 'delivery') {
+                // Set default order type based on service type and restaurant category
+                const isRestaurantCategory = cartData?.restaurantId?.category === 'restaurant';
+                const serviceType = cartData?.restaurantId?.serviceType || cartData?.serviceType;
+                
+                if (serviceType === 'pickup') {
+                    // For restaurant category, show dineout instead of pickup
+                    if (isRestaurantCategory) {
+                        setOrderType('dineOut');
+                    } else {
+                        setOrderType('pickup');
+                    }
+                } else if (serviceType === 'delivery') {
                     setOrderType('delivery');
-                } else if (cartData?.serviceType === 'both') {
-                    setOrderType('delivery');
+                } else if (serviceType === 'both') {
+                    // For restaurant category, default to dineout for 'both'
+                    if (isRestaurantCategory) {
+                        setOrderType('dineOut');
+                    } else {
+                        setOrderType('delivery'); // Default to delivery for 'both' for non-restaurant
+                    }
+                } else if (serviceType === 'dineOut') {
+                    setOrderType('dineOut');
                 }
 
                 setAddresses(addressesResponse.data);
@@ -178,10 +194,13 @@ const Checkout = () => {
         setIsProcessing(true);
 
         try {
-            // Only validate address for delivery orders
-            if (orderType === 'delivery') {
+            // Validate address for delivery and dineout orders
+            if (orderType === 'delivery' || orderType === 'dineOut') {
                 if (!selectedAddress && !showAddressForm) {
-                    toast.error('Please select or add a delivery address to continue');
+                    const errorMessage = orderType === 'dineOut' 
+                        ? 'Please select or add customer details to continue'
+                        : 'Please select or add a delivery address to continue';
+                    toast.error(errorMessage);
                     return;
                 }
 
@@ -246,8 +265,8 @@ const Checkout = () => {
                 quantity: cartData.quantity
             };
 
-            // Only include address data for delivery orders
-            if (orderType === 'delivery') {
+            // Include address data for delivery and dineout orders
+            if (orderType === 'delivery' || orderType === 'dineOut') {
                 if (selectedAddress) {
                     orderData.addressId = selectedAddress._id;
                 } else if (showAddressForm) {
@@ -303,11 +322,11 @@ const Checkout = () => {
 
             // Get restaurant category from cart data
             const cartData = carts[0];
-            const category = cartData?.restaurant?.category || 'restaurant';
+            const category = cartData?.restaurantId?.category || 'restaurant';
 
             // Calculate distance if delivery and address is selected
             let distance = 0;
-            if (orderType === 'delivery' && selectedAddress && cartData?.restaurant?.location) {
+            if (orderType === 'delivery' && selectedAddress && cartData?.restaurantId?.location) {
                 // Simple distance calculation (in a real app, you'd use a proper geolocation service)
                 // For now, we'll use a placeholder distance
                 distance = 5; // 5km as default
@@ -361,17 +380,15 @@ const Checkout = () => {
     };
 
     const cartData = carts[0];
-    const isDeliveryAvailable = cartData?.serviceType === 'delivery' || cartData?.serviceType === 'both';
-    const isPickupAvailable = cartData?.serviceType === 'pickup' || cartData?.serviceType === 'both';
+    const serviceType = cartData?.restaurantId?.serviceType || cartData?.serviceType;
+    const isDeliveryAvailable = serviceType === 'delivery' || serviceType === 'both';
+    
+    // For restaurant category, show dineout instead of pickup
+    const isRestaurantCategory = cartData?.restaurantId?.category === 'restaurant';
+    const isPickupAvailable = !isRestaurantCategory && (serviceType === 'pickup' || serviceType === 'both');
+    const isDineOutAvailable = isRestaurantCategory && (serviceType === 'pickup' || serviceType === 'both') || serviceType === 'dineOut';
 
-    // If only one option is available, automatically select it
-    useEffect(() => {
-        if (isDeliveryAvailable && !isPickupAvailable) {
-            setOrderType('delivery');
-        } else if (!isDeliveryAvailable && isPickupAvailable) {
-            setOrderType('pickup');
-        }
-    }, [isDeliveryAvailable, isPickupAvailable]);
+    // Note: Order type is now set in initializeCheckout function based on restaurant category and service type
 
     // Recalculate charges when relevant data changes
     useEffect(() => {
@@ -458,9 +475,9 @@ const Checkout = () => {
                                 <div key={item.itemId} className="flex items-center justify-between py-4 border-b border-gray-100">
                                     <div className="flex items-center gap-4">
                                         <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden relative">
-                                            {item.photos?.length > 0 && item.photos[0] != null && item.photos[0] != '' ? (
+                                            {item.photos?.length > 0 && item.photos != null && item.photos != '' ? (
                                                 <img
-                                                    src={item.photos[0]}
+                                                    src={item.photos}
                                                     alt={item.name}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -500,10 +517,12 @@ const Checkout = () => {
                                         <span className="text-sm text-gray-600">Delivery Charge</span>
                                         <span className="text-sm text-gray-600">Calculating...</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">GST ({calculatedCharges?.gstPercentage || 5}%)</span>
-                                        <span className="text-sm text-gray-600">Calculating...</span>
-                                    </div>
+                                    {calculatedCharges?.gstAmount > 0 && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">GST ({calculatedCharges?.gstPercentage || 5}%)</span>
+                                            <span className="text-sm text-gray-600">Calculating...</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                         <span className="text-lg font-semibold text-gray-800">Total Amount</span>
                                         <span className="text-lg font-semibold text-gray-800">Calculating...</span>
@@ -521,10 +540,12 @@ const Checkout = () => {
                                             <span className="text-sm text-gray-600">₹{calculatedCharges.deliveryCharge.toFixed(2)}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">GST ({calculatedCharges.gstPercentage}%)</span>
-                                        <span className="text-sm text-gray-600">₹{calculatedCharges.gstAmount.toFixed(2)}</span>
-                                    </div>
+                                    {calculatedCharges.gstAmount > 0 && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">GST ({calculatedCharges.gstPercentage}%)</span>
+                                            <span className="text-sm text-gray-600">₹{calculatedCharges.gstAmount.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                         <span className="text-lg font-semibold text-gray-800">Total Amount</span>
                                         <span className="text-xl font-bold text-gray-900">₹{calculatedCharges.totalAmount.toFixed(2)}</span>
@@ -620,8 +641,10 @@ const Checkout = () => {
 
                     {/* Right Side - Address Management */}
                     <div className="space-y-6">
-                        <div className="bg-white rounded-xl shadow-lg p-6">
-                            <h2 className="text-xl font-semibold mb-4 text-gray-700">Delivery Address</h2>
+                                                 <div className="bg-white rounded-xl shadow-lg p-6">
+                             <h2 className="text-xl font-semibold mb-4 text-gray-700">
+                                 {orderType === 'dineOut' ? 'Customer Details' : 'Delivery Address'}
+                             </h2>
 
                             {!showAddressForm ? (
                                 <>
@@ -779,9 +802,9 @@ const Checkout = () => {
                         {/* Order Type Selection */}
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h2 className="text-xl font-semibold mb-4 text-gray-700">Order Type</h2>
-                            <div className="flex gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {isDeliveryAvailable && (
-                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
+                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200">
                                         <input
                                             type="radio"
                                             name="orderType"
@@ -797,7 +820,7 @@ const Checkout = () => {
                                     </label>
                                 )}
                                 {isPickupAvailable && (
-                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200 flex-1">
+                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200">
                                         <input
                                             type="radio"
                                             name="orderType"
@@ -809,6 +832,22 @@ const Checkout = () => {
                                         <div>
                                             <span className="font-medium text-gray-800">Pickup</span>
                                             <p className="text-sm text-gray-500">Pick up your order from the store</p>
+                                        </div>
+                                    </label>
+                                )}
+                                {isDineOutAvailable && (
+                                    <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors duration-200">
+                                        <input
+                                            type="radio"
+                                            name="orderType"
+                                            value="dineOut"
+                                            checked={orderType === 'dineOut'}
+                                            onChange={(e) => setOrderType(e.target.value)}
+                                            className="h-5 w-5 text-blue-600"
+                                        />
+                                        <div>
+                                            <span className="font-medium text-gray-800">Dine Out</span>
+                                            <p className="text-sm text-gray-500">Dine in at the restaurant</p>
                                         </div>
                                     </label>
                                 )}

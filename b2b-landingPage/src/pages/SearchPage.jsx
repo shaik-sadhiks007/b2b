@@ -144,6 +144,40 @@ function SearchPage() {
     };
   }, [searchQuery, searchType]);
 
+  // Reset selectedQuantities when new search results come in
+  useEffect(() => {
+    if (searchResults.length > 0) {
+      const newSelectedQuantities = {};
+      searchResults.forEach(item => {
+        if (item.loose) {
+          newSelectedQuantities[item.id] = 100; // Default to 100g/100ml
+        }
+      });
+      console.log('Setting default quantities for search results:', newSelectedQuantities);
+      setSelectedQuantities(prev => ({
+        ...prev,
+        ...newSelectedQuantities
+      }));
+    }
+  }, [searchResults.length]);
+
+  // Initialize selectedQuantities for popular items
+  useEffect(() => {
+    if (popularItems.length > 0) {
+      const newSelectedQuantities = {};
+      popularItems.forEach(item => {
+        if (item.loose) {
+          newSelectedQuantities[item.id] = 100; // Default to 100g/100ml
+        }
+      });
+      console.log('Setting default quantities for popular items:', newSelectedQuantities);
+      setSelectedQuantities(prev => ({
+        ...prev,
+        ...newSelectedQuantities
+      }));
+    }
+  }, [popularItems.length]);
+
   const getCartItem = (itemId) => {
     return carts[0]?.items?.find(item =>
       item.itemId === itemId || item.itemId === itemId.toString()
@@ -151,10 +185,15 @@ function SearchPage() {
   };
 
   const handleQuantitySelect = (itemId, quantity) => {
-    setSelectedQuantities(prev => ({
-      ...prev,
-      [itemId]: quantity
-    }));
+    console.log('Setting quantity for item', itemId, 'to', quantity);
+    setSelectedQuantities(prev => {
+      const newState = {
+        ...prev,
+        [itemId]: quantity
+      };
+      console.log('New selectedQuantities state:', newState);
+      return newState;
+    });
   };
 
   const handleAddToCart = async (item) => {
@@ -181,11 +220,12 @@ function SearchPage() {
     }
 
     const selectedQuantity = item.loose ? (selectedQuantities[item.id] || 100) : 1;
+    console.log('Adding to cart - item:', item.id, 'selectedQuantity:', selectedQuantity, 'selectedQuantities state:', selectedQuantities);
     const quantityLabel = item.loose
-      ? `${selectedQuantity} ${item.unit || 'g'}`
+      ? getQuantityLabel(selectedQuantity, item.unit)
       : `${item.unitValue || 1} ${item.unit || 'unit'}`;
     const calculatedPrice = item.loose
-      ? (item.price * selectedQuantity / 1000).toFixed(2)
+      ? calculatePrice(item.price, selectedQuantity, item.unit)
       : item.price;
 
     const items = [{
@@ -353,6 +393,7 @@ function SearchPage() {
     const cartItem = getCartItem(item.id);
     const isUpdating = updatingItems[item.id];
     const selectedQuantity = selectedQuantities[item.id] || 100;
+    console.log('Rendering actions for item:', item.id, 'selectedQuantity:', selectedQuantity, 'selectedQuantities state:', selectedQuantities);
     const displayPrice = item.loose ?
       (cartItem ? cartItem.totalPrice : calculatePrice(item.price, selectedQuantity, item.unit))
       : null;

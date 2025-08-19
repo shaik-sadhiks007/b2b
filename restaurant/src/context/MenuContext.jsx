@@ -13,7 +13,7 @@ export const MenuProvider = ({ children }) => {
     const [menuItems, setMenuItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
 
     const isAdminMode = user && user.role === 'admin' && ownerId;
     const businessId = isAdminMode ? ownerId : user?.businessId;
@@ -54,7 +54,7 @@ export const MenuProvider = ({ children }) => {
         const entries = Object.entries(grouped);
         const uncategorizedIndex = entries.findIndex(([category]) => category === 'uncategorized');
         let orderedEntries = entries;
-        
+
         if (uncategorizedIndex !== -1) {
             const [uncategorized] = entries.splice(uncategorizedIndex, 1);
             orderedEntries = [uncategorized, ...entries];
@@ -74,13 +74,13 @@ export const MenuProvider = ({ children }) => {
     const fetchMenu = useCallback(async () => {
         setLoading(true);
         try {
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/all` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/all`
                 : `${API_URL}/api/menu`;
-            
+
             const response = await axios.get(endpoint, isAdminMode ? { params: { ownerId } } : {});
             const processedItems = processMenuItems(response.data);
-            
+
             setMenuItems(isAdminMode ? groupMenuItems(processedItems) : processedItems);
             setError(null);
         } catch (error) {
@@ -91,8 +91,6 @@ export const MenuProvider = ({ children }) => {
         }
     }, [isAdminMode, ownerId]);
 
- 
-
 
 
     // Validate discount data
@@ -101,9 +99,9 @@ export const MenuProvider = ({ children }) => {
             const discount = parseFloat(itemData.discountPercentage);
             if (isNaN(discount)) throw new Error('Discount must be a number');
             if (discount < 0 || discount > 100) throw new Error('Discount must be between 0-100%');
-            
+
             const totalPrice = itemData.totalPrice || currentItem?.totalPrice;
-            if (totalPrice && (totalPrice * (1 - discount/100)) <= 0) {
+            if (totalPrice && (totalPrice * (1 - discount / 100)) <= 0) {
                 throw new Error('Discount would make price zero or negative');
             }
         }
@@ -113,22 +111,25 @@ export const MenuProvider = ({ children }) => {
     const addMenuItem = async (itemData) => {
         try {
             validateDiscount(itemData);
-            
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin` 
+
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin`
                 : `${API_URL}/api/menu`;
-            
+
             const response = await axios.post(endpoint, itemData, isAdminMode ? { params: { ownerId } } : {});
             const newItem = processMenuItems([response.data])[0];
 
             setMenuItems(prev => {
-                if (isAdminMode) {
-                    const flatItems = prev.flatMap(cat => 
+                if (isAdminMode || (Array.isArray(prev) && prev.length > 0 && prev[0].category)) {
+                    // Grouped structure
+                    const flatItems = prev.flatMap(cat =>
                         cat.subcategories.flatMap(sub => sub.items)
                     );
                     return groupMenuItems([...flatItems, newItem]);
+                } else {
+                    // Flat structure
+                    return [...prev, newItem];
                 }
-                return [...prev, newItem];
             });
 
             toast.success('Menu item added successfully');
@@ -143,31 +144,42 @@ export const MenuProvider = ({ children }) => {
     // Update existing menu item
     const updateMenuItem = async (itemId, itemData) => {
         try {
-            const currentItem = menuItems.flatMap(cat => 
-                cat.subcategories.flatMap(sub => sub.items)
-            ).find(item => item._id === itemId);
-            
+            // Find current item based on data structure
+            let currentItem;
+            if (isAdminMode || (Array.isArray(menuItems) && menuItems.length > 0 && menuItems[0].category)) {
+                // Grouped structure
+                currentItem = menuItems.flatMap(cat =>
+                    cat.subcategories.flatMap(sub => sub.items)
+                ).find(item => item._id === itemId);
+            } else {
+                // Flat structure
+                currentItem = menuItems.find(item => item._id === itemId);
+            }
+
             validateDiscount(itemData, currentItem);
 
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/${itemId}` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/${itemId}`
                 : `${API_URL}/api/menu/${itemId}`;
-            
+
             const response = await axios.put(endpoint, itemData, isAdminMode ? { params: { ownerId } } : {});
             const updatedItem = processMenuItems([response.data])[0];
 
             setMenuItems(prev => {
-                if (isAdminMode) {
-                    const flatItems = prev.flatMap(cat => 
-                        cat.subcategories.flatMap(sub => 
-                            sub.items.map(item => 
+                if (isAdminMode || (Array.isArray(prev) && prev.length > 0 && prev[0].category)) {
+                    // Grouped structure
+                    const flatItems = prev.flatMap(cat =>
+                        cat.subcategories.flatMap(sub =>
+                            sub.items.map(item =>
                                 item._id === itemId ? updatedItem : item
                             )
                         )
                     );
                     return groupMenuItems(flatItems);
+                } else {
+                    // Flat structure
+                    return prev.map(item => item._id === itemId ? updatedItem : item);
                 }
-                return prev.map(item => item._id === itemId ? updatedItem : item);
             });
 
             toast.success('Menu item updated successfully');
@@ -184,12 +196,12 @@ export const MenuProvider = ({ children }) => {
         try {
             validateDiscount({ discountPercentage });
 
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/${itemId}/discount` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/${itemId}/discount`
                 : `${API_URL}/api/menu/${itemId}/discount`;
-            
+
             const response = await axios.patch(
-                endpoint, 
+                endpoint,
                 { discountPercentage },
                 isAdminMode ? { params: { ownerId } } : {}
             );
@@ -197,17 +209,20 @@ export const MenuProvider = ({ children }) => {
             const updatedItem = processMenuItems([response.data])[0];
 
             setMenuItems(prev => {
-                if (isAdminMode) {
-                    const flatItems = prev.flatMap(cat => 
-                        cat.subcategories.flatMap(sub => 
-                            sub.items.map(item => 
+                if (isAdminMode || (Array.isArray(prev) && prev.length > 0 && prev[0].category)) {
+                    // Grouped structure
+                    const flatItems = prev.flatMap(cat =>
+                        cat.subcategories.flatMap(sub =>
+                            sub.items.map(item =>
                                 item._id === itemId ? updatedItem : item
                             )
                         )
                     );
                     return groupMenuItems(flatItems);
+                } else {
+                    // Flat structure
+                    return prev.map(item => item._id === itemId ? updatedItem : item);
                 }
-                return prev.map(item => item._id === itemId ? updatedItem : item);
             });
 
             toast.success('Discount applied successfully');
@@ -227,22 +242,25 @@ export const MenuProvider = ({ children }) => {
     // Delete menu item
     const deleteMenuItem = async (itemId) => {
         try {
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/${itemId}` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/${itemId}`
                 : `${API_URL}/api/menu/${itemId}`;
-            
+
             await axios.delete(endpoint, isAdminMode ? { params: { ownerId } } : {});
 
             setMenuItems(prev => {
-                if (isAdminMode) {
-                    const flatItems = prev.flatMap(cat => 
-                        cat.subcategories.flatMap(sub => 
+                if (isAdminMode || (Array.isArray(prev) && prev.length > 0 && prev[0].category)) {
+                    // Grouped structure
+                    const flatItems = prev.flatMap(cat =>
+                        cat.subcategories.flatMap(sub =>
                             sub.items.filter(item => item._id !== itemId)
                         )
                     );
                     return groupMenuItems(flatItems);
+                } else {
+                    // Flat structure
+                    return prev.filter(item => item._id !== itemId);
                 }
-                return prev.filter(item => item._id !== itemId);
             });
 
             toast.success('Menu item deleted successfully');
@@ -253,18 +271,18 @@ export const MenuProvider = ({ children }) => {
         }
     };
 
-   
+
 
     // Bulk operations for menu items
     const bulkAddMenuItems = async (items) => {
         try {
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/bulk` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/bulk`
                 : `${API_URL}/api/menu/bulk`;
-            
+
             const response = await axios.post(endpoint, { items }, isAdminMode ? { params: { ownerId } } : {});
             const newItems = processMenuItems(response.data);
-            
+
             setMenuItems(prev => {
                 if (isAdminMode) {
                     return groupMenuItems([
@@ -272,12 +290,12 @@ export const MenuProvider = ({ children }) => {
                         ...newItems
                     ]);
                 }
-                
+
                 const newMenuItems = [...prev];
-                
+
                 newItems.forEach(newItem => {
                     const categoryIndex = newMenuItems.findIndex(c => c.category === newItem.category);
-                    
+
                     if (categoryIndex === -1) {
                         newMenuItems.push({
                             category: newItem.category,
@@ -288,10 +306,10 @@ export const MenuProvider = ({ children }) => {
                         });
                         return;
                     }
-                    
+
                     const subcategoryIndex = newMenuItems[categoryIndex].subcategories
                         .findIndex(s => s.subcategory === newItem.subcategory);
-                    
+
                     if (subcategoryIndex === -1) {
                         newMenuItems[categoryIndex].subcategories.push({
                             subcategory: newItem.subcategory,
@@ -299,13 +317,13 @@ export const MenuProvider = ({ children }) => {
                         });
                         return;
                     }
-                    
+
                     newMenuItems[categoryIndex].subcategories[subcategoryIndex].items.push(newItem);
                 });
-                
+
                 return newMenuItems;
             });
-            
+
             toast.success(`${newItems.length} menu items added successfully`);
             return newItems;
         } catch (error) {
@@ -317,25 +335,25 @@ export const MenuProvider = ({ children }) => {
 
     const bulkDeleteMenuItems = async (itemIds) => {
         try {
-            const endpoint = isAdminMode 
-                ? `${API_URL}/api/menu/admin/bulk` 
+            const endpoint = isAdminMode
+                ? `${API_URL}/api/menu/admin/bulk`
                 : `${API_URL}/api/menu/bulk`;
-            
+
             const response = await axios.delete(endpoint, {
                 params: isAdminMode ? { ownerId } : undefined,
                 data: { itemIds }
             });
-            
+
             setMenuItems(prev => {
                 if (isAdminMode) {
-                    const remainingItems = prev.flatMap(cat => 
-                        cat.subcategories.flatMap(sub => 
+                    const remainingItems = prev.flatMap(cat =>
+                        cat.subcategories.flatMap(sub =>
                             sub.items.filter(item => !itemIds.includes(item._id))
                         )
                     );
                     return groupMenuItems(remainingItems);
                 }
-                
+
                 return prev
                     .map(category => ({
                         ...category,
@@ -343,12 +361,12 @@ export const MenuProvider = ({ children }) => {
                             .map(subcategory => ({
                                 ...subcategory,
                                 items: subcategory.items.filter(item => !itemIds.includes(item._id))
-                            }))  
+                            }))
                             .filter(subcategory => subcategory.items.length > 0)
-                    })) 
+                    }))
                     .filter(category => category.subcategories.length > 0);
             });
-            
+
             toast.success(`${response.data.deletedCount} menu items deleted successfully`);
             return response.data.deletedCount;
         } catch (error) {
@@ -373,10 +391,10 @@ export const MenuProvider = ({ children }) => {
 
     const renameSubcategory = async (category, oldSubcategory, newSubcategory) => {
         try {
-            await axios.put(`${API_URL}/api/menu/subcategory/rename`, { 
-                category, 
-                oldSubcategory, 
-                newSubcategory 
+            await axios.put(`${API_URL}/api/menu/subcategory/rename`, {
+                category,
+                oldSubcategory,
+                newSubcategory
             });
             await fetchMenu();
             toast.success('Subcategory renamed successfully');
@@ -391,10 +409,10 @@ export const MenuProvider = ({ children }) => {
         try {
             const categoryItems = menuItems.find(c => c.category === category);
             if (!categoryItems) return;
-            
+
             const itemIds = categoryItems.subcategories.flatMap(s => s.items.map(i => i._id));
             if (itemIds.length === 0) return;
-            
+
             await bulkDeleteMenuItems(itemIds);
             toast.success('Category deleted successfully');
         } catch (error) {
@@ -404,8 +422,8 @@ export const MenuProvider = ({ children }) => {
         }
     };
     useEffect(() => {
-  fetchMenu();
-}, [fetchMenu]);
+        fetchMenu();
+    }, [fetchMenu]);
 
     // Context value
     const value = useMemo(() => ({

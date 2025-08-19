@@ -4,8 +4,9 @@ const { uploadBase64ImageToS3, getS3ObjectUrl, deleteS3Object } = require('../ut
 // Helper to extract base64 from Data URL or return as-is
 function extractBase64(data) {
     if (typeof data !== 'string') return data;
-    const match = data.match(/^data:.*;base64,(.*)$/);
-    return match ? match[1] : data;
+    // Don't extract the base64 part, return the full data URL
+    // This is needed because the decodeBase64Image function in awsS3.js expects the full data URL
+    return data;
 }
 
 // Get all menu items for a business

@@ -499,96 +499,158 @@ function SearchPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {searchResults.map((result) => (
-          <div
-            key={result.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-          >
-            <div className="relative h-48 w-full">
-              {result.image ? (
-                <img 
-                  src={result.image} 
-                  alt={result.name} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                  {result.name}
+        {searchResults.map((result) => {
+          const isRestaurant = searchType === 'business' || result.type === 'restaurant';
+          if (isRestaurant) {
+            return (
+              <div
+                key={result.id}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => handleRestaurantClick(result)}
+              >
+                <div className="relative h-48 w-full">
+                  {result.image ? (
+                    <img
+                      src={result.image}
+                      alt={result.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                      {result.name}
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {result.serviceType === 'both' ? 'PICKUP & DELIVERY' : (result.serviceType || 'Unknown')}
+                    </span>
+                  </div>
+                  <div className="absolute top-2 right-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${result.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${result.online ? 'bg-green-500' : 'bg-gray-500'} mr-1`}></span>
+                      {result.online ? 'Open' : 'Closed'}
+                    </span>
+                  </div>
                 </div>
-              )}
-              {result.restaurant && (
-                <div className="absolute top-2 left-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {result.restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
-                  </span>
-                </div>
-              )}
-              {result.restaurant && (
-                <div className="absolute top-2 right-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${result.restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${result.restaurant.online ? 'bg-green-500' : 'bg-gray-500'} mr-1`}></span>
-                    {result.restaurant.online ? 'Open' : 'Closed'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="text-lg font-semibold mb-2">{result.name}</h3>
-              
-              {/* Restaurant Information */}
-              {result.restaurant && (
-                <div className="mb-3">
-                  <h4 
-                    className="font-medium text-gray-800 mb-1 cursor-pointer hover:text-blue-600"
-                    onClick={() => handleRestaurantClick(result.restaurant)}
-                  >
-                    {result.restaurant.name}
-                  </h4>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-1">{result.name}</h3>
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                     <MapPin size={14} />
                     <span>
-                      {result.restaurant.address ? 
-                        (result.restaurant.address.fullAddress || 
-                         `${result.restaurant.address.streetAddress || ''} ${result.restaurant.address.city || ''} ${result.restaurant.address.state || ''}`.trim() || 
-                         'Address not available') 
+                      {result.address
+                        ? (result.address.fullAddress ||
+                          `${result.address.streetAddress || ''} ${result.address.city || ''} ${result.address.state || ''}`.trim() ||
+                          'Address not available')
                         : 'Address not available'}
                     </span>
                   </div>
-                  {result.restaurant.operatingHours && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                  {result.operatingHours && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                       <Clock size={14} />
                       <span>
-                        {result.restaurant.operatingHours.openTime} - {result.restaurant.operatingHours.closeTime}
+                        {result.operatingHours.openTime} - {result.operatingHours.closeTime}
                       </span>
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Price Information */}
-              <div className="mb-3">
-                <p className="text-lg font-semibold text-green-600">
-                  ₹{result.price}
-                  {result.loose && (
-                    <span className="text-sm text-gray-500 ml-1">
-                      / {result.unit === 'liter' ? 'liter' : 'kg'}
-                    </span>
+                  {typeof result.distance === 'number' && (
+                    <div className="text-xs text-gray-500">
+                      {result.distance.toFixed(1)} km away
+                    </div>
                   )}
-                </p>
-                {result.loose && (
-                  <p className="text-sm text-gray-500">
-                    ({result.unitValue} {result.unit} available)
-                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // Product result
+          return (
+            <div
+              key={result.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="relative h-48 w-full">
+                {result.image ? (
+                  <img 
+                    src={result.image} 
+                    alt={result.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                    {result.name}
+                  </div>
+                )}
+                {result.restaurant && (
+                  <div className="absolute top-2 left-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {result.restaurant.serviceType === 'both' ? 'PICKUP & DELIVERY' : result.restaurant.serviceType}
+                    </span>
+                  </div>
+                )}
+                {result.restaurant && (
+                  <div className="absolute top-2 right-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${result.restaurant.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${result.restaurant.online ? 'bg-green-500' : 'bg-gray-500'} mr-1`}></span>
+                      {result.restaurant.online ? 'Open' : 'Closed'}
+                    </span>
+                  </div>
                 )}
               </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-2">{result.name}</h3>
+                
+                {result.restaurant && (
+                  <div className="mb-3">
+                    <h4 
+                      className="font-medium text-gray-800 mb-1 cursor-pointer hover:text-blue-600"
+                      onClick={() => handleRestaurantClick(result.restaurant)}
+                    >
+                      {result.restaurant.name}
+                    </h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <MapPin size={14} />
+                      <span>
+                        {result.restaurant.address ? 
+                          (result.restaurant.address.fullAddress || 
+                           `${result.restaurant.address.streetAddress || ''} ${result.restaurant.address.city || ''} ${result.restaurant.address.state || ''}`.trim() || 
+                           'Address not available') 
+                          : 'Address not available'}
+                      </span>
+                    </div>
+                    {result.restaurant.operatingHours && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock size={14} />
+                        <span>
+                          {result.restaurant.operatingHours.openTime} - {result.restaurant.operatingHours.closeTime}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Item Actions */}
-              <div className="mt-3">
-                {renderItemActions(result)}
+                <div className="mb-3">
+                  <p className="text-lg font-semibold text-green-600">
+                    ₹{result.price}
+                    {result.loose && (
+                      <span className="text-sm text-gray-500 ml-1">
+                        / {result.unit === 'liter' ? 'liter' : 'kg'}
+                      </span>
+                    )}
+                  </p>
+                  {result.loose && (
+                    <p className="text-sm text-gray-500">
+                      ({result.unitValue} {result.unit} available)
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  {renderItemActions(result)}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

@@ -8,7 +8,7 @@ import { MapPin } from 'lucide-react';
 
 const Footer = () => {
     const navigate = useNavigate();
-    const { isSubdomain, businessData, restaurantName, loading } = useSubdomain();
+    const { isSubdomain, businessData, name, loading } = useSubdomain();
 
     // Map component
     const MapComponent = ({ coordinates }) => {
@@ -51,7 +51,7 @@ const Footer = () => {
                     {/* Company/Business Info */}
                     <div>
                         <h3 className="text-xl font-bold mb-4">
-                            {isSubdomain ? (restaurantName || 'Restaurant') : 'B2B'}
+                            {isSubdomain ? (name || 'Restaurant') : 'B2B'}
                         </h3>
                         <p className="text-gray-400">
                             {isSubdomain
@@ -187,7 +187,7 @@ const Footer = () => {
 
                 {/* Bottom Bar */}
                 <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                    {/* <p>&copy; {new Date().getFullYear()} {isSubdomain ? (businessData?.restaurantName || 'Restaurant') : 'B2B'}. All rights reserved.</p> */}
+                    {/* <p>&copy; {new Date().getFullYear()} {isSubdomain ? (businessData?.name || 'Restaurant') : 'B2B'}. All rights reserved.</p> */}
 
                     <p>&copy; {new Date().getFullYear()} B2B. All rights reserved.</p>
 

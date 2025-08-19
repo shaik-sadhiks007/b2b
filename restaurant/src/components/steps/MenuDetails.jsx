@@ -5,7 +5,7 @@ import axios from 'axios';
 import { API_URL } from '../../api/api';
 
 const MenuDetails = ({
-    categories,
+    businessTypes,
     selectedCategory,
     setSelectedCategory,
     formData,
@@ -18,9 +18,9 @@ const MenuDetails = ({
     const [subdomainStatus, setSubdomainStatus] = useState(null); // null, 'available', 'taken', 'invalid'
 
     // Generate default subdomain from business name
-    const generateDefaultSubdomain = (businessName) => {
-        if (!businessName) return '';
-        return businessName
+    const generateDefaultSubdomain = (name) => {
+        if (!name) return '';
+        return name
             .toLowerCase()
             .replace(/[^a-z0-9\s]/g, '') // Remove special characters
             .replace(/\s+/g, '') // Remove spaces
@@ -29,14 +29,14 @@ const MenuDetails = ({
 
     // Set default subdomain when business name changes
     useEffect(() => {
-        if (!formData.subdomain && formData.restaurantName) {
-            const defaultSubdomain = generateDefaultSubdomain(formData.restaurantName);
+        if (!formData.subdomain && formData.name) {
+            const defaultSubdomain = generateDefaultSubdomain(formData.name);
             setFormData(prev => ({
                 ...prev,
                 subdomain: defaultSubdomain
             }));
         }
-    }, [formData.restaurantName, formData.subdomain, setFormData]);
+    }, [formData.name, formData.subdomain, setFormData]);
 
     // Check subdomain availability
     const checkSubdomainAvailability = async () => {
@@ -127,8 +127,9 @@ const MenuDetails = ({
         };
 
         const stepData = {
-            category: selectedCategory?.id || '',
+            name: selectedCategory?.id || '',
             subdomain: formData.subdomain || '',
+            serviceType: formData.serviceType || '',
             operatingHours: updatedOperatingHours
         };
 
@@ -221,25 +222,55 @@ const MenuDetails = ({
     return (
         <form onSubmit={handleSubmit} className="menu-details-form">
             <div className="mb-4">
-                <h5 className="mb-3">Select Business Category</h5>
+                <h5 className="mb-3">Select Business Type</h5>
                 <div className="category-grid">
-                    {categories.map((category) => (
+                    {businessTypes.map((businessType) => (
                         <div
-                            key={category.id}
-                            className={`category-card ${selectedCategory?.id === category.id ? 'active' : ''}`}
-                            onClick={() => handleCategorySelect(category)}
+                            key={businessType.id}
+                            className={`category-card ${selectedCategory?.id === businessType.id ? 'active' : ''}`}
+                            onClick={() => handleCategorySelect(businessType)}
                         >
-                            {selectedCategory?.id === category.id && (
+                            {selectedCategory?.id === businessType.id && (
                                 <div className="category-check">
                                     <FaCheck />
                                 </div>
                             )}
                             <div className="category-icon">
-                                {getCategoryIcon(category.name)}
+                                {getCategoryIcon(businessType.name)}
                             </div>
-                            <div className="category-name">{category.name}</div>
+                            <div className="category-name">{businessType.name}</div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            <div className="mb-4">
+                <h5 className="mb-3">Service Type</h5>
+                <div className="row">
+                    <div className="col-md-6">
+                        <label className="form-label">Service Type *</label>
+                        <select
+                            className="form-select"
+                            name="serviceType"
+                            value={formData.serviceType || ''}
+                            onChange={(e) => {
+                                const { name, value } = e.target;
+                                setFormData(prev => ({
+                                    ...prev,
+                                    [name]: value
+                                }));
+                            }}
+                            required
+                        >
+                            <option value="">Select Service Type</option>
+                            <option value="pickup">Pickup Only</option>
+                            <option value="delivery">Delivery Only</option>
+                            <option value="both">Both Pickup & Delivery</option>
+                        </select>
+                        <div className="form-text">
+                            Choose how customers can receive your products/services
+                        </div>
+                    </div>
                 </div>
             </div>
 

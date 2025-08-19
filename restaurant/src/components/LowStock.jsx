@@ -2,16 +2,17 @@ import React, { useContext, useState, useEffect } from 'react';
 import { MenuContext } from '../context/MenuContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import { 
-  RefreshCw, 
-  Filter, 
-  ChevronUp, 
-  ChevronDown, 
+import {
+  RefreshCw,
+  Filter,
+  ChevronUp,
+  ChevronDown,
   AlertTriangle,
   Printer,
   Download
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { AuthContext } from '../context/AuthContext';
 
 const LowStock = () => {
   const { getLowStockItems, lowStockThreshold, setLowStockThreshold } = useContext(MenuContext);
@@ -21,6 +22,7 @@ const LowStock = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'quantity', direction: 'asc' });
   const [threshold, setThreshold] = useState(lowStockThreshold);
   const [filterCategory, setFilterCategory] = useState('all');
+  const { user } = useContext(AuthContext)
 
   useEffect(() => {
     refreshLowStockItems();
@@ -64,7 +66,7 @@ const LowStock = () => {
   const categories = [...new Set(lowStockItems.map(item => item.category))];
 
   const filteredItems = sortedItems.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.subcategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,13 +120,25 @@ const LowStock = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row mt-6">
-      <Sidebar />
-      <div className="flex flex-col w-full">
-        <Navbar />
+    <div className="container-fluid px-0">
 
-        <div className="w-full px-4 md:px-6 py-4 flex justify-center">
-          <div className="w-full max-w-6xl">
+      {
+        (user && user?.role !== 'admin') && (
+          <div style={{ marginTop: "60px" }}>
+            <Navbar />
+            <Sidebar />
+          </div>
+        )
+      }
+
+      <div
+        className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+        style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+      >
+
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+
+          <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-4 md:p-6 pb-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
@@ -182,7 +196,7 @@ const LowStock = () => {
                     min="1"
                     placeholder="Set Threshold"
                     value={threshold}
-                    onChange={(e) => setThreshold(parseInt(e.target.value) )}
+                    onChange={(e) => setThreshold(parseInt(e.target.value))}
                     className="w-full rounded-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
@@ -269,6 +283,8 @@ const LowStock = () => {
           </div>
         </div>
       </div>
+
+
     </div>
   );
 };

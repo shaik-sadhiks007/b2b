@@ -315,10 +315,10 @@ const Business = () => {
                                             <div className="p-6">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="flex items-center gap-4">
-                                                        {business.profileImage ? (
+                                                        {business.profile ? (
                                                             <img 
-                                                                src={business.profileImage} 
-                                                                alt={business.restaurantName}
+                                                                src={business.profile} 
+                                                                alt={business.name}
                                                                 className="w-16 h-16 rounded-lg object-cover"
                                                             />
                                                         ) : (
@@ -328,10 +328,10 @@ const Business = () => {
                                                         )}
                                                         <div>
                                                             <h2 className="text-xl font-semibold text-gray-900">
-                                                                {business.restaurantName}
+                                                                {business.name}
                                                             </h2>
                                                             <p className="text-sm text-gray-500">
-                                                                Owner: {business.ownerName}
+                                                                Owner: {business.owner.username}
                                                             </p>
                                                             <p className="text-sm text-gray-500">
                                                                 Created: {formatDate(business.createdAt)}

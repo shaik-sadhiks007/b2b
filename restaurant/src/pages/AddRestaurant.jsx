@@ -51,7 +51,6 @@ const AddRestaurant = () => {
     const [restaurantImages, setRestaurantImages] = useState([]);
     const [foodImages, setFoodImages] = useState([]);
     const [deliveryMenuImages, setDeliveryMenuImages] = useState([]);
-    const [profileImage, setProfileImage] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
@@ -59,9 +58,9 @@ const AddRestaurant = () => {
     const { user } = useContext(AuthContext);
 
     const [formData, setFormData] = useState({
-        restaurantName: '',
+        name: '',
         ownerName: '',
-        serviceType: serviceType || '',
+        serviceType: serviceType || 'delivery',
         description : '',
         subdomain: '',
         address: {
@@ -83,7 +82,7 @@ const AddRestaurant = () => {
             lat: null,
             lng: null
         },
-        category: '',
+        type: '',
         operatingHours: {
             defaultOpenTime: '09:00',
             defaultCloseTime: '22:00',
@@ -98,10 +97,10 @@ const AddRestaurant = () => {
             }
         },
         images: {
-            profileImage: '',
-            panCardImage: '',
-            gstImage: '',
-            fssaiImage: ''
+            profile: '',
+            panCard: '',
+            gst: '',
+            fssai: ''
         },
         panDetails: {
             panNumber: '',
@@ -118,19 +117,24 @@ const AddRestaurant = () => {
         step4: false
     });
 
-    const categories = [
+    const businessTypes = [
         { id: 'restaurant', name: 'Restaurant', icon: 'bi-building' },
         { id: 'grocery', name: 'Grocery Store', icon: 'bi-cart4' },
         { id: 'pharmacy', name: 'Pharmacy', icon: 'bi-capsule' },
         // { id: 'bakery', name: 'Bakery', icon: 'bi-cup-hot' },
         // { id: 'fruits', name: 'Fruits & Vegetables', icon: 'bi-apple' },
         // { id: 'meat', name: 'Meat & Fish', icon: 'bi-egg-fried' },
-        // { id: 'dairy', name: 'Dairy Products', icon: 'bi-cup-straw' },
+        // { id: 'dairy', name: 'Dairy Products', icon: 'bi-capsule' },
         // { id: 'stationery', name: 'Stationery', icon: 'bi-pencil' }
     ];
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, type, checked } = {
+            ...e.target,
+            name: e.target.name === 'restaurantName' ? 'name' : 
+                  e.target.name === 'category' ? 'type' : e.target.name
+        };
+        
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
             setFormData(prev => ({
@@ -150,7 +154,7 @@ const AddRestaurant = () => {
     };
 
     const validateForm = () => {
-        const isValid = formData.restaurantName &&
+        const isValid = formData.name &&
             formData.ownerName &&
             formData.contact?.email &&
             formData.contact?.primaryPhone &&
@@ -400,7 +404,7 @@ const AddRestaurant = () => {
                         case 1:
                             // Step 1: Basic Information
                             formDataToSend.append('formData', JSON.stringify({
-                                restaurantName: formData.restaurantName,
+                                name: formData.name,
                                 serviceType: formData.serviceType.toLowerCase(),
                                 ownerName: formData.ownerName,
                                 description : formData.description,
@@ -439,11 +443,11 @@ const AddRestaurant = () => {
                             }));
 
                             // Handle profile image
-                            if (formData.images && formData.images.profileImage) {
-                                if (formData.images.profileImage instanceof File) {
-                                    formDataToSend.append('profileImage', formData.images.profileImage);
-                                } else if (typeof formData.images.profileImage === 'string' && formData.images.profileImage.startsWith('http')) {
-                                    formDataToSend.append('imageUrls.profileImage', formData.images.profileImage);
+                            if (formData.images && formData.images.profile) {
+                                if (formData.images.profile instanceof File) {
+                                    formDataToSend.append('profile', formData.images.profile);
+                                } else if (typeof formData.images.profile === 'string' && formData.images.profile.startsWith('http')) {
+                                    formDataToSend.append('imageUrls.profile', formData.images.profile);
                                 }
                             }
                             break;
@@ -460,8 +464,9 @@ const AddRestaurant = () => {
                             });
 
                             formDataToSend.append('formData', JSON.stringify({
-                                category: formData.category || '',
+                                type: formData.type || '',
                                 subdomain: formData.subdomain || '',
+                                serviceType: formData.serviceType || '',
                                 operatingHours: {
                                     defaultOpenTime: formData.operatingHours?.defaultOpenTime || '09:00',
                                     defaultCloseTime: formData.operatingHours?.defaultCloseTime || '22:00',
@@ -480,20 +485,20 @@ const AddRestaurant = () => {
                                     address: ''
                                 },
                                 images: {
-                                    profileImage: formData.images?.profileImage || '',
-                                    panCardImage: formData.images?.panCardImage || '',
-                                    gstImage: formData.images?.gstImage || '',
-                                    fssaiImage: formData.images?.fssaiImage || ''
+                                    profile: formData.images?.profile || '',
+                                    panCard: formData.images?.panCard || '',
+                                    gst: formData.images?.gst || '',
+                                    fssai: formData.images?.fssai || ''
                                 }
                             }));
                             // Handle profile image
-                            if (formData.images?.profileImage instanceof File) {
-                                formDataToSend.append('profileImage', formData.images.profileImage);
+                            if (formData.images?.profile instanceof File) {
+                                formDataToSend.append('profile', formData.images.profile);
                             }
 
                             // Handle PAN card image
-                            if (formData.images?.panCardImage instanceof File) {
-                                formDataToSend.append('panCardImage', formData.images.panCardImage);
+                            if (formData.images?.panCard instanceof File) {
+                                formDataToSend.append('panCard', formData.images.panCard);
                             }
                             break;
 
@@ -546,7 +551,7 @@ const AddRestaurant = () => {
 
         setFormData(prev => ({
             ...prev,
-            category: category.id
+            type: category.id
         }));
         setCategorySearch('');
         setIsMenuOpen(false);
@@ -557,7 +562,7 @@ const AddRestaurant = () => {
     const validateStep = (step) => {
         switch (step) {
             case 1:
-                return formData.restaurantName &&
+                return formData.name &&
                     formData.ownerName &&
                     formData.contact?.email &&
                     formData.contact?.primaryPhone &&
@@ -568,8 +573,8 @@ const AddRestaurant = () => {
                     formData.location?.lat &&
                     formData.location?.lng;
             case 2:
-                // Check if a category is selected, subdomain is provided, and at least one day is open
-                return formData.category &&
+                // Check if a businessType is selected, subdomain is provided, and at least one day is open
+                return formData.type &&
                     formData.subdomain &&
                     formData.operatingHours?.timeSlots
             case 3:
@@ -632,8 +637,8 @@ const AddRestaurant = () => {
                     <MenuDetails
                         formData={formData}
                         setFormData={setFormData}
-                        categories={categories}
-                        selectedCategory={categories.find(c => c.id === formData.category) || ''}
+                        businessTypes={businessTypes}
+                        selectedCategory={businessTypes.find(c => c.id === formData.type) || ''}
                         setSelectedCategory={handleCategorySelect}
                         operatingHours={operatingHours}
                         setOperatingHours={(newOperatingHours) => {
@@ -650,8 +655,9 @@ const AddRestaurant = () => {
                                 setFormData(prev => {
                                     const updatedData = {
                                         ...prev,
-                                        category: stepData.category,
+                                        type: stepData.type,
                                         subdomain: stepData.subdomain,
+                                        serviceType: stepData.serviceType || prev.serviceType,
                                         operatingHours: {
                                             ...stepData.operatingHours,
                                             defaultOpenTime: stepData.operatingHours.defaultOpenTime || prev.operatingHours.defaultOpenTime,
@@ -684,8 +690,8 @@ const AddRestaurant = () => {
                         formData={formData}
                         setFormData={setFormData}
                         setPanDetails={(details) => setFormData(prev => ({ ...prev, panDetails: details }))}
-                        panCardImage={formData.images?.panCardImage}
-                        setPanCardImage={(image) => setFormData(prev => ({ ...prev, images: { ...prev.images, panCardImage: image } }))}
+                        panCard={formData.images?.panCard}
+                        setPanCard={(image) => setFormData(prev => ({ ...prev, images: { ...prev.images, panCard: image } }))}
                         fileInputRef={fileInputRef}
                         handleImageUpload={handleImageUpload}
                         isFormValid={validateStep(3)}
@@ -713,7 +719,7 @@ const AddRestaurant = () => {
 
     // Update validation state for step 1
     useEffect(() => {
-        const isStep1Valid = formData.restaurantName &&
+        const isStep1Valid = formData.name &&
             formData.ownerName &&
             formData.contact?.email &&
             formData.contact?.primaryPhone &&
@@ -724,16 +730,16 @@ const AddRestaurant = () => {
             formData.location?.lat &&
             formData.location?.lng;
         setStepValidation(prev => ({ ...prev, step1: isStep1Valid }));
-    }, [formData.restaurantName, formData.ownerName, formData.contact, formData.address, formData.location]);
+    }, [formData.name, formData.ownerName, formData.contact, formData.address, formData.location]);
 
     // Update validation state for step 2
     useEffect(() => {
-        const isStep2Valid = formData.category &&
+        const isStep2Valid = formData.type &&
             formData.subdomain &&
             formData.operatingHours?.timeSlots &&
             Object.values(formData.operatingHours.timeSlots || {}).some(day => day.isOpen);
         setStepValidation(prev => ({ ...prev, step2: isStep2Valid }));
-    }, [formData.category, formData.subdomain, formData.operatingHours]);
+    }, [formData.type, formData.subdomain, formData.operatingHours]);
 
     // Update validation state for step 3
     useEffect(() => {

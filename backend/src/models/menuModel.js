@@ -45,9 +45,9 @@ const menuItemSchema = new mongoose.Schema(
       min: 0,
       max: 100,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           // Ensure discount doesn't make price zero
-          return v === 0 || this.totalPrice * (1 - v/100) > 0;
+          return v === 0 || this.totalPrice * (1 - v / 100) > 0;
         },
         message: "Discount would make the price zero or negative"
       }
@@ -84,7 +84,7 @@ const menuItemSchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
       required: false,
-          },
+    },
     unitValue: {
       type: Number,
       required: true,
@@ -136,22 +136,22 @@ const menuItemSchema = new mongoose.Schema(
 );
 
 // Virtual for current price (after discount)
-menuItemSchema.virtual('currentPrice').get(function() {
+menuItemSchema.virtual('currentPrice').get(function () {
   return parseFloat((this.totalPrice * (1 - this.discountPercentage / 100)).toFixed(2));
 });
 
 // Virtual for discount amount (money saved)
-menuItemSchema.virtual('discountAmount').get(function() {
+menuItemSchema.virtual('discountAmount').get(function () {
   return parseFloat((this.totalPrice * (this.discountPercentage / 100)).toFixed(2));
 });
 
 // Virtual for checking if item is on discount
-menuItemSchema.virtual('isOnDiscount').get(function() {
+menuItemSchema.virtual('isOnDiscount').get(function () {
   return this.discountPercentage > 0;
 });
 
 // Method to apply a discount (by percentage)
-menuItemSchema.methods.applyDiscount = function(percentage) {
+menuItemSchema.methods.applyDiscount = function (percentage) {
   if (percentage < 0 || percentage > 100) {
     throw new Error('Discount percentage must be between 0 and 100');
   }
@@ -160,7 +160,7 @@ menuItemSchema.methods.applyDiscount = function(percentage) {
 };
 
 // Method to set a specific discounted price
-menuItemSchema.methods.setDiscountedPrice = function(discountedPrice) {
+menuItemSchema.methods.setDiscountedPrice = function (discountedPrice) {
   if (discountedPrice >= this.totalPrice) {
     this.discountPercentage = 0;
   } else if (discountedPrice <= 0) {
@@ -173,7 +173,7 @@ menuItemSchema.methods.setDiscountedPrice = function(discountedPrice) {
 };
 
 // Method to remove discount
-menuItemSchema.methods.removeDiscount = function() {
+menuItemSchema.methods.removeDiscount = function () {
   this.discountPercentage = 0;
   return this;
 };

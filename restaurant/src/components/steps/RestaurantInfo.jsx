@@ -105,7 +105,7 @@ const RestaurantInfo = ({
         
         // Validate required fields
         const errors = [];
-        if (!formData.restaurantName) errors.push('Business Name is required');
+        if (!formData.name) errors.push('Business Name is required');
         if (!formData.ownerName) errors.push('Owner Name is required');
         
         // Description validation
@@ -139,7 +139,7 @@ const RestaurantInfo = ({
 
         // Create the step data with the exact structure needed
         const stepData = {
-            restaurantName: formData.restaurantName,
+            name: formData.name,
             serviceType: formData.serviceType,
             ownerName: formData.ownerName,
             description: formData.description,
@@ -199,8 +199,8 @@ const RestaurantInfo = ({
                 <input
                     type="text"
                     className="form-control"
-                    name="restaurantName"
-                    value={formData.restaurantName}
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
                 />
             </div>

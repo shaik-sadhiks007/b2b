@@ -91,14 +91,14 @@ router.get('/', async (req, res) => {
                 businessId: item.businessId,
                 restaurant: item.restaurant ? {
                     id: item.restaurant._id,
-                    name: item.restaurant.restaurantName,
+                    name: item.restaurant.name,
                     online: true, // Simplified for debugging
                     distance: null,
                     serviceType: item.restaurant.serviceType,
                     address: item.restaurant.address,
                     operatingHours: item.restaurant.operatingHours,
                     subdomain: item.restaurant.subdomain,
-                    category: item.restaurant.category
+                    type: item.restaurant.type
                 } : null
             }));
 
@@ -113,21 +113,21 @@ router.get('/', async (req, res) => {
                             {
                                 $or: [
                                     // Exact match
-                                    { restaurantName: { $regex: query, $options: 'i' } },
-                                    { category: { $regex: query, $options: 'i' } },
+                                    { name: { $regex: query, $options: 'i' } },
+                                    { type: { $regex: query, $options: 'i' } },
                                     { 'address.locality': { $regex: query, $options: 'i' } },
                                     { 'address.city': { $regex: query, $options: 'i' } },
                                     { 'address.landmark': { $regex: query, $options: 'i' } },
                                     
                                     // Word boundary match
-                                    { restaurantName: { $regex: `\\b${query}\\b`, $options: 'i' } },
-                                    { category: { $regex: `\\b${query}\\b`, $options: 'i' } },
+                                    { name: { $regex: `\\b${query}\\b`, $options: 'i' } },
+                                    { type: { $regex: `\\b${query}\\b`, $options: 'i' } },
                                     { 'address.locality': { $regex: `\\b${query}\\b`, $options: 'i' } },
                                     { 'address.city': { $regex: `\\b${query}\\b`, $options: 'i' } },
                                     
                                     // Contains match
-                                    { restaurantName: { $regex: query.split('').join('.*'), $options: 'i' } },
-                                    { category: { $regex: query.split('').join('.*'), $options: 'i' } },
+                                    { name: { $regex: query.split('').join('.*'), $options: 'i' } },
+                                    { type: { $regex: query.split('').join('.*'), $options: 'i' } },
                                     { 'address.locality': { $regex: query.split('').join('.*'), $options: 'i' } },
                                     { 'address.city': { $regex: query.split('').join('.*'), $options: 'i' } }
                                 ]
@@ -140,18 +140,18 @@ router.get('/', async (req, res) => {
                         matchScore: {
                             $add: [
                                 // Exact match gets highest score
-                                { $cond: [{ $regexMatch: { input: '$restaurantName', regex: new RegExp(`^${query}$`, 'i') } }, 10, 0] },
-                                { $cond: [{ $regexMatch: { input: '$category', regex: new RegExp(`^${query}$`, 'i') } }, 8, 0] },
+                                { $cond: [{ $regexMatch: { input: '$name', regex: new RegExp(`^${query}$`, 'i') } }, 10, 0] },
+                                { $cond: [{ $regexMatch: { input: '$type', regex: new RegExp(`^${query}$`, 'i') } }, 8, 0] },
                                 { $cond: [{ $regexMatch: { input: '$address.locality', regex: new RegExp(`^${query}$`, 'i') } }, 7, 0] },
                                 
                                 // Word boundary match gets medium score
-                                { $cond: [{ $regexMatch: { input: '$restaurantName', regex: new RegExp(`\\b${query}\\b`, 'i') } }, 6, 0] },
-                                { $cond: [{ $regexMatch: { input: '$category', regex: new RegExp(`\\b${query}\\b`, 'i') } }, 4, 0] },
+                                { $cond: [{ $regexMatch: { input: '$name', regex: new RegExp(`\\b${query}\\b`, 'i') } }, 6, 0] },
+                                { $cond: [{ $regexMatch: { input: '$type', regex: new RegExp(`\\b${query}\\b`, 'i') } }, 4, 0] },
                                 { $cond: [{ $regexMatch: { input: '$address.locality', regex: new RegExp(`\\b${query}\\b`, 'i') } }, 3, 0] },
                                 
                                 // Contains match gets lower score
-                                { $cond: [{ $regexMatch: { input: '$restaurantName', regex: new RegExp(query, 'i') } }, 2, 0] },
-                                { $cond: [{ $regexMatch: { input: '$category', regex: new RegExp(query, 'i') } }, 1, 0] }
+                                { $cond: [{ $regexMatch: { input: '$name', regex: new RegExp(query, 'i') } }, 2, 0] },
+                                { $cond: [{ $regexMatch: { input: '$type', regex: new RegExp(query, 'i') } }, 1, 0] }
                             ]
                         }
                     }
@@ -191,8 +191,8 @@ router.get('/', async (req, res) => {
                 return {
                     type: 'business',
                     id: restaurant._id,
-                    name: restaurant.restaurantName,
-                    category: restaurant.category,
+                    name: restaurant.name,
+                    type: restaurant.type,
                     serviceType: restaurant.serviceType,
                     subdomain: restaurant.subdomain,
                     address: {
@@ -210,7 +210,7 @@ router.get('/', async (req, res) => {
                         openTime: restaurant.operatingHours.defaultOpenTime,
                         closeTime: restaurant.operatingHours.defaultCloseTime
                     },
-                    image: restaurant.images.profileImage,
+                    image: restaurant.images.profile,
                     status: restaurant.status,
                     online: isOnline,
                     distance: distance !== null ? parseFloat(distance.toFixed(2)) : null

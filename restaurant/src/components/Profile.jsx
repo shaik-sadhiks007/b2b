@@ -42,7 +42,7 @@ const Profile = () => {
     const [editingTimes, setEditingTimes] = useState({ openTime: '', closeTime: '' });
 
     const [formData, setFormData] = useState({
-        restaurantName: '',
+        name: '',
         ownerName: '',
         serviceType: '',
         description: '',
@@ -319,11 +319,11 @@ const Profile = () => {
             const response = await axios.get(`${API_URL}/api/restaurants/profile`);
             setRestaurant(response.data);
             // Set image preview if profile image exists
-            if (response.data.images?.profileImage) {
-                setImagePreview(response.data.images.profileImage);
+            if (response.data.images?.profile) {
+                setImagePreview(response.data.images.profile);
             }
             setFormData({
-                restaurantName: response.data.restaurantName || '',
+                name: response.data.name || response.data.restaurantName || '',
                 ownerName: response.data.ownerName || '',
                 serviceType: response.data.serviceType || '',
                 description: response.data.description || '',
@@ -400,9 +400,9 @@ const Profile = () => {
                     changedData[key] = formData[key];
                 }
             });
-            if (imagePreview && imagePreview !== restaurant.images?.profileImage) {
+            if (imagePreview && imagePreview !== restaurant.images?.profile) {
                 changedData.images = {
-                    profileImage: imagePreview
+                    profile: imagePreview
                 };
             }
             if (Object.keys(changedData).length === 0) {
@@ -413,8 +413,8 @@ const Profile = () => {
             const response = await axios.patch(`${API_URL}/api/restaurants/profile`, changedData);
             setRestaurant(prev => ({ ...prev, ...response.data }));
             setFormData(prev => ({ ...prev, ...response.data }));
-            if (response.data.images?.profileImage) {
-                setImagePreview(response.data.images.profileImage);
+            if (response.data.images?.profile) {
+                setImagePreview(response.data.images.profile);
             }
             setIsEditing(false);
             toast.success('Profile updated successfully');
@@ -473,8 +473,8 @@ const Profile = () => {
                                         className="btn btn-primary px-4"
                                         onClick={() => {
                                             setIsEditing(!isEditing);
-                                            if (!imagePreview && restaurant?.images?.profileImage) {
-                                                setImagePreview(restaurant.images.profileImage);
+                                            if (!imagePreview && restaurant?.images?.profile) {
+                                                setImagePreview(restaurant.images.profile);
                                             }
                                         }}
                                     >
@@ -550,8 +550,8 @@ const Profile = () => {
                                                         <input
                                                             type="text"
                                                             className="form-control"
-                                                            name="restaurantName"
-                                                            value={formData.restaurantName}
+                                                            name="name"
+                                                            value={formData.name}
                                                             onChange={handleInputChange}
                                                             required
                                                         />
@@ -1008,9 +1008,9 @@ const Profile = () => {
                                             <div className="row">
                                                 <div className="col-md-3">
                                                     <div className="position-relative" style={{ width: '200px', height: '200px' }}>
-                                                        {restaurant?.images?.profileImage ? (
+                                                        {restaurant?.images?.profile ? (
                                                             <img
-                                                                src={restaurant.images.profileImage}
+                                                                src={restaurant.images.profile}
                                                                 alt="Restaurant"
                                                                 className="rounded-circle"
                                                                 style={{
@@ -1041,7 +1041,7 @@ const Profile = () => {
                                                     <div className="row g-3">
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Business Name</h6>
-                                                            <p className="mb-0">{restaurant?.restaurantName}</p>
+                                                            <p className="mb-0">{restaurant?.name || restaurant?.restaurantName}</p>
                                                         </div>
                                                         <div className="col-md-6">
                                                             <h6 className="text-muted mb-2 fw-medium">Owner Name</h6>

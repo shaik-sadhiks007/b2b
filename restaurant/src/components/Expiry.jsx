@@ -2,17 +2,18 @@ import React, { useContext, useState, useEffect } from 'react';
 import { MenuContext } from '../context/MenuContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import { 
-  RefreshCw, 
-  Filter, 
-  ChevronUp, 
-  ChevronDown, 
+import {
+  RefreshCw,
+  Filter,
+  ChevronUp,
+  ChevronDown,
   AlertTriangle,
   Printer,
   Download,
   Calendar
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { AuthContext } from '../context/AuthContext';
 
 const Expiry = () => {
   const { menuItems, filterItemsByExpiry, expiryFilter, setExpiryFilter } = useContext(MenuContext);
@@ -22,6 +23,7 @@ const Expiry = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'monthsToExpiry', direction: 'asc' });
   const [monthsFilter, setMonthsFilter] = useState(expiryFilter || 3); // Default to 3 months
   const [filterCategory, setFilterCategory] = useState('all');
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     refreshExpiringItems();
@@ -31,8 +33,8 @@ const Expiry = () => {
     setLoading(true);
     try {
       // Flatten the menu items structure
-      const allItems = menuItems.flatMap(category => 
-        category.subcategories.flatMap(subcategory => 
+      const allItems = menuItems.flatMap(category =>
+        category.subcategories.flatMap(subcategory =>
           subcategory.items.map(item => ({
             ...item,
             category: category.category,
@@ -40,18 +42,18 @@ const Expiry = () => {
           }))
         )
       );
-      
+
       // Convert months filter to days for the filter function
       const daysFilter = monthsFilter * 30; // Approximate 1 month = 30 days
       const filteredItems = filterItemsByExpiry(allItems, daysFilter);
-      
+
       // Calculate months to expiry for each item
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const itemsWithMonths = filteredItems.map(item => {
         let expiryDate;
-        
+
         // Handle different date formats
         if (item.expiryDate?.toDate) {
           expiryDate = item.expiryDate.toDate();
@@ -60,12 +62,12 @@ const Expiry = () => {
         } else if (item.expiryDate instanceof Date) {
           expiryDate = new Date(item.expiryDate.getTime());
         }
-        
+
         expiryDate.setHours(0, 0, 0, 0);
         const diffTime = expiryDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const diffMonths = Math.floor(diffDays / 30); // Approximate months
-        
+
         return {
           ...item,
           daysToExpiry: diffDays,
@@ -73,7 +75,7 @@ const Expiry = () => {
           formattedExpiry: expiryDate.toLocaleDateString()
         };
       });
-      
+
       setExpiringItems(itemsWithMonths);
       setLoading(false);
     } catch (error) {
@@ -109,7 +111,7 @@ const Expiry = () => {
   const categories = [...new Set(expiringItems.map(item => item.category))];
 
   const filteredItems = sortedItems.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.subcategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,13 +166,25 @@ const Expiry = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row mt-6">
-      <Sidebar />
-      <div className="flex flex-col w-full">
-        <Navbar />
+    <div className="container-fluid px-0">
+      {
+        (user && user?.role !== 'admin') && (
+          <div style={{ marginTop: "60px" }}>
+            <Navbar />
+            <Sidebar />
+          </div>
+        )
+      }
 
-        <div className="w-full px-4 md:px-6 py-4 flex justify-center">
-          <div className="w-full max-w-6xl">
+
+      <div
+        className={`${user?.role === 'admin' ? 'col-lg-12' : 'col-lg-10'} ms-auto`}
+        style={{ marginTop: user?.role === 'admin' ? '0px' : '60px' }}
+      >
+
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+
+          <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-4 md:p-6 pb-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
@@ -332,6 +346,7 @@ const Expiry = () => {
                     </tbody>
                   </table>
                 </div>
+
               </div>
             )}
           </div>

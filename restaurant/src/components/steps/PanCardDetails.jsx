@@ -4,16 +4,18 @@ import { toast } from 'react-toastify';
 const PanCardDetails = ({
     panDetails,
     setPanDetails,
+    panCard,
+    setPanCard,
     formData,
     setFormData,
     isFormValid,
     onNext,
 }) => {
     const [previewImages, setPreviewImages] = useState({
-        profileImage: null,
-        panCardImage: null,
-        gstImage: null,
-        fssaiImage: null
+        profile: null,
+        panCard: null,
+        gst: null,
+        fssai: null
     });
 
     // Initialize preview images from formData if they exist
@@ -21,10 +23,10 @@ const PanCardDetails = ({
         if (formData?.images) {
             setPreviewImages(prev => ({
                 ...prev,
-                profileImage: formData.images.profileImage || null,
-                panCardImage: formData.images.panCardImage || null,
-                gstImage: formData.images.gstImage || null,
-                fssaiImage: formData.images.fssaiImage || null
+                profile: formData.images.profile || null,
+                panCard: formData.images.panCard || null,
+                gst: formData.images.gst || null,
+                fssai: formData.images.fssai || null
             }));
         }
     }, [formData]);
@@ -72,7 +74,7 @@ const PanCardDetails = ({
         e.preventDefault();
         
         // Validate profile image
-        if (!previewImages.profileImage) {
+        if (!previewImages.profile) {
             toast.error('Profile Image is required');
             return;
         }
@@ -124,10 +126,10 @@ const PanCardDetails = ({
                 address: panDetails.address.trim(),
             },
             images: {
-                profileImage: previewImages.profileImage,
-                panCardImage: previewImages.panCardImage,
-                gstImage: previewImages.gstImage,
-                fssaiImage: previewImages.fssaiImage
+                profile: previewImages.profile,
+                panCard: previewImages.panCard,
+                gst: previewImages.gst,
+                fssai: previewImages.fssai
             }
         };
 
@@ -209,10 +211,10 @@ const PanCardDetails = ({
                     
                     {/* Image Uploads */}
                     <div className="row">
-                        {renderImageUpload('profileImage', 'Profile Image Of Business', true)}
-                        {renderImageUpload('panCardImage', 'PAN Card Image')}
-                        {renderImageUpload('gstImage', 'GST Certificate')}
-                        {renderImageUpload('fssaiImage', 'FSSAI Certificate')}
+                        {renderImageUpload('profile', 'Profile Image Of Business', true)}
+                        {renderImageUpload('panCard', 'PAN Card Image')}
+                        {renderImageUpload('gst', 'GST Certificate')}
+                        {renderImageUpload('fssai', 'FSSAI Certificate')}
                     </div>
 
                     {/* PAN Card Details */}

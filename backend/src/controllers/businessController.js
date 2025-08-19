@@ -9,8 +9,8 @@ const createBusiness = async (req, res) => {
     try {
         const formDataObj = JSON.parse(req.body.formData || '{}');
         const {
-            restaurantName,
-            serviceType,
+            name,
+            serviceType = 'delivery',
             ownerName,
             contact,
             address,
@@ -19,17 +19,18 @@ const createBusiness = async (req, res) => {
             whatsappUpdates,
             operatingHours,
             description,
-            subdomain
+            subdomain,
+            panDetails
         } = formDataObj;
-        let profileImageUrl = null;
+        let profileUrl = null;
         if (req.file) {
             // Assume req.file.buffer contains the image buffer
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
-            profileImageUrl = getS3ObjectUrl(s3Key);
-        } else if (formDataObj.profileImage && formDataObj.profileImage.startsWith('data:image')) {
-            const s3Key = await uploadBase64ImageToS3(formDataObj.profileImage, 'business');
-            profileImageUrl = getS3ObjectUrl(s3Key);
+            profileUrl = getS3ObjectUrl(s3Key);
+        } else if (formDataObj.profile && formDataObj.profile.startsWith('data:image')) {
+            const s3Key = await uploadBase64ImageToS3(formDataObj.profile, 'business');
+            profileUrl = getS3ObjectUrl(s3Key);
         }
         // Check if subdomain is already taken
         if (subdomain) {
@@ -43,8 +44,8 @@ const createBusiness = async (req, res) => {
 
         const business = new Business({
             owner: req.user.id,
-            restaurantName,
-            serviceType,
+            name,
+            serviceType: serviceType.toLowerCase(),
             ownerName,
             contact: {
                 primaryPhone: contact?.primaryPhone || '',
@@ -58,7 +59,7 @@ const createBusiness = async (req, res) => {
             whatsappUpdates,
             description,
             subdomain: subdomain || undefined,
-            images: { profileImage: profileImageUrl },
+            images: { profile: profileUrl },
             operatingHours: {
                 defaultOpenTime: operatingHours?.defaultOpenTime || '',
                 defaultCloseTime: operatingHours?.defaultCloseTime || '',
@@ -122,31 +123,31 @@ const updateBusinessStep = async (req, res) => {
                 updateData.images = {};
             }
             // Profile image
-            if (req.files?.profileImage?.[0]) {
+            if (req.files?.profile?.[0]) {
                 try {
-                    const file = req.files.profileImage[0];
+                    const file = req.files.profile[0];
                     const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
                     const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
-                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                    updateData.images.profile = getS3ObjectUrl(s3Key);
                 } catch (error) {
-                    console.error('[businessController.js][updateBusinessStep-profileImage]', error);
-                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
+                    console.error('[businessController.js][updateBusinessStep-profile]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profile] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
-            } else if (formDataObj.images?.profileImage && formDataObj.images.profileImage.startsWith('data:image')) {
+            } else if (formDataObj.images?.profile && formDataObj.images.profile.startsWith('data:image')) {
                 try {
-                    const s3Key = await uploadBase64ImageToS3(formDataObj.images.profileImage, 'business');
-                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                    const s3Key = await uploadBase64ImageToS3(formDataObj.images.profile, 'business');
+                    updateData.images.profile = getS3ObjectUrl(s3Key);
                 } catch (error) {
-                    console.error('[businessController.js][updateBusinessStep-profileImage]', error);
-                    console.trace('[businessController.js][updateBusinessStep-profileImage] Stack trace:');
+                    console.error('[businessController.js][updateBusinessStep-profile]', error);
+                    console.trace('[businessController.js][updateBusinessStep-profile] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
-            } else if (formDataObj.images?.profileImage && formDataObj.images.profileImage.includes('amazonaws.com')) {
-                updateData.images.profileImage = formDataObj.images.profileImage;
+            } else if (formDataObj.images?.profile && formDataObj.images.profile.includes('amazonaws.com')) {
+                updateData.images.profile = formDataObj.images.profile;
             }
             // Optional images
-            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            const optionalImages = ['panCard', 'gst', 'fssai'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
                     try {
@@ -172,7 +173,7 @@ const updateBusinessStep = async (req, res) => {
                     updateData.images[imageType] = formDataObj.images[imageType];
                 }
             }
-            if (!updateData.images.profileImage) {
+            if (!updateData.images.profile) {
                 return res.status(400).json({ message: 'Profile image is required' });
             }
         }
@@ -249,30 +250,30 @@ const getBusinessProfile = async (req, res) => {
 const updateBusinessProfile = async (req, res) => {
     try {
         const updateData = { ...req.body };
-        let oldProfileImageKey = null;
-        let oldProfileImageUrl = null;
+        let oldprofileKey = null;
+        let oldprofileUrl = null;
         // Find the existing business to get the old image URL
         const existingBusiness = await Business.findById(req.restaurant._id);
-        if (existingBusiness && existingBusiness.images && existingBusiness.images.profileImage) {
-            oldProfileImageUrl = existingBusiness.images.profileImage;
+        if (existingBusiness && existingBusiness.images && existingBusiness.images.profile) {
+            oldprofileUrl = existingBusiness.images.profile;
         }
         if (req.files) {
             if (!updateData.images) {
                 updateData.images = {};
             }
-            if (req.files.profileImage?.[0]) {
+            if (req.files.profile?.[0]) {
                 try {
-                    const file = req.files.profileImage[0];
+                    const file = req.files.profile[0];
                     const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
                     const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
-                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                    updateData.images.profile = getS3ObjectUrl(s3Key);
                 } catch (error) {
-                    console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
-                    console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
+                    console.error('[businessController.js][updateBusinessProfile-profile]', error);
+                    console.trace('[businessController.js][updateBusinessProfile-profile] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
-            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            const optionalImages = ['panCard', 'gst', 'fssai'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
                     try {
@@ -289,22 +290,22 @@ const updateBusinessProfile = async (req, res) => {
             }
         }
         // Handle base64 image upload even if req.files is not present
-        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+        if (updateData.images?.profile && updateData.images.profile.startsWith('data:image')) {
             try {
-                const s3Key = await uploadBase64ImageToS3(updateData.images.profileImage, 'business');
-                updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                const s3Key = await uploadBase64ImageToS3(updateData.images.profile, 'business');
+                updateData.images.profile = getS3ObjectUrl(s3Key);
             } catch (error) {
-                console.error('[businessController.js][updateBusinessProfile-profileImage]', error);
-                console.trace('[businessController.js][updateBusinessProfile-profileImage] Stack trace:');
+                console.error('[businessController.js][updateBusinessProfile-profile]', error);
+                console.trace('[businessController.js][updateBusinessProfile-profile] Stack trace:');
                 return res.status(500).json({ message: 'Error uploading profile image' });
             }
         }
         // If a new profile image was uploaded, delete the old S3 object (fire-and-forget)
-        if (oldProfileImageUrl && updateData.images && updateData.images.profileImage && oldProfileImageUrl !== updateData.images.profileImage) {
+        if (oldprofileUrl && updateData.images && updateData.images.profile && oldprofileUrl !== updateData.images.profile) {
             const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
-            if (oldProfileImageUrl.startsWith(s3UrlPrefix)) {
-                oldProfileImageKey = oldProfileImageUrl.replace(s3UrlPrefix, '');
-                require('../utils/awsS3').deleteS3Object(oldProfileImageKey); // don't await
+            if (oldprofileUrl.startsWith(s3UrlPrefix)) {
+                oldprofileKey = oldprofileUrl.replace(s3UrlPrefix, '');
+                require('../utils/awsS3').deleteS3Object(oldprofileKey); // don't await
             }
         }
         Object.keys(updateData).forEach(key => {
@@ -335,16 +336,16 @@ const updateBusinessProfile = async (req, res) => {
 // Get all businesses (public route - no auth required)
 const getAllPublicBusinesses = async (req, res) => {
     try {
-        const { lat, lng, category } = req.query;
+        const { lat, lng, type } = req.query;
         let query = { status: 'published' };
-        if (category && category !== "all") {
+        if (type && type !== "all") {
             query.$or = [
-                { serviceType: category },
-                { category: category }
+                { serviceType: type },
+                { type: type }
             ];
         }
         const businesses = await Business.find(query)
-            .select('restaurantName serviceType images.profileImage description rating location category operatingHours subdomain')
+            .select('name serviceType images.profile description rating location type operatingHours subdomain')
             .lean();
         const now = moment().tz('Asia/Kolkata');
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -375,13 +376,13 @@ const getAllPublicBusinesses = async (req, res) => {
             }
             return {
                 _id: business._id,
-                name: business.restaurantName,
-                imageUrl: business.images?.profileImage || null,
+                name: business.name,
+                imageUrl: business.images?.profile || null,
                 description: business.description || '',
                 distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
                 location: business.location || null,
                 serviceType: business.serviceType || '',
-                category: business.category || '',
+                type: business.type || '',
                 subdomain: business.subdomain || null,
                 online: isOnline,
                 operatingHours: {
@@ -413,7 +414,7 @@ const getPublicBusinessById = async (req, res) => {
         const business = await Business.findOne({
             _id: req.params.id,
             status: 'published'
-        }).select('restaurantName images.profileImage description location operatingHours serviceType');
+        }).select('name images.profile description location operatingHours serviceType type');
         if (!business) {
             return res.status(404).json({ message: 'Business not found' });
         }
@@ -445,13 +446,14 @@ const getPublicBusinessById = async (req, res) => {
         }
         const formattedBusiness = {
             _id: business._id,
-            name: business.restaurantName,
-            imageUrl: business.images?.profileImage || null,
+            name: business.name,
+            imageUrl: business.images?.profile || null,
             description: business.description || '',
             distance: distance !== null ? parseFloat(distance.toFixed(2)) : null,
             location: business.location || '',
             online: isOnline,
             serviceType: business.serviceType || '',
+            type: business.type || '',
             operatingHours: {
                 openTime: openTime || business.operatingHours?.defaultOpenTime || null,
                 closeTime: closeTime || business.operatingHours?.defaultCloseTime || null
@@ -482,14 +484,14 @@ const getAllBusinessesForAdmin = async (req, res) => {
         // Search by restaurant name or owner name
         if (search) {
             query.$or = [
-                { restaurantName: { $regex: search, $options: 'i' } },
+                { name: { $regex: search, $options: 'i' } },
                 { ownerName: { $regex: search, $options: 'i' } }
             ];
         }
         
         const businesses = await Business.find(query)
             .populate('owner', 'username email')
-            .select('restaurantName ownerName serviceType status createdAt currentStep images.profileImage contact address')
+            .select('name ownerName serviceType status createdAt currentStep images.profile contact address type')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(pageSize))
@@ -499,13 +501,14 @@ const getAllBusinessesForAdmin = async (req, res) => {
         
         const formattedBusinesses = businesses.map(business => ({
             _id: business._id,
-            restaurantName: business.restaurantName,
+            name: business.name,
             ownerName: business.ownerName,
             owner: business.owner,
             serviceType: business.serviceType,
+            type: business.type,
             status: business.status,
             currentStep: business.currentStep,
-            profileImage: business.images?.profileImage,
+            profile: business.images?.profile,
             contact: business.contact,
             address: business.address,
             createdAt: business.createdAt
@@ -601,29 +604,29 @@ const updateBusinessProfileByOwnerId = async (req, res) => {
         if (!business) return res.status(404).json({ message: 'Business not found for this owner' });
 
         const updateData = { ...req.body };
-        let oldProfileImageKey = null;
-        let oldProfileImageUrl = null;
+        let oldprofileKey = null;
+        let oldprofileUrl = null;
         // Find the existing business to get the old image URL
-        if (business && business.images && business.images.profileImage) {
-            oldProfileImageUrl = business.images.profileImage;
+        if (business && business.images && business.images.profile) {
+            oldprofileUrl = business.images.profile;
         }
         if (req.files) {
             if (!updateData.images) {
                 updateData.images = {};
             }
-            if (req.files.profileImage?.[0]) {
+            if (req.files.profile?.[0]) {
                 try {
-                    const file = req.files.profileImage[0];
+                    const file = req.files.profile[0];
                     const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
                     const s3Key = await uploadBase64ImageToS3(base64Image, 'business');
-                    updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                    updateData.images.profile = getS3ObjectUrl(s3Key);
                 } catch (error) {
-                    console.error('[businessController.js][updateBusinessProfileByOwnerId-profileImage]', error);
-                    console.trace('[businessController.js][updateBusinessProfileByOwnerId-profileImage] Stack trace:');
+                    console.error('[businessController.js][updateBusinessProfileByOwnerId-profile]', error);
+                    console.trace('[businessController.js][updateBusinessProfileByOwnerId-profile] Stack trace:');
                     return res.status(500).json({ message: 'Error uploading profile image' });
                 }
             }
-            const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+            const optionalImages = ['panCard', 'gst', 'fssai'];
             for (const imageType of optionalImages) {
                 if (req.files?.[imageType]?.[0]) {
                     try {
@@ -640,17 +643,17 @@ const updateBusinessProfileByOwnerId = async (req, res) => {
             }
         }
         // Handle base64 image upload even if req.files is not present
-        if (updateData.images?.profileImage && updateData.images.profileImage.startsWith('data:image')) {
+        if (updateData.images?.profile && updateData.images.profile.startsWith('data:image')) {
             try {
-                const s3Key = await uploadBase64ImageToS3(updateData.images.profileImage, 'business');
-                updateData.images.profileImage = getS3ObjectUrl(s3Key);
+                const s3Key = await uploadBase64ImageToS3(updateData.images.profile, 'business');
+                updateData.images.profile = getS3ObjectUrl(s3Key);
             } catch (error) {
-                console.error('[businessController.js][updateBusinessProfileByOwnerId-profileImage]', error);
-                console.trace('[businessController.js][updateBusinessProfileByOwnerId-profileImage] Stack trace:');
+                console.error('[businessController.js][updateBusinessProfileByOwnerId-profile]', error);
+                console.trace('[businessController.js][updateBusinessProfileByOwnerId-profile] Stack trace:');
                 return res.status(500).json({ message: 'Error uploading profile image' });
             }
         }
-        const optionalImages = ['panCardImage', 'gstImage', 'fssaiImage'];
+        const optionalImages = ['panCard', 'gst', 'fssai'];
         for (const imageType of optionalImages) {
             if (updateData.images?.[imageType] && updateData.images[imageType].startsWith('data:image')) {
                 try {
@@ -664,11 +667,11 @@ const updateBusinessProfileByOwnerId = async (req, res) => {
             }
         }
         // If a new profile image was uploaded, delete the old S3 object (fire-and-forget)
-        if (oldProfileImageUrl && updateData.images && updateData.images.profileImage && oldProfileImageUrl !== updateData.images.profileImage) {
+        if (oldprofileUrl && updateData.images && updateData.images.profile && oldprofileUrl !== updateData.images.profile) {
             const s3UrlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
-            if (oldProfileImageUrl.startsWith(s3UrlPrefix)) {
-                oldProfileImageKey = oldProfileImageUrl.replace(s3UrlPrefix, '');
-                require('../utils/awsS3').deleteS3Object(oldProfileImageKey); // don't await
+            if (oldprofileUrl.startsWith(s3UrlPrefix)) {
+                oldprofileKey = oldprofileUrl.replace(s3UrlPrefix, '');
+                require('../utils/awsS3').deleteS3Object(oldprofileKey); // don't await
             }
         }
         Object.keys(updateData).forEach(key => {

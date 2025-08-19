@@ -6,7 +6,7 @@ const businessSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    restaurantName: {
+    name: {
         type: String,
         required: true
     },
@@ -30,7 +30,7 @@ const businessSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    category: {
+    type: {
         type: String
     },
     address: {
@@ -64,10 +64,10 @@ const businessSchema = new mongoose.Schema({
         }
     },
     images: {
-        profileImage: String,
-        panCardImage: String,
-        gstImage: String,
-        fssaiImage: String
+        profile: String,
+        panCard: String,
+        gst: String,
+        fssai: String
     },
     panDetails: {
         panNumber: String,

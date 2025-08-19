@@ -78,10 +78,10 @@ const BusinessProfile = () => {
             }
         },
         images: {
-            profileImage: '',
-            panCardImage: '',
-            gstImage: '',
-            fssaiImage: ''
+            profile: '',
+            panCard: '',
+            gst: '',
+            fssai: ''
         },
         panDetails: {
             panNumber: '',
@@ -325,8 +325,8 @@ const BusinessProfile = () => {
             ...business,
             subdomain: business?.subdomain || '',
         });
-        if (business?.images?.profileImage) {
-            setImagePreview(business.images.profileImage);
+        if (business?.images?.profile) {
+            setImagePreview(business.images.profile);
         }
         setLoading(false);
     }, [business]);
@@ -360,9 +360,9 @@ const BusinessProfile = () => {
                     changedData[key] = formData[key];
                 }
             });
-            if (imagePreview && imagePreview !== restaurant.images?.profileImage) {
+            if (imagePreview && imagePreview !== restaurant.images?.profile) {
                 changedData.images = {
-                    profileImage: imagePreview
+                    profile: imagePreview
                 };
             }
             if (Object.keys(changedData).length === 0) {
@@ -374,8 +374,8 @@ const BusinessProfile = () => {
             if (response.data && response.data._id) {
                 setRestaurant(prev => ({ ...prev, ...response.data }));
                 setFormData(prev => ({ ...prev, ...response.data }));
-                if (response.data.images?.profileImage) {
-                    setImagePreview(response.data.images.profileImage);
+                if (response.data.images?.profile) {
+                    setImagePreview(response.data.images.profile);
                 }
             }
             setIsEditing(false);
@@ -437,8 +437,8 @@ const BusinessProfile = () => {
                                         className="btn btn-primary px-4"
                                         onClick={() => {
                                             setIsEditing(!isEditing);
-                                            if (!imagePreview && restaurant?.images?.profileImage) {
-                                                setImagePreview(restaurant.images.profileImage);
+                                            if (!imagePreview && restaurant?.images?.profile) {
+                                                setImagePreview(restaurant.images.profile);
                                             }
                                         }}
                                     >
@@ -994,7 +994,7 @@ const BusinessProfile = () => {
                                                         <label className="form-label">Website</label>
                                                         <input type="text" className="form-control" name="contact.website" value={formData.contact.website} onChange={handleInputChange} />
                                                     </div>
-                                                    {/* Image Uploads (except profileImage) */}
+                                                    {/* Image Uploads (except profile Image) */}
                                                     <div className="col-md-3">
                                                         <label className="form-label">PAN Card Image</label>
                                                         <input type="file" className="form-control" accept="image/*" onChange={e => {
@@ -1006,14 +1006,14 @@ const BusinessProfile = () => {
                                                                         ...prev,
                                                                         images: {
                                                                             ...prev.images,
-                                                                            panCardImage: reader.result
+                                                                            panCard: reader.result
                                                                         }
                                                                     }));
                                                                 };
                                                                 reader.readAsDataURL(file);
                                                             }
                                                         }} />
-                                                        {formData.images.panCardImage && <img src={formData.images.panCardImage} alt="PAN Card" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                        {formData.images.panCard && <img src={formData.images.panCard} alt="PAN Card" className="img-fluid mt-2" style={{maxHeight: 80}} />}
                                                     </div>
                                                     <div className="col-md-3">
                                                         <label className="form-label">GST Image</label>
@@ -1026,14 +1026,14 @@ const BusinessProfile = () => {
                                                                         ...prev,
                                                                         images: {
                                                                             ...prev.images,
-                                                                            gstImage: reader.result
+                                                                            gst: reader.result
                                                                         }
                                                                     }));
                                                                 };
                                                                 reader.readAsDataURL(file);
                                                             }
                                                         }} />
-                                                        {formData.images.gstImage && <img src={formData.images.gstImage} alt="GST" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                        {formData.images.gst && <img src={formData.images.gst} alt="GST" className="img-fluid mt-2" style={{maxHeight: 80}} />}
                                                     </div>
                                                     <div className="col-md-3">
                                                         <label className="form-label">FSSAI Image</label>
@@ -1046,14 +1046,14 @@ const BusinessProfile = () => {
                                                                         ...prev,
                                                                         images: {
                                                                             ...prev.images,
-                                                                            fssaiImage: reader.result
+                                                                            fssai: reader.result
                                                                         }
                                                                     }));
                                                                 };
                                                                 reader.readAsDataURL(file);
                                                             }
                                                         }} />
-                                                        {formData.images.fssaiImage && <img src={formData.images.fssaiImage} alt="FSSAI" className="img-fluid mt-2" style={{maxHeight: 80}} />}
+                                                        {formData.images.fssai && <img src={formData.images.fssai} alt="FSSAI" className="img-fluid mt-2" style={{maxHeight: 80}} />}
                                                     </div>
                                                     {/* PAN Details Fields */}
                                                     <div className="col-md-3">
@@ -1117,9 +1117,9 @@ const BusinessProfile = () => {
                                             <div className="row">
                                                 <div className="col-md-3">
                                                     <div className="position-relative" style={{ width: '200px', height: '200px' }}>
-                                                        {restaurant?.images?.profileImage ? (
+                                                        {restaurant?.images?.profile ? (
                                                             <img
-                                                                src={restaurant.images.profileImage}
+                                                                src={restaurant.images.profile}
                                                                 alt="Restaurant"
                                                                 className="rounded-circle"
                                                                 style={{

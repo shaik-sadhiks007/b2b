@@ -40,14 +40,14 @@ const upload = multer({
 
 
 // Create new business (Step 1)
-router.post('/', authMiddleware, upload.single('profileImage'), createBusiness);
+router.post('/', authMiddleware, upload.single('profile'), createBusiness);
 
 // Update business step
 router.put('/:id/step/:step', authMiddleware, upload.fields([
-    { name: 'profileImage', maxCount: 1 },
-    { name: 'panCardImage', maxCount: 1 },
-    { name: 'gstImage', maxCount: 1 },
-    { name: 'fssaiImage', maxCount: 1 }
+    { name: 'profile', maxCount: 1 },
+    { name: 'panCard', maxCount: 1 },
+    { name: 'gst', maxCount: 1 },
+    { name: 'fssai', maxCount: 1 }
 ]), updateBusinessStep);
 
 // Get all businesses for the current user
@@ -58,10 +58,10 @@ router.get('/profile', authMiddleware, businessMiddleware, getBusinessProfile);
 
 // Update business profile
 router.patch('/profile', authMiddleware, businessMiddleware, upload.fields([
-    { name: 'profileImage', maxCount: 1 },
-    { name: 'panCardImage', maxCount: 1 },
-    { name: 'gstImage', maxCount: 1 },
-    { name: 'fssaiImage', maxCount: 1 }
+    { name: 'profile', maxCount: 1 },
+    { name: 'panCard', maxCount: 1 },
+    { name: 'gst', maxCount: 1 },
+    { name: 'fssai', maxCount: 1 }
 ]), updateBusinessProfile);
 
 
